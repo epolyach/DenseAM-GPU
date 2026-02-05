@@ -20,7 +20,7 @@
 }
 
 \title{Evolution of the LSR Monte Carlo Simulation:\\
-From Masking to Heating Protocol}
+From Masking to CUDA Streams}
 \author{}
 \date{}
 
@@ -29,13 +29,14 @@ From Masking to Heating Protocol}
 
 \section{Overview}
 
-This document describes the progression of three GPU-accelerated Monte Carlo
+This document describes the progression of four GPU-accelerated Monte Carlo
 implementations for the LSR (Log-Sum-ReLU / Epanechnikov) energy function
 in Dense Associative Memory on the $N$-sphere:
 \begin{enumerate}
     \item \texttt{generate\_lsr\_longeq\_gpu.jl} --- the \emph{masking} version (v1),
     \item \texttt{generate\_lsr\_longeq\_gpu\_v2.jl} --- the \emph{T-loop} version (v2),
-    \item \texttt{generate\_lsr\_longeq\_gpu\_v3.jl} --- the \emph{heating protocol} version (v3).
+    \item \texttt{generate\_lsr\_longeq\_gpu\_v3.jl} --- the \emph{heating protocol} version (v3),
+    \item \texttt{generate\_lsr\_longeq\_gpu\_v4.jl} --- the \emph{CUDA streams + fine grid} version (v4).
 \end{enumerate}
 All three share the same physics (LSR energy with $b = 2 + \sqrt{2} \approx 3.414$),
 the same Metropolis--Hastings algorithm on $S^{N-1}(\sqrt{N})$, and the same
@@ -287,79 +288,220 @@ $E_i$ remain valid when $\beta$ changes between temperature steps, and no
 energy recomputation is needed at the start of each $T_j$.
 
 
+\section{Version 4: CUDA Streams + Fine Grid}
+
+\subsection{Motivation}
+
+While v3 successfully eliminates the blue bay, the inner loop over $\alpha$
+values is fully sequential: each MC step issues $n_\alpha$ small CUBLAS calls
+one after another.  For the v3 grid ($n_\alpha = 18$, $N \sim 8$--$20$,
+$N_{\mathrm{trials}} = 256$), each \texttt{gemm\_strided\_batched} operates on
+very small matrices, severely underutilizing an A6000's 10{,}752 CUDA cores.
+To afford a finer grid (55~$\alpha$ values, 50~$T$ points), the per-step
+time must be reduced.
+
+\subsection{CUDA streams for concurrent $\alpha$ processing}
+
+Version~4 creates one CUDA stream per $\alpha$ value and dispatches the
+compute kernel for each $\alpha_i$ to its own stream.  The GPU scheduler can
+then overlap the small kernels from different streams, filling otherwise
+idle SMs:
+\begin{lstlisting}
+streams = [CuStream() for _ in 1:n_alpha]
+
+for i in 1:n_alpha
+    CUDA.stream!(streams[i]) do
+        mc_step_prerand!(xs_g[i], xp_cur[i], ...,
+                         ra_cur[i], ...)
+    end
+end
+CUDA.synchronize()
+\end{lstlisting}
+
+All operations inside the \texttt{stream!} block---CUBLAS, broadcast kernels,
+reductions---are submitted to the specified stream.  The GPU executes them
+concurrently across streams when resources are available.
+
+\subsection{Separating random generation from compute}
+
+A key constraint prevents simply wrapping the original
+\texttt{mc\_step\_single\_T!} in a stream block: CUDA's cuRAND generator
+maintains internal state that is \textbf{not safe} for concurrent access from
+multiple streams.  Calling \texttt{CUDA.randn!} on different streams from the
+same generator would corrupt the RNG state.
+
+Version~4 therefore introduces \texttt{mc\_step\_prerand!}, which expects
+\emph{pre-filled} random arrays:
+\begin{itemize}
+    \item \texttt{xp}: pre-filled with $\mathcal{N}(0,1)$ noise (overwritten
+    in-place with the proposal).
+    \item \texttt{ra}: pre-filled with $\mathrm{U}(0,1)$ values for accept/reject.
+\end{itemize}
+All random number generation happens on the default stream (sequential, safe),
+while the deterministic compute is dispatched to per-$\alpha$ streams.
+
+\subsection{Double-buffered RNG}
+
+To overlap random generation with compute, v4 maintains two sets of random
+buffers (A and B).  Within each MC step:
+\begin{enumerate}
+    \item Dispatch compute using the \emph{current} buffer to per-$\alpha$ streams.
+    \item Generate next step's random numbers into the \emph{alternate} buffer on
+    the default stream.
+    \item \texttt{CUDA.synchronize()} --- wait for both compute and random
+    generation.
+    \item Swap buffer pointers.
+\end{enumerate}
+
+\begin{lstlisting}
+xp_cur, xp_nxt = xp_A, xp_B
+ra_cur, ra_nxt = ra_A, ra_B
+
+# Pre-fill first buffer
+fill_randoms!(xp_cur, ra_cur, n_alpha)
+CUDA.synchronize()
+
+for step in 1:n_eq
+    # Compute on current buffer (per-alpha streams)
+    dispatch_eq_step!(streams, xs_g, xp_cur, ...)
+
+    # Generate next randoms (default stream, alternate buffer)
+    fill_randoms!(xp_nxt, ra_nxt, n_alpha)
+
+    CUDA.synchronize()  # one sync per MC step
+    xp_cur, xp_nxt = xp_nxt, xp_cur
+    ra_cur, ra_nxt = ra_nxt, ra_cur
+end
+\end{lstlisting}
+
+Because compute uses buffer~A while random generation fills buffer~B (or vice
+versa), there are no write--write conflicts, and only a single
+\texttt{CUDA.synchronize()} is needed per MC step.
+
+\subsection{Finer grids}
+
+With better GPU utilization from streams, v4 uses substantially finer grids:
+\begin{itemize}
+    \item $\alpha = 0.01, 0.02, \ldots, 0.55$ (55 values, vs.\ 18 in v3).
+    \item $T$: 50 log-spaced points from $10^{-2}$ to $2.5$ (vs.\ 20 in v3).
+\end{itemize}
+The log-spaced temperature grid from v3 is preserved, providing dense sampling
+near the phase transition at low~$T$ and coarser sampling at high~$T$ where the
+order parameter is featureless.
+
+The extended $\alpha$ range (down to 0.01) includes the regime
+$\alpha < \alpha_{\mathrm{th}} \approx 0.043$ where the support threshold
+guarantees perfect retrieval at any temperature, providing an internal
+consistency check.
+
+\subsection{Memory considerations}
+
+For low $\alpha$ values (e.g.\ $\alpha = 0.01$), the adaptive-$N$ scheme
+gives $N = \lceil \ln P / \alpha \rceil \approx 621$, with $P = 50$.
+The pattern array $[N \times P \times N_{\mathrm{trials}}]$ for this single
+$\alpha$ occupies $\sim\!4$~MB (with $N_{\mathrm{trials}} = 32$).  The total
+GPU memory across all 55~$\alpha$ values is dominated by the high-$N$, low-$P$
+values and is well within A6000 capacity.
+
+The double-buffered proposal and uniform arrays add only
+$2 \times \sum_i (N_i \times N_{\mathrm{trials}} + N_{\mathrm{trials}})
+\times 4$~bytes $\approx 20$~MB of overhead.
+
+
 \section{Summary of Differences}
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \toprule
-& \textbf{v1 (Masking)} & \textbf{v2 (T-loop)} & \textbf{v3 (Heating)} \\
+& \textbf{v1 (Masking)} & \textbf{v2 (T-loop)} & \textbf{v3 (Heating)} & \textbf{v4 (Streams)} \\
 \midrule
 State shape per $\alpha$
-  & $[N, n_T, N_{\mathrm{trials}}]$
-  & $[N, 1, N_{\mathrm{trials}}] \times n_T$
-  & $[N, 1, N_{\mathrm{trials}}] \times 1$ \\[2pt]
+  & $[N, n_T, N_{\mathrm{tr}}]$
+  & $[N, 1, N_{\mathrm{tr}}] \!\times\! n_T$
+  & $[N, 1, N_{\mathrm{tr}}] \!\times\! 1$
+  & $[N, 1, N_{\mathrm{tr}}] \!\times\! 1$ \\[2pt]
 $\beta$ type
-  & GPU vector ($n_T \!\times\! N_{\mathrm{trials}}$)
+  & GPU vector
+  & scalar
   & scalar
   & scalar \\[2pt]
 MC step function
   & \texttt{mc\_step\_masked!}
   & \texttt{mc\_step\_single\_T!}
-  & \texttt{mc\_step\_single\_T!} \\[2pt]
+  & \texttt{mc\_step\_single\_T!}
+  & \texttt{mc\_step\_prerand!} \\[2pt]
+$\alpha$ parallelism
+  & sequential
+  & sequential
+  & sequential
+  & CUDA streams \\[2pt]
+RNG strategy
+  & inline
+  & inline
+  & inline
+  & double-buffered \\[2pt]
 Equilibration
-  & masking with thresholds
+  & masking
   & independent per $T$
+  & sequential heating
   & sequential heating \\[2pt]
 $N_{\mathrm{eq}}$ schedule
-  & $5000 \times e^{0.15(1/T - 1/T_{\max})}$
+  & $5\text{k} \times e^{0.15/T}$
   & same
-  & 20k init + 5k/step \\[2pt]
+  & flat init + step
+  & flat init + step \\[2pt]
 Initialization
-  & all $({\alpha},T)$ near target
-  & all $({\alpha},T)$ near target
+  & all $(\alpha,T)$ near target
+  & all $(\alpha,T)$ near target
+  & only $T_1$ near target
   & only $T_1$ near target \\[2pt]
 Data flow between $T$
   & none
   & none
-  & $T_j \to T_{j+1}$ \\[2pt]
+  & $T_j \!\to\! T_{j+1}$
+  & $T_j \!\to\! T_{j+1}$ \\[2pt]
 GPU arrays for states
   & $n_\alpha$ (batched)
-  & $n_\alpha \times n_T$
+  & $n_\alpha \!\times\! n_T$
+  & $n_\alpha$
   & $n_\alpha$ \\[2pt]
 \midrule
-$N_{\mathrm{trials}}$
-  & 64
-  & 64
-  & 128 \\[2pt]
-$N_{\mathrm{samp}}$
-  & 500
-  & 500
-  & 2000 \\[2pt]
+$n_\alpha \times n_T$
+  & $18 \times 30$
+  & $18 \times 30$
+  & $18 \times 20$
+  & $55 \times 50$ \\[2pt]
+$T$ grid
+  & linear
+  & linear
+  & log-spaced
+  & log-spaced \\[2pt]
 Output file
   & \texttt{lsr\_longeq.csv}
   & \texttt{lsr\_longeq.csv}
+  & \texttt{lsr\_heating.csv}
   & \texttt{lsr\_heating.csv} \\
 \bottomrule
 \end{tabular}
-\caption{Comparison of the three LSR Monte Carlo implementations.}
+\caption{Comparison of the four LSR Monte Carlo implementations.}
 \label{tab:comparison}
 \end{table}
 
 
 \section{Expected Impact on the Phase Diagram}
 
-The heating protocol is designed to eliminate the blue bay by ensuring that the
-MC chain has a physically continuous thermal history:
+The heating protocol (v3/v4) is designed to eliminate the blue bay by ensuring
+that the MC chain has a physically continuous thermal history:
 \begin{itemize}
     \item At $T < T_c$: the system is in retrieval (correct).  The state from
-    $T_{j-1}$ is a good starting point, and 5{,}000 re-equilibration steps are
-    sufficient for the small perturbation $\Delta T = 0.05$.
+    $T_{j-1}$ is a good starting point, and re-equilibration steps are
+    sufficient for the small perturbation in log-spaced $T$.
     \item At $T \approx T_c$: the free-energy barrier between retrieval and
     spin-glass is weakening.  Because the system is already equilibrated at
     $T_{j-1} \lesssim T_c$, the barrier crossing requires only a modest
-    thermal push.  The 5{,}000 MC steps provide this opportunity.
+    thermal push.
     \item At $T > T_c$: the system has already transitioned to spin-glass at
     $T \approx T_c$.  Subsequent heating steps maintain the disordered state.
 \end{itemize}
@@ -367,12 +509,13 @@ MC chain has a physically continuous thermal history:
 There is a known caveat: because this is a heating protocol, the observed
 transition temperature may be slightly \emph{above} the thermodynamic $T_c$
 (superheating effect at a first-order transition).  The magnitude of this
-shift depends on the barrier height relative to $\Delta T = 0.05$ and the number
-of re-equilibration steps.  For the moderate system sizes in this simulation
-($N \sim 8$--$20$), the superheating shift is expected to be small.
+shift depends on the barrier height relative to the temperature step size and
+the number of re-equilibration steps.  For the moderate system sizes in this
+simulation ($N \sim 2$--$620$), the superheating shift is expected to be small.
 
-The increased statistical power ($N_{\mathrm{trials}} = 128$,
-$N_{\mathrm{samp}} = 2{,}000$) further reduces noise in the phase diagram,
-providing a cleaner comparison with the theoretical boundary.
+Version~4's finer grids and CUDA-stream parallelism provide the sharpest
+phase diagram to date, with the extended $\alpha$ range capturing both the
+support-threshold regime ($\alpha < \alpha_{\mathrm{th}}$) and the full
+phase boundary up to $\alpha = 0.55$.
 
 \end{document}
