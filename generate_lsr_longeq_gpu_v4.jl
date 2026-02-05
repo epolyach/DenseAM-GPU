@@ -25,14 +25,14 @@ const T_vec     = F.(10 .^ range(-2, log10(2.5), length=50))  # log-spaced: 0.01
 const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
 
-const N_TRIALS  = 32
+const N_TRIALS  = 64
 const N_SAMP    = 500
-const MIN_PAT   = 50
-const MAX_PAT   = 2000
+const MIN_PAT   = 500
+const MAX_PAT   = 20000
 
 # ──────────────── Heating equilibration ────────────────
-const N_EQ_INIT = 30000  # heavy equilibration at T_1 (coldest)
-const N_EQ_STEP = 3000   # re-equilibration per subsequent T step
+const N_EQ_INIT = 300000  # heavy equilibration at T_1 (coldest)
+const N_EQ_STEP = 30000   # re-equilibration per subsequent T step
 
 # ──────────────── Adaptive functions ────────────────
 function n_patterns(alpha)
@@ -220,6 +220,7 @@ function main()
     println("  $(n_alpha) CUDA streams, double-buffered RNG\n")
 
     phi_grid = zeros(Float64, n_alpha, n_T)
+    csv_file = "lsr_heating.csv"
     total_work = total_eq + n_T * N_SAMP
     prog = Progress(total_work, desc="Heating+Sampling: ")
     t0 = time()
@@ -290,6 +291,22 @@ function main()
                 alpha_vec[n_alpha÷2], phi_grid[n_alpha÷2, j],
                 alpha_vec[end], phi_grid[end, j])
 
+        # ── Write CSV with columns completed so far ──
+        open(csv_file, "w") do f
+            write(f, "alpha")
+            for jj in 1:j
+                write(f, @sprintf(",T%.4f", T_vec[jj]))
+            end
+            write(f, "\n")
+            for i in 1:n_alpha
+                write(f, @sprintf("%.2f", alpha_vec[i]))
+                for jj in 1:j
+                    write(f, @sprintf(",%.4f", phi_grid[i, jj]))
+                end
+                write(f, "\n")
+            end
+        end
+
         # xs_g[i] carries forward to T_{j+1} — HEATING PROPAGATION
     end
     finish!(prog)
@@ -297,23 +314,7 @@ function main()
     t_total = time() - t0
     @printf("\nTotal time: %.1f s (%.2f ms/step avg)\n\n", t_total, 1000*t_total/total_work)
 
-    # ── Save CSV ──
-    csv_file = "lsr_heating.csv"
-    open(csv_file, "w") do f
-        write(f, "alpha")
-        for T in T_vec
-            write(f, @sprintf(",T%.4f", T))
-        end
-        write(f, "\n")
-        for i in 1:n_alpha
-            write(f, @sprintf("%.2f", alpha_vec[i]))
-            for j in 1:n_T
-                write(f, @sprintf(",%.4f", phi_grid[i, j]))
-            end
-            write(f, "\n")
-        end
-    end
-    println("CSV saved: $csv_file")
+    println("CSV saved: $csv_file ($n_T T columns)")
     println()
 
     # Sample output
