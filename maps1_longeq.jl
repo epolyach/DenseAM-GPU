@@ -38,7 +38,9 @@ end
 # ──────────────── Read data (Long Equilibration) ────────────────
 
 data_lse = CSV.read("lse_longeq.csv", DataFrame)
-data_lsr = if isfile("lsr_longeq.csv")
+data_lsr = if isfile("lsr_heating.csv")
+    CSV.read("lsr_heating.csv", DataFrame)
+elseif isfile("lsr_longeq.csv")
     CSV.read("lsr_longeq.csv", DataFrame)
 else
     CSV.read("lsr_alpha_sweep_table.csv", DataFrame)
