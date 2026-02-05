@@ -5,18 +5,6 @@
 Manifest.toml
 TOML/Manifest.toml
 
-# Output files (can be regenerated)
-*.png
-*.eps
-
-# PDF files except papers and LaTeX reports
-*.pdf
-!LATEX/*.pdf
-!papers/*.pdf
-
-# CSV data files (large, can be regenerated)
-*.csv
-
 # LaTeX build artifacts
 *.aux
 *.log
@@ -43,11 +31,3 @@ Thumbs.db
 *.tmp
 *.bak
 *.backup
-
-# Keep structure but ignore contents of these directories
-OLD_CSV/
-OLD_JULIA/
-OLD_PNG/
-EPS/
-PNG/
-CSV/
