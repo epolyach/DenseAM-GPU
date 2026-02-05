@@ -1,0 +1,378 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\graphicspath{{../}}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{listings}
+
+\lstset{
+  basicstyle=\small\ttfamily,
+  breaklines=true,
+  frame=single,
+  language=Python, % close enough for Julia highlighting
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  columns=flexible
+}
+
+\title{Evolution of the LSR Monte Carlo Simulation:\\
+From Masking to Heating Protocol}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Overview}
+
+This document describes the progression of three GPU-accelerated Monte Carlo
+implementations for the LSR (Log-Sum-ReLU / Epanechnikov) energy function
+in Dense Associative Memory on the $N$-sphere:
+\begin{enumerate}
+    \item \texttt{generate\_lsr\_longeq\_gpu.jl} --- the \emph{masking} version (v1),
+    \item \texttt{generate\_lsr\_longeq\_gpu\_v2.jl} --- the \emph{T-loop} version (v2),
+    \item \texttt{generate\_lsr\_longeq\_gpu\_v3.jl} --- the \emph{heating protocol} version (v3).
+\end{enumerate}
+All three share the same physics (LSR energy with $b = 2 + \sqrt{2} \approx 3.414$),
+the same Metropolis--Hastings algorithm on $S^{N-1}(\sqrt{N})$, and the same
+adaptive-$N$ scheme ($N(\alpha) = \lfloor \ln P / \alpha \rceil$).
+They differ in how the temperature dimension is handled during equilibration,
+which turns out to be the decisive factor for the accuracy of the phase diagram.
+
+\section{The Shared LSR Energy and MC Kernel}
+
+All three versions compute the LSR energy via batched CUBLAS matrix--vector products:
+\begin{equation}
+    H_{\mathrm{LSR}}(\mathbf{x}) = -\frac{N}{b}\ln\sum_{\mu=1}^{P}
+    \max\!\Bigl(0,\; 1 - b + \frac{b}{N}\,\boldsymbol{\xi}^\mu\!\cdot\mathbf{x}\Bigr).
+\end{equation}
+When the state $\mathbf{x}$ lies outside the support of \emph{all} patterns
+(i.e.\ the argument of every $\max$ is zero), the energy is set to
+$E_{\infty} = 10^{30}$, effectively creating an impenetrable barrier.
+The Metropolis proposal is a Gaussian perturbation projected back onto the sphere:
+\begin{equation}
+    \mathbf{x}' = \sqrt{N}\,\frac{\mathbf{x} + \delta\,\boldsymbol{\eta}}
+    {\|\mathbf{x} + \delta\,\boldsymbol{\eta}\|},
+    \qquad \boldsymbol{\eta} \sim \mathcal{N}(0, I_N),
+    \qquad \delta = \max(0.1,\; 2.4/\sqrt{N}).
+\end{equation}
+
+\section{Version 1: Masking Approach}
+
+\subsection{Architecture}
+
+Version~1 processes \emph{all temperatures simultaneously} by packing the $T$
+dimension into the state arrays.  For each $\alpha_i$, the state tensor has shape
+$[N_i \times n_T \times N_{\mathrm{trials}}]$, and the inverse temperature
+$\beta = 1/T$ is stored as a GPU vector of length $n_T \times N_{\mathrm{trials}}$.
+
+The T-dependent equilibration is implemented via a \emph{masking} mechanism:
+\begin{enumerate}
+    \item Run all $n_T$ temperature chains in parallel.
+    \item Maintain a boolean mask \texttt{active}$[1, n_T, N_{\mathrm{trials}}]$.
+    \item Advance the simulation step by step.  When a temperature $T_j$ has
+    accumulated its allotted $N_{\mathrm{eq}}(T_j)$ steps, deactivate it in the mask.
+    \item Use \texttt{mc\_step\_masked!}, which skips accept/reject for inactive chains.
+    \item Continue until the coldest temperature (requiring the most steps) finishes.
+\end{enumerate}
+
+\subsection{Key functions}
+
+\begin{itemize}
+    \item \texttt{compute\_energy\_lsr!}: batched energy via
+    \texttt{gemm\_strided\_batched} over $[N, n_T, N_{\mathrm{trials}}]$ arrays.
+    \item \texttt{mc\_step\_masked!}: Metropolis step that only updates chains
+    where \texttt{active} is true.
+    \item \texttt{mc\_step!}: standard (unmasked) Metropolis step used during
+    sampling.
+\end{itemize}
+
+\subsection{Initialization}
+
+All $({\alpha}, T)$ chains are initialized independently near the target pattern:
+\begin{equation}
+    \mathbf{x}^{(i,j)}_0 = \sqrt{N_i}\,
+    \frac{\boldsymbol{\xi}^1_i + 0.05\,\boldsymbol{\eta}}
+    {\|\boldsymbol{\xi}^1_i + 0.05\,\boldsymbol{\eta}\|},
+    \qquad \forall\; i \in [n_\alpha],\; j \in [n_T].
+\end{equation}
+
+\subsection{Limitations}
+
+\begin{itemize}
+    \item \textbf{Wasted compute}: after a high-$T$ chain reaches its equilibration
+    quota and is masked out, the GPU still processes the entire $[N, n_T, N_{\mathrm{trials}}]$
+    tensor.  Inactive chains consume memory bandwidth without doing useful work.
+    \item \textbf{Complexity}: the threshold-based deactivation logic (sorting unique
+    $N_{\mathrm{eq}}$ values, updating masks, transferring to GPU) adds code complexity
+    and potential for bugs.
+    \item \textbf{Metastability}: every temperature is initialized near the target,
+    so the ``blue bay'' artifact is present.
+\end{itemize}
+
+
+\section{Version 2: T-Loop Approach}
+
+\subsection{Motivation}
+
+Version~2 eliminates the masking overhead by processing each temperature
+\emph{sequentially} in a dedicated loop.  Each $T_j$ receives exactly
+$N_{\mathrm{eq}}(T_j)$ equilibration steps with no wasted compute on deactivated
+chains.
+
+\subsection{Architecture}
+
+The state storage changes from a 3D tensor to a nested array:
+\[
+    \texttt{xs\_full}[i][j] \in \mathbb{R}^{N_i \times 1 \times N_{\mathrm{trials}}},
+    \qquad i \in [n_\alpha],\; j \in [n_T].
+\]
+Each $({\alpha}, T)$ pair has its own independent GPU array.  The inverse temperature
+$\beta$ is now a \emph{scalar} (not a vector), and the MC step function
+\texttt{mc\_step\_single\_T!} takes $\beta$ as a scalar argument.
+
+\subsection{Equilibration}
+
+The equilibration loop processes temperatures from cold to hot:
+\begin{lstlisting}
+for j in 1:n_T
+    beta = 1 / T_vec[j]
+    n_eq = N_EQ_vec[j]    # T-dependent
+    for step in 1:n_eq
+        for i in 1:n_alpha
+            mc_step_single_T!(xs_full[i][j], ..., beta, ...)
+        end
+    end
+end
+\end{lstlisting}
+The sampling phase is separate and iterates over all $({\alpha}, T)$ pairs.
+
+\subsection{Improvements over v1}
+
+\begin{itemize}
+    \item \textbf{No wasted compute}: each $T$ runs for exactly $N_{\mathrm{eq}}(T_j)$
+    steps, with no idle chains.
+    \item \textbf{Simpler code}: no masking logic, no threshold management.
+    \item \textbf{Scalar $\beta$}: enables \texttt{gemm\_strided\_batched} on
+    $[N, 1, N_{\mathrm{trials}}]$ arrays, which is more cache-friendly for
+    moderate $N$.
+\end{itemize}
+
+\subsection{Persistent limitation: independent initialization}
+
+Despite the structural improvements, v2 retains the same initialization strategy
+as v1: every \texttt{xs\_full}$[i][j]$ is initialized independently near the
+target pattern.  There is \textbf{no data flow between different temperatures}
+during equilibration.  Each $({\alpha}, T)$ simulation is an isolated MC run that
+must independently escape the retrieval basin if the equilibrium state is
+disordered.  This leads to the ``blue bay'' artifact described in
+Section~\ref{sec:blue_bay}.
+
+
+\section{The Blue Bay Artifact}
+\label{sec:blue_bay}
+
+\subsection{Observation}
+
+The phase diagram produced by v2 (right panel of \texttt{maps1\_longeq.png})
+exhibits a prominent region of high $\varphi$ (blue) extending \emph{above}
+the theoretical phase boundary $\alpha_c(T)$, particularly at
+$\alpha \approx 0.25$--$0.35$ and $T \approx 0.3$--$1.5$.  We call this the
+``blue bay.''
+
+\subsection{Physical mechanism}
+
+The theoretical boundary marks where the retrieval free energy
+$f_{\mathrm{ret}} = u(\phi) - T\,s(\phi, q)$ equals the noise-floor energy
+$u_{\mathrm{noise}}$ (a first-order phase transition).  Above the boundary,
+the spin-glass state has lower free energy, but the retrieval state persists
+as a \emph{metastable local minimum} separated from the spin-glass by a
+free-energy barrier.
+
+For the LSR kernel, this barrier is especially severe:
+\begin{enumerate}
+    \item The ReLU support creates \textbf{hard walls}: any MC proposal that
+    moves the state outside all pattern supports encounters $E = 10^{30}$
+    and is always rejected.
+    \item Near the support threshold
+    $\alpha_{\mathrm{th}} = \tfrac{1}{2}(1 - 1/b)^2 \approx 0.25$,
+    very few spurious patterns contribute to the noise floor, so the barrier
+    between retrieval and spin-glass is tall relative to the driving force.
+    \item The MC chain, initialized near the target, cannot escape within
+    the allotted equilibration time.
+\end{enumerate}
+
+\subsection{Why LSE does not exhibit this artifact}
+
+The companion LSE simulation (\texttt{generate\_lse\_longeq\_gpu.jl}) uses
+the same initialization strategy but produces a clean phase diagram.
+Two factors explain this:
+\begin{itemize}
+    \item The Gaussian kernel has \emph{infinite} tails --- there are no hard
+    energy walls, so the MC chain can smoothly diffuse away from the target at
+    high~$T$.
+    \item The LSE simulation uses stronger statistics: $N_{\mathrm{trials}} = 256$
+    (vs.\ 64), $N_{\mathrm{samp}} = 5{,}000$ (vs.\ 500), and a flat
+    $N_{\mathrm{eq}} = 50{,}000$ (vs.\ $\sim\!5{,}000$ at high~$T$).
+\end{itemize}
+
+
+\section{Version 3: Heating Protocol}
+
+\subsection{Core idea}
+
+Instead of initializing each temperature independently, v3 \emph{propagates}
+the equilibrated state from $T_j$ to $T_{j+1}$:
+\begin{enumerate}
+    \item At the coldest temperature $T_1 = 0.05$, initialize near the target
+    and equilibrate heavily ($N_{\mathrm{eq}}^{\mathrm{init}} = 20{,}000$ steps).
+    This is correct: at low~$T$ the retrieval state is the true equilibrium.
+    \item For each subsequent $T_{j+1} = T_j + \Delta T$, \emph{keep} the state
+    from $T_j$ and re-equilibrate with $N_{\mathrm{eq}}^{\mathrm{step}} = 5{,}000$
+    steps at the new temperature.
+    \item As $T$ increases past $T_c$, thermal fluctuations naturally
+    destabilize the retrieval basin.  Because the state is already equilibrated at
+    $T_j \lesssim T_c$, the small perturbation $\Delta T = 0.05$ is sufficient to
+    push the system over the weakening barrier.
+\end{enumerate}
+
+\subsection{Architecture}
+
+The state storage simplifies to a single array per $\alpha$:
+\[
+    \texttt{xs\_g}[i] \in \mathbb{R}^{N_i \times 1 \times N_{\mathrm{trials}}},
+    \qquad i \in [n_\alpha].
+\]
+This array is \emph{reused} across all temperatures---after equilibrating and
+sampling at $T_j$, the same array (carrying the final state) enters the
+equilibration loop for $T_{j+1}$.
+
+The equilibration and sampling phases are \emph{merged} into a single
+temperature loop:
+\begin{lstlisting}
+for j in 1:n_T
+    beta = 1 / T_vec[j]
+    n_eq = (j == 1) ? N_EQ_INIT : N_EQ_STEP
+
+    # Equilibrate (state carries from T_{j-1})
+    for step in 1:n_eq
+        for i in 1:n_alpha
+            mc_step_single_T!(xs_g[i], ..., beta, ...)
+        end
+    end
+
+    # Sample
+    for step in 1:N_SAMP
+        for i in 1:n_alpha
+            mc_step_single_T!(xs_g[i], ..., beta, ...)
+            phi_acc[i] += overlap(xs_g[i], target[i])
+        end
+    end
+
+    phi_grid[:, j] = mean(phi_acc) / N_SAMP
+    # xs_g carries forward to T_{j+1}
+end
+\end{lstlisting}
+
+\subsection{Why the LSR energy is compatible with heating}
+
+A key technical point: the LSR energy function does not depend on temperature.
+Temperature enters only through the Metropolis acceptance criterion
+$\min(1, e^{-\beta\,\Delta E})$.  Therefore, the stored energies
+$E_i$ remain valid when $\beta$ changes between temperature steps, and no
+energy recomputation is needed at the start of each $T_j$.
+
+
+\section{Summary of Differences}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+& \textbf{v1 (Masking)} & \textbf{v2 (T-loop)} & \textbf{v3 (Heating)} \\
+\midrule
+State shape per $\alpha$
+  & $[N, n_T, N_{\mathrm{trials}}]$
+  & $[N, 1, N_{\mathrm{trials}}] \times n_T$
+  & $[N, 1, N_{\mathrm{trials}}] \times 1$ \\[2pt]
+$\beta$ type
+  & GPU vector ($n_T \!\times\! N_{\mathrm{trials}}$)
+  & scalar
+  & scalar \\[2pt]
+MC step function
+  & \texttt{mc\_step\_masked!}
+  & \texttt{mc\_step\_single\_T!}
+  & \texttt{mc\_step\_single\_T!} \\[2pt]
+Equilibration
+  & masking with thresholds
+  & independent per $T$
+  & sequential heating \\[2pt]
+$N_{\mathrm{eq}}$ schedule
+  & $5000 \times e^{0.15(1/T - 1/T_{\max})}$
+  & same
+  & 20k init + 5k/step \\[2pt]
+Initialization
+  & all $({\alpha},T)$ near target
+  & all $({\alpha},T)$ near target
+  & only $T_1$ near target \\[2pt]
+Data flow between $T$
+  & none
+  & none
+  & $T_j \to T_{j+1}$ \\[2pt]
+GPU arrays for states
+  & $n_\alpha$ (batched)
+  & $n_\alpha \times n_T$
+  & $n_\alpha$ \\[2pt]
+\midrule
+$N_{\mathrm{trials}}$
+  & 64
+  & 64
+  & 128 \\[2pt]
+$N_{\mathrm{samp}}$
+  & 500
+  & 500
+  & 2000 \\[2pt]
+Output file
+  & \texttt{lsr\_longeq.csv}
+  & \texttt{lsr\_longeq.csv}
+  & \texttt{lsr\_heating.csv} \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of the three LSR Monte Carlo implementations.}
+\label{tab:comparison}
+\end{table}
+
+
+\section{Expected Impact on the Phase Diagram}
+
+The heating protocol is designed to eliminate the blue bay by ensuring that the
+MC chain has a physically continuous thermal history:
+\begin{itemize}
+    \item At $T < T_c$: the system is in retrieval (correct).  The state from
+    $T_{j-1}$ is a good starting point, and 5{,}000 re-equilibration steps are
+    sufficient for the small perturbation $\Delta T = 0.05$.
+    \item At $T \approx T_c$: the free-energy barrier between retrieval and
+    spin-glass is weakening.  Because the system is already equilibrated at
+    $T_{j-1} \lesssim T_c$, the barrier crossing requires only a modest
+    thermal push.  The 5{,}000 MC steps provide this opportunity.
+    \item At $T > T_c$: the system has already transitioned to spin-glass at
+    $T \approx T_c$.  Subsequent heating steps maintain the disordered state.
+\end{itemize}
+
+There is a known caveat: because this is a heating protocol, the observed
+transition temperature may be slightly \emph{above} the thermodynamic $T_c$
+(superheating effect at a first-order transition).  The magnitude of this
+shift depends on the barrier height relative to $\Delta T = 0.05$ and the number
+of re-equilibration steps.  For the moderate system sizes in this simulation
+($N \sim 8$--$20$), the superheating shift is expected to be small.
+
+The increased statistical power ($N_{\mathrm{trials}} = 128$,
+$N_{\mathrm{samp}} = 2{,}000$) further reduces noise in the phase diagram,
+providing a cleaner comparison with the theoretical boundary.
+
+\end{document}

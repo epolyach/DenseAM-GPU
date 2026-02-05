@@ -23,18 +23,55 @@ This repository contains Julia code for:
 | `N_EQ` | Equilibration steps | T-dependent |
 | `N_SAMP` | Sampling steps | 500 - 5000 |
 
+## LSR Simulation Versions
+
+The LSR Monte Carlo simulation evolved through four versions, each addressing specific issues in the phase diagram:
+
+### v1 — Masking (`generate_lsr_longeq_gpu.jl`)
+- Processes all T simultaneously in batched arrays `[N, n_T×N_TRIALS]`
+- Uses `mc_step_masked!` with boolean active mask for T-dependent equilibration
+- All chains initialized independently near target for every (α, T)
+- **Problem**: Complex threshold-based deactivation; all states initialized in retrieval basin
+
+### v2 — T-loop (`generate_lsr_longeq_gpu_v2.jl`)
+- Sequential T loop with per-(α, T) state arrays `xs_full[i][j]`
+- T-dependent equilibration: `N_EQ(T) = 5000 × exp(0.15 × (1/T - 1/T_max))`, cap 300k
+- Uses `gemm_strided_batched` for batched energy computation
+- **Problem**: "Blue bay" artifact — metastable retrieval above the theoretical boundary due to independent initialization + first-order transition barrier + LSR hard support walls
+
+### v3 — Heating Protocol (`generate_lsr_longeq_gpu_v3.jl`)
+- **Key innovation**: propagates equilibrated states from low T → high T (heating protocol)
+- Single state per α `xs_g[i]` reused across T — massive memory reduction
+- Only T₁ initialized near target; subsequent T inherit state from previous T
+- Merged equilibration + sampling in one T loop
+- Log-spaced T grid for better resolution at low T where the phase transition occurs
+- **Result**: Blue bay eliminated — thermal fluctuations naturally destabilize retrieval as T crosses T_c
+
+### v4 — CUDA Streams + Fine Grid (`generate_lsr_longeq_gpu_v4.jl`) ← current
+- **CUDA streams**: one stream per α value for concurrent GPU processing
+- **Double-buffered RNG**: overlap random number generation with compute (one `CUDA.synchronize()` per MC step)
+- `mc_step_prerand!`: separates random generation from compute (cuRAND generators can't be shared across concurrent streams)
+- Finer grids: α = 0.01:0.01:0.55 (55 values), T = 50 log-spaced points
+- Heating protocol from v3 preserved
+- Output: `lsr_heating.csv`
+
+See [LATEX/lsr_evolution.tex](LATEX/lsr_evolution.tex) for detailed documentation of the v1→v2→v3 evolution.
+
 ## Project Structure
 
 ```
 ├── generate_lse_longeq_gpu.jl    # LSE Monte Carlo simulation
-├── generate_lsr_longeq_gpu.jl    # LSR Monte Carlo (masking version)
-├── generate_lsr_longeq_gpu_v2.jl # LSR Monte Carlo (T-loop version, recommended)
+├── generate_lsr_longeq_gpu.jl    # LSR v1: masking approach
+├── generate_lsr_longeq_gpu_v2.jl # LSR v2: T-loop, independent states
+├── generate_lsr_longeq_gpu_v3.jl # LSR v3: heating protocol
+├── generate_lsr_longeq_gpu_v4.jl # LSR v4: CUDA streams + fine grid (current)
 ├── maps1_longeq.jl               # Phase diagram visualization
 ├── test_acceptance_map.jl        # Acceptance rate diagnostics
 ├── test_lsr_acceptance.jl        # LSR acceptance tests
 ├── TOML/
 │   └── Project.toml              # Julia dependencies
 ├── LATEX/
+│   ├── lsr_evolution.tex         # LSR v1→v2→v3 evolution documentation
 │   ├── fss_report.tex            # Finite-size scaling report
 │   └── mc_approaches.tex         # MC methodology notes
 ├── MD/
@@ -53,22 +90,26 @@ julia --project=TOML -e 'using Pkg; Pkg.instantiate()'
 # Run LSE simulation
 julia --project=TOML generate_lse_longeq_gpu.jl
 
-# Run LSR simulation (v2 recommended)
-julia --project=TOML generate_lsr_longeq_gpu_v2.jl
+# Run LSR simulation (v4 recommended)
+julia --project=TOML generate_lsr_longeq_gpu_v4.jl
 
 # Generate phase diagram plots
 julia --project=TOML maps1_longeq.jl
 ```
 
-## T-dependent Equilibration
+## Equilibration Strategies
 
-For proper equilibration at low T, the number of equilibration steps scales as:
-
+### v2: T-dependent exponential
 ```
-N_EQ(T) = N_EQ_base × exp(c × (1/T - 1/T_max))
+N_EQ(T) = N_EQ_base × exp(c × (1/T - 1/T_max)),  cap 300k
 ```
+Compensates for exponentially decreasing acceptance rate at low T.
 
-where `c ≈ 0.15` maintains approximately constant accepted moves across temperatures. This compensates for the exponentially decreasing acceptance rate at low T.
+### v3/v4: Heating protocol
+```
+N_EQ_INIT at T₁ (coldest) + N_EQ_STEP per subsequent T step
+```
+State propagates from low T → high T. At T < T_c: system stays in retrieval. At T ≈ T_c: thermal fluctuations naturally cross the weakening barrier. At T > T_c: system has already transitioned to spin-glass.
 
 ## Physics Background
 
