@@ -9,9 +9,10 @@ TOML/Manifest.toml
 *.png
 *.eps
 
-# PDF files except papers
+# PDF files except papers and LaTeX reports
 *.pdf
 !LATEX/*.pdf
+!papers/*.pdf
 
 # CSV data files (large, can be regenerated)
 *.csv
