@@ -1,0 +1,52 @@
+# Julia artifacts
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+Manifest.toml
+TOML/Manifest.toml
+
+# Output files (can be regenerated)
+*.png
+*.eps
+
+# PDF files except papers
+*.pdf
+!LATEX/*.pdf
+
+# CSV data files (large, can be regenerated)
+*.csv
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# Keep structure but ignore contents of these directories
+OLD_CSV/
+OLD_JULIA/
+OLD_PNG/
+EPS/
+PNG/
+CSV/
