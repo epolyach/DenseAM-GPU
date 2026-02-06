@@ -18,17 +18,17 @@ const F = Float32
 # ──────────────── Parameters ────────────────
 const b_lsr     = F(2 + sqrt(2))   # ≈ 3.414
 
-# const alpha_vec = collect(F(0.01):F(0.01):F(0.55))  # 55 values
-# const T_vec     = collect(F(0.05):F(0.05):F(2.50))  # 50 values
+const alpha_vec = collect(F(0.01):F(0.01):F(0.55))  # 55 values (production)
+const T_vec     = collect(F(0.05):F(0.05):F(2.50))  # 50 values (production)
 
-const alpha_vec = collect(F(0.2):F(0.02):F(0.54))  
-const T_vec     = collect(F(0.05):F(0.05):F(1.50)) 
+# const alpha_vec = collect(F(0.2):F(0.02):F(0.54))  
+# const T_vec     = collect(F(0.05):F(0.05):F(1.50)) 
 
 const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
 
-const N_TRIALS  = 64 # 256
-const N_SAMP    = 500 # 5000
+const N_TRIALS  = 256  # 64
+const N_SAMP    = 5000 # 500
 const MIN_PAT   = 500 # 500
 const MAX_PAT   = 20000 # 20000
 const n_chains  = n_T * N_TRIALS  # 12800
@@ -257,33 +257,36 @@ function main()
     t_samp = time() - t0
     @printf("Sampling: %.1f s (%.2f ms/step)\n\n", t_samp, 1000*t_samp/N_SAMP)
 
-    # ── Collect results ──
-    println("Collecting results...")
+    # ── Stream CSV results (write header + each α as it completes) ──
+    csv_file = "lsr_longeq.csv"
+    csv_handle = open(csv_file, "w")
+    
+    # Write header
+    write(csv_handle, "alpha")
+    for T in T_vec
+        write(csv_handle, @sprintf(",T%.2f", T))
+    end
+    write(csv_handle, "\n")
+    flush(csv_handle)  # Ensure header is written immediately
+    
+    # Collect and stream results α by α
     phi_grid = zeros(Float64, n_alpha, n_T)
+    println("Streaming results to $csv_file as sampling completes...")
     for i in 1:n_alpha
         for j in 1:n_T
             phi_avg = Array(phi_acc[i][j]) ./ N_SAMP  # [N_TRIALS]
             phi_grid[i, j] = mean(phi_avg)
         end
-    end
-
-    # ── Save CSV ──
-    csv_file = "lsr_longeq.csv"
-    open(csv_file, "w") do f
-        write(f, "alpha")
-        for T in T_vec
-            write(f, @sprintf(",T%.2f", T))
+        # Write this α's row immediately
+        write(csv_handle, @sprintf("%.2f", alpha_vec[i]))
+        for j in 1:n_T
+            write(csv_handle, @sprintf(",%.4f", phi_grid[i, j]))
         end
-        write(f, "\n")
-        for i in 1:n_alpha
-            write(f, @sprintf("%.2f", alpha_vec[i]))
-            for j in 1:n_T
-                write(f, @sprintf(",%.4f", phi_grid[i, j]))
-            end
-            write(f, "\n")
-        end
+        write(csv_handle, "\n")
+        flush(csv_handle)  # Force write to disk
     end
-    println("CSV saved: $csv_file")
+    close(csv_handle)
+    println("CSV saved: $csv_file (streamed as results were computed)")
     println()
 
     # Sample output
