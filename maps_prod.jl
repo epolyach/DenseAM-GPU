@@ -38,14 +38,14 @@ end
 
 # ──────────────── Read data (Long Equilibration) ────────────────
 
-data_lse = CSV.read("lse_longeq.csv", DataFrame)
-data_lsr = if isfile("lsr_heating.csv")
-    CSV.read("lsr_heating.csv", DataFrame)
-elseif isfile("lsr_longeq.csv")
-    CSV.read("lsr_longeq.csv", DataFrame)
-else
-    CSV.read("lsr_alpha_sweep_table.csv", DataFrame)
-end
+data_lse = CSV.read(
+    isfile("CSV/lse_longeq_v2.csv") ? "CSV/lse_longeq_v2.csv" : "lse_longeq.csv",
+    DataFrame)
+data_lsr = CSV.read(
+    isfile("lsr_heating.csv") ? "lsr_heating.csv" :
+    isfile("lsr_longeq.csv") ? "lsr_longeq.csv" :
+    "lsr_alpha_sweep_table.csv",
+    DataFrame)
 
 # Extract α and T ranges separately for each dataset
 alpha_lse = data_lse[:, 1]
