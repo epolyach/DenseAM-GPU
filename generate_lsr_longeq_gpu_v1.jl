@@ -99,9 +99,9 @@ function mc_step!(x::CuArray{F,3}, xp::CuArray{F,3},
     # Proposed energy
     compute_energy_lsr!(Ep, xp, pat, ov, Nf)
 
-    # Metropolis accept/reject
+    # Metropolis accept/reject (unconditionally reject if Ep is infinite — basin escape forbidden)
     CUDA.rand!(ra)
-    acc = @. ra < exp(-(β * (Ep - E)))
+    acc = @. (Ep < INF_ENERGY) & (ra < exp(-(β * (Ep - E))))
     a3 = reshape(acc, 1, n_T, N_TRIALS)
     @. x = ifelse(a3, xp, x)
     @. E = ifelse(acc, Ep, E)
@@ -128,8 +128,9 @@ function mc_step_masked!(x::CuArray{F,3}, xp::CuArray{F,3},
     compute_energy_lsr!(Ep, xp, pat, ov, Nf)
 
     # Metropolis accept/reject, but only for active chains
+    # Unconditionally reject if Ep is infinite — basin escape forbidden
     CUDA.rand!(ra)
-    acc = @. ra < exp(-(β * (Ep - E)))
+    acc = @. (Ep < INF_ENERGY) & (ra < exp(-(β * (Ep - E))))
     a3 = reshape(acc, 1, nT, nTrials)
 
     # Only update if active

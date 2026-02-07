@@ -19,6 +19,7 @@ const F = Float32
 
 # ──────────────── Parameters ────────────────
 const b_lsr     = F(2 + sqrt(2))   # ≈ 3.414
+const INF_ENERGY = F(1e30)
 
 const alpha_vec = collect(F(0.01):F(0.01):F(0.55))  # 55 values
 const T_vec     = collect(F(0.05):F(0.05):F(2.50))   # 50 values
@@ -52,8 +53,7 @@ function compute_energy_lsr!(E::CuVector{F}, x::CuArray{F,3},
     # LSR: E = -(N/b) * log(Σ_p max(0, 1 - b + b*overlap/N))
     @. overlap = max(zero(F), one(F) - b_lsr + b_lsr * overlap / Nf)
     s = sum(overlap, dims=1)                        # [1 × n_T × N_TRIALS]
-    @. s = max(s, F(1e-10))                         # avoid log(0)
-    E .= vec(@. -Nb * log(s))                       # [n_chains]
+    E .= vec(@. ifelse(s > zero(F), -Nb * log(s), INF_ENERGY))  # [n_chains]
     return nothing
 end
 
@@ -74,7 +74,7 @@ function mc_step!(x::CuArray{F,3}, xp::CuArray{F,3},
 
     # Metropolis accept/reject
     CUDA.rand!(ra)
-    acc = @. ra < exp(-(β * (Ep - E)))
+    acc = @. (Ep < INF_ENERGY) & (ra < exp(-(β * (Ep - E))))
     a3 = reshape(acc, 1, n_T, N_TRIALS)
     @. x = ifelse(a3, xp, x)
     @. E = ifelse(acc, Ep, E)

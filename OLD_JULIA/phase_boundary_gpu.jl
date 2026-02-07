@@ -117,9 +117,7 @@ function compute_energy_lsr_fused!(E::CuVector{F}, x::CuMatrix{F},
     # Break into steps to avoid GPU compilation issues
     args = @. max(zero(F), one(F) - b * (one(F) - phi))  # [P × n_batch]
     sum_args = sum(args, dims=1)  # [1 × n_batch]
-    sum_args = max.(sum_args, F(1e-10))  # Avoid log(0)
-
-    E .= vec(-Nb .* log.(sum_args))
+    E .= vec(@. ifelse(sum_args > zero(F), -Nb * log(sum_args), F(1e30)))
 
     return E
 end
@@ -154,7 +152,7 @@ function mc_step_optimized!(x::CuMatrix{F}, E::CuVector{F},
     accept_prob = @. exp(-beta * delta_E)
 
     CUDA.rand!(rand_accept)
-    accept = @. rand_accept < accept_prob
+    accept = @. (E_prop < F(1e30)) & (rand_accept < accept_prob)
 
     # Update (fused with broadcasting)
     accept_mat = reshape(accept, 1, :)
