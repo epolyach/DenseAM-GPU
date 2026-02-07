@@ -15,6 +15,7 @@ using ProgressMeter
 
 const F = Float32
 const b_lsr = F(2 + sqrt(2))
+const INF_ENERGY = F(1e30)
 
 const alpha_vec = collect(F(0.01):F(0.01):F(0.55))
 const T_vec     = collect(F(0.05):F(0.05):F(2.50))
@@ -33,8 +34,7 @@ function compute_energy_lsr!(E::CuVector{F}, x::CuArray{F,3},
     CUDA.CUBLAS.gemm_strided_batched!('T', 'N', one(F), patterns, x, zero(F), overlap)
     @. overlap = max(zero(F), one(F) - b_lsr + b_lsr * overlap / Nf)
     s = sum(overlap, dims=1)
-    @. s = max(s, F(1e-10))
-    E .= vec(@. -Nb * log(s))
+    E .= vec(@. ifelse(s > zero(F), -Nb * log(s), INF_ENERGY))
     return nothing
 end
 
@@ -52,7 +52,7 @@ function mc_step!(x::CuArray{F,3}, xp::CuArray{F,3},
     compute_energy_lsr!(Ep, xp, pat, ov, Nf)
 
     CUDA.rand!(ra)
-    acc = @. ra < exp(-(β * (Ep - E)))
+    acc = @. (Ep < INF_ENERGY) & (ra < exp(-(β * (Ep - E))))
     a3 = reshape(acc, 1, nT, nTr)
     @. x = ifelse(a3, xp, x)
     @. E = ifelse(acc, Ep, E)

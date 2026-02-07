@@ -80,10 +80,10 @@ function mc_step_single_T!(x::CuArray{F,3}, xp::CuArray{F,3},
     # Proposed energy
     compute_energy_lsr_batched!(Ep, xp, pat, ov, Nf)
 
-    # Metropolis accept/reject
+    # Metropolis accept/reject (unconditionally reject if Ep is infinite — basin escape forbidden)
     CUDA.rand!(ra)
-    acc = @. ra < exp(-β * (Ep - E))
-    
+    acc = @. (Ep < INF_ENERGY) & (ra < exp(-β * (Ep - E)))
+
     # Update: accept or stay
     @. x = ifelse(acc, xp, x)
     @. E = ifelse(acc, Ep, E)

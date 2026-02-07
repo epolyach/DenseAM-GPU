@@ -56,7 +56,7 @@ function mc_step_count!(x::CuArray{F,3}, xp::CuArray{F,3},
     compute_energy_lsr!(Ep, xp, pat, ov, Nf)
 
     CUDA.rand!(ra)
-    acc = @. ra < exp(-(β * (Ep - E)))
+    acc = @. (Ep < INF_ENERGY) & (ra < exp(-(β * (Ep - E))))
     n_acc = sum(acc)  # Count acceptances
 
     a3 = reshape(acc, 1, n_T, N_TRIALS)

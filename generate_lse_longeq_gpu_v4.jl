@@ -1,10 +1,10 @@
 #=
-GPU-Accelerated LSR Alpha Sweep – CUDA Streams + Fine Grid (v4)
+GPU-Accelerated LSE Alpha Sweep – CUDA Streams + Fine Grid (v4)
 - CUDA streams for concurrent α processing → better GPU utilization
 - Double-buffered random numbers: overlap RNG with compute
-- Finer α grid (0.01:0.01:0.55, 55 values) and T grid (40 log-spaced)
-- Heating protocol from v3 preserved
-- Output: lsr_heating.csv
+- Finer α grid (0.01:0.01:0.55, 55 values) and T grid (50 log-spaced)
+- Heating protocol: start from coldest T, carry state forward
+- Output: lse_heating.csv
 =#
 
 using CUDA
@@ -17,7 +17,7 @@ using ProgressMeter
 const F = Float32
 
 # ──────────────── Parameters ────────────────
-const b_lsr     = F(2 + sqrt(2))   # ≈ 3.414
+const betanet   = F(1.0)
 
 const alpha_vec = collect(F(0.01):F(0.01):F(0.55))
 const T_vec     = F.(10 .^ range(-2, log10(2.5), length=50))  # log-spaced: 0.01 → 2.5
@@ -42,23 +42,23 @@ end
 
 adaptive_ss(N::Int) = max(F(0.1), F(2.4) / sqrt(F(N)))
 
-# ──────────────── LSR Energy ────────────────
-const INF_ENERGY = F(1e30)
-
-function compute_energy_lsr_batched!(E::CuVector{F}, x::CuArray{F,3},
+# ──────────────── LSE Energy ────────────────
+function compute_energy_lse_batched!(E::CuVector{F}, x::CuArray{F,3},
                                       patterns::CuArray{F,3}, overlap::CuArray{F,3},
                                       Nf::F)
-    Nb = Nf / b_lsr
+    # overlap[p,1,t] = Σ_n patterns[n,p,t] * x[n,1,t]
     CUDA.CUBLAS.gemm_strided_batched!('T', 'N', one(F), patterns, x, zero(F), overlap)
-    @. overlap = max(zero(F), one(F) - b_lsr + b_lsr * overlap / Nf)
+
+    # Log-sum-exp trick
+    @. overlap = -betanet * (Nf - overlap)
+    m = maximum(overlap, dims=1)
+    @. overlap = exp(overlap - m)
     s = sum(overlap, dims=1)
-    E .= vec(@. ifelse(s > zero(F), -Nb * log(s), INF_ENERGY))
+    E .= vec(@. -(m + log(s)) / betanet)
     return nothing
 end
 
 # ──────────────── MC Step with pre-generated randoms ────────────────
-# Separates random generation from compute to enable CUDA stream parallelism.
-# xp must be pre-filled with N(0,1) noise; ra must be pre-filled with U(0,1).
 function mc_step_prerand!(x::CuArray{F,3}, xp::CuArray{F,3},
                           E::CuVector{F}, Ep::CuVector{F},
                           pat::CuArray{F,3}, ov::CuArray{F,3},
@@ -72,10 +72,10 @@ function mc_step_prerand!(x::CuArray{F,3}, xp::CuArray{F,3},
     @. xp = sqrt(Nf) * xp / nrm
 
     # Proposed energy
-    compute_energy_lsr_batched!(Ep, xp, pat, ov, Nf)
+    compute_energy_lse_batched!(Ep, xp, pat, ov, Nf)
 
-    # Metropolis accept/reject (unconditionally reject if Ep is infinite — basin escape forbidden)
-    acc = @. (Ep < INF_ENERGY) & (ra < exp(-β * (Ep - E)))
+    # Metropolis accept/reject
+    acc = @. ra < exp(-β * (Ep - E))
     a3 = reshape(acc, 1, 1, nTrials)
     @. x = ifelse(a3, xp, x)
     @. E = ifelse(acc, Ep, E)
@@ -83,10 +83,6 @@ function mc_step_prerand!(x::CuArray{F,3}, xp::CuArray{F,3},
 end
 
 # ──────────────── Streamed MC step helpers ────────────────
-# Pre-generate randoms on default stream for all α, then dispatch compute
-# to per-α CUDA streams. Double-buffering avoids race conditions with one
-# CUDA.synchronize() per MC step.
-
 function fill_randoms!(xp_buf, ra_buf, n_alpha)
     for i in 1:n_alpha
         CUDA.randn!(xp_buf[i])
@@ -123,7 +119,7 @@ function main()
     !CUDA.functional() && error("CUDA not available")
 
     println("=" ^ 70)
-    println("LSR Alpha Sweep – GPU v4 (Streams + Fine Grid, b=$(round(b_lsr, digits=3)))")
+    println("LSE Alpha Sweep – GPU v4 (Streams + Fine Grid, βnet=$(betanet))")
     println("=" ^ 70)
     dev = CUDA.device()
     @printf("GPU: %s (%.1f GB)\n\n", CUDA.name(dev), CUDA.totalmem(dev)/1e9)
@@ -193,7 +189,6 @@ function main()
         ra_B[i]   = CUDA.zeros(F, N_TRIALS)
         ssvec[i]  = adaptive_ss(N)
 
-        # patterns + target + state + 2×proposal + overlap + 2×energy + 2×uniform
         mem += (N*P*N_TRIALS + N*N_TRIALS + N*N_TRIALS + 2*N*N_TRIALS + P*N_TRIALS + 2*N_TRIALS + 2*N_TRIALS) * sizeof(F)
     end
     GC.gc()
@@ -209,7 +204,7 @@ function main()
         xs_g[i] .= tgts_g[i] .+ F(0.05) .* CUDA.randn(F, Ns[i], 1, N_TRIALS)
         nrm = sqrt.(sum(xs_g[i] .^ 2, dims=1))
         xs_g[i] .= sqrt(Nf) .* xs_g[i] ./ nrm
-        compute_energy_lsr_batched!(E_g[i], xs_g[i], pats_g[i], ov_g[i], Nf)
+        compute_energy_lse_batched!(E_g[i], xs_g[i], pats_g[i], ov_g[i], Nf)
     end
     CUDA.synchronize()
     println("Done.\n")
@@ -220,7 +215,7 @@ function main()
     println("  $(n_alpha) CUDA streams, double-buffered RNG\n")
 
     phi_grid = zeros(Float64, n_alpha, n_T)
-    csv_file = "lsr_heating.csv"
+    csv_file = "lse_heating.csv"
     total_work = total_eq + n_T * N_SAMP
     prog = Progress(total_work, desc="Heating+Sampling: ")
     t0 = time()
@@ -239,17 +234,13 @@ function main()
         CUDA.synchronize()
 
         for step in 1:n_eq
-            # Dispatch compute using current buffer (per-α streams)
             dispatch_eq_step!(streams, xs_g, xp_cur, E_g, Ep_g, pats_g, ov_g,
                              ra_cur, β, Ns, ssvec, n_alpha)
 
-            # Generate next randoms into alternate buffer (default stream)
             fill_randoms!(xp_nxt, ra_nxt, n_alpha)
 
-            # Wait for both compute and next randoms
             CUDA.synchronize()
 
-            # Swap buffers
             xp_cur, xp_nxt = xp_nxt, xp_cur
             ra_cur, ra_nxt = ra_nxt, ra_cur
             next!(prog)
@@ -261,16 +252,13 @@ function main()
         end
         CUDA.synchronize()
 
-        # Pre-fill first buffer for sampling
         fill_randoms!(xp_cur, ra_cur, n_alpha)
         CUDA.synchronize()
 
         for step in 1:N_SAMP
-            # MC step + φ accumulation on per-α streams
             dispatch_samp_step!(streams, xs_g, xp_cur, E_g, Ep_g, pats_g, ov_g,
                                ra_cur, β, Ns, ssvec, tgts_g, phi_acc, n_alpha)
 
-            # Generate next randoms
             fill_randoms!(xp_nxt, ra_nxt, n_alpha)
 
             CUDA.synchronize()
@@ -332,7 +320,7 @@ function main()
     @printf("Heating protocol: N_EQ_INIT=%d + %d × N_EQ_STEP=%d = %d total eq steps\n",
             N_EQ_INIT, n_T-1, N_EQ_STEP, total_eq)
     @printf("CUDA streams: %d concurrent α chains (double-buffered)\n", n_alpha)
-    @printf("b = %.4f (Epanechnikov kernel)\n", b_lsr)
+    @printf("βnet = %.1f (log-sum-exp kernel)\n", betanet)
     println("=" ^ 70)
 end
 

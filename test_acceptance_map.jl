@@ -78,7 +78,7 @@ function mc_step_with_ss!(x::CuArray{F,3}, xp::CuArray{F,3},
     compute_energy_lsr!(Ep, xp, pat, ov, Nf)
 
     CUDA.rand!(ra)
-    acc = @. ra < exp(-(β * (Ep - E)))
+    acc = @. (Ep < INF_ENERGY) & (ra < exp(-(β * (Ep - E))))
     a3 = reshape(acc, 1, n_T, N_TRIALS)
     @. x = ifelse(a3, xp, x)
     @. E = ifelse(acc, Ep, E)

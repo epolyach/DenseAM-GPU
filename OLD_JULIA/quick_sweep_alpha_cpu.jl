@@ -73,9 +73,7 @@ function compute_energy_lsr(x::Vector{Float64}, patterns::Matrix{Float64},
     # LSR: E = -(N/b) * ln(Σ max(0, 1-b*(1-φ)))
     args = max.(0.0, 1.0 .- b * (1.0 .- phi))
     sum_args = sum(args)
-    sum_args = max(sum_args, 1e-10)  # Avoid log(0)
-
-    energy = -Nb * log(sum_args)
+    energy = sum_args > 0.0 ? -Nb * log(sum_args) : Inf
 
     return energy
 end
@@ -123,7 +121,7 @@ function run_mc(N::Int, patterns::Matrix{Float64}, target::Vector{Float64},
 
         # Accept/reject
         delta_E = E_prop - E
-        if rand() < exp(-beta * delta_E)
+        if isfinite(E_prop) && rand() < exp(-beta * delta_E)
             x = x_prop
             E = E_prop
         end
