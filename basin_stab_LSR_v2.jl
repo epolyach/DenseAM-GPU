@@ -7,7 +7,7 @@ Protocol: Basin of Attraction / Retrieval Test
 - High statistics: n_trials = 1024 trials
 - LSR energy with b = 2 + √2 (hard wall at φ_c ≈ 0.707)
 - Question: Does initialization with φ>0.75 converge to ξ¹ (stable basin)?
-- Output: basin_stab_LSR_v1.csv
+- Output: basin_stab_LSR_v2.csv
 ────────────────────────────────────────────────────────────────────────
 =#
 
@@ -192,7 +192,7 @@ function main()
     @printf("Chunk size: %d α value(s) at a time\n\n", chunk_size)
 
     # ── Write CSV header ──
-    csv_file = "basin_stab_LSR_v1.csv"
+    csv_file = "basin_stab_LSR_v2.csv"
     open(csv_file, "w") do f
         write(f, "alpha")
         for T in T_vec
