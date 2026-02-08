@@ -6,7 +6,7 @@ Protocol: Basin of Attraction / Retrieval Test
 - Relaxation dynamics: n_steps = 2^14 = 16384 steps
 - High statistics: n_trials = 1024 trials
 - Question: Does initialization with φ>0.75 converge to ξ¹ (stable basin)?
-- Output: basin_stab_LSE_v1.csv
+- Output: basin_stab_LSE_v2.csv
 ────────────────────────────────────────────────────────────────────────
 =#
 
@@ -188,7 +188,7 @@ function main()
     @printf("Chunk size: %d α value(s) at a time\n\n", chunk_size)
 
     # ── Write CSV header ──
-    csv_file = "basin_stab_LSE_v1.csv"
+    csv_file = "basin_stab_LSE_v2.csv"
     open(csv_file, "w") do f
         write(f, "alpha")
         for T in T_vec
