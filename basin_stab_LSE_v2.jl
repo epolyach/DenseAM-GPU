@@ -102,13 +102,14 @@ end
 # ──────────────── Random initialization with controlled φ ────────────────
 function initialize_random_alignment!(x::Array{F,3}, target::Array{F,3}, N::Int,
                                      phi_min::F, phi_max::F)
-    # x: [N × n_T × N_TRIALS]
-    # target: [N × 1 × N_TRIALS]
+    # x: [N × n_T × n_trials]
+    # target: [N × 1 × n_trials]
     # Each trial gets random φ ∈ [phi_min, phi_max]
 
-    tgt = target[:, 1, :]  # [N × N_TRIALS]
+    tgt = target[:, 1, :]  # [N × n_trials]
+    n_trials = size(x, 3)
 
-    for t in 1:N_TRIALS
+    for t in 1:n_trials
         for j in 1:n_T
             # Random alignment in [phi_min, phi_max]
             phi_init = phi_min + (phi_max - phi_min) * rand(F)
