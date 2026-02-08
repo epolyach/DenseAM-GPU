@@ -33,9 +33,9 @@ const alpha_vec = collect(F(0.01):F(0.01):F(0.55))  # 55 values
 const T_vec     = F.(10 .^ range(-2, log10(2.5), length=50))  # log-spaced
 const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
-const MIN_PAT   = 500
-const MAX_PAT   = 20000
-const ind       = 1                   # Power-law index for pattern count scaling
+const MIN_PAT   = 50000
+const MAX_PAT   = 500000
+const ind       = 10                  # Power-law index for pattern count scaling
 
 # Target memory per chunk: use up to 90% of 50GB = 45GB
 const TARGET_MEM_PER_CHUNK_GB = 45.0
