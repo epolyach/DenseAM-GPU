@@ -26,7 +26,7 @@ const F = USE_FLOAT16 ? Float16 : Float32
 const b_lsr       = F(2 + sqrt(2))    # ≈ 3.414
 const PHI_MIN     = F(0.75)           # Minimum initial alignment (above φ_c≈0.707)
 const PHI_MAX     = F(1.0)            # Maximum initial alignment
-const MAX_N_TRIALS = 1024             # Maximum trials (at α_min)
+const MAX_N_TRIALS = 512              # Maximum trials (at α_min)
 const MIN_N_TRIALS = 64               # Minimum trials (at α_max)
 const N_STEPS     = 2^14              # 2^14 = 16384 relaxation steps
 
@@ -34,7 +34,7 @@ const alpha_vec = collect(F(0.01):F(0.01):F(0.55))  # 55 values
 const T_vec     = F.(10 .^ range(-2, log10(2.5), length=50))  # log-spaced
 const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
-const MIN_PAT   = 50000
+const MIN_PAT   = 20000
 const MAX_PAT   = 500000
 const ind       = 10                   # Power-law index for pattern count scaling
 
