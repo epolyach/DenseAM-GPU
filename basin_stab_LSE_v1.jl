@@ -32,13 +32,14 @@ const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
 const MIN_PAT   = 500
 const MAX_PAT   = 20000
+const ind       = 1                # Power-law index for pattern count scaling
 const n_chains  = n_T * N_TRIALS
 
-# Adaptive pattern count (linear in α)
-function n_patterns(alpha)
-    slope = (MAX_PAT - MIN_PAT) / (alpha_vec[end] - alpha_vec[1])
-    return MIN_PAT + slope * (alpha - alpha_vec[1])
-end
+# Adaptive pattern count: P(α) follows power-law distribution
+# ind=1 → linear spacing (MIN_PAT to MAX_PAT)
+# ind=2 → quadratic spacing (more patterns at high α)
+# ind>1 → concentrated toward MAX_PAT
+const n_patterns_vec = range(MIN_PAT^(1/ind), MAX_PAT^(1/ind), length=n_alpha) .^ ind
 
 # Adaptive step size
 adaptive_ss(N::Int) = max(F(0.1), F(2.4) / sqrt(F(N)))
@@ -129,8 +130,8 @@ function main()
 
     # Compute N(α), P(α) for all α
     Ns = Int[]; Ps = Int[]
-    for α in alpha_vec
-        Pt = n_patterns(α)
+    for (idx, α) in enumerate(alpha_vec)
+        Pt = n_patterns_vec[idx]
         N  = max(round(Int, log(Pt) / α), 2)
         push!(Ns, N); push!(Ps, round(Int, Pt))
     end
