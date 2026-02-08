@@ -94,7 +94,8 @@ function mc_step!(x::CuArray{F,3}, xp::CuArray{F,3},
     # Metropolis accept/reject (reject if basin escape)
     CUDA.rand!(ra)
     acc = @. (Ep < INF_ENERGY) & (ra < exp(-(β * (Ep - E))))
-    a3 = reshape(acc, 1, n_T, N_TRIALS)
+    n_trials = length(β) ÷ n_T
+    a3 = reshape(acc, 1, n_T, n_trials)
     @. x = ifelse(a3, xp, x)
     @. E = ifelse(acc, Ep, E)
     return nothing
