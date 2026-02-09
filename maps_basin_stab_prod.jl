@@ -38,8 +38,8 @@ end
 
 # ──────────────── Read data (Basin Stability) ────────────────
 
-data_lse = CSV.read("basin_stab_LSE_v1.csv", DataFrame)
-data_lsr = CSV.read("basin_stab_LSR_v1.csv", DataFrame)
+data_lse = CSV.read("basin_stab_LSE_v3.csv", DataFrame)
+data_lsr = CSV.read("basin_stab_LSR_v3.csv", DataFrame)
 
 # Extract α and T ranges separately for each dataset
 alpha_lse = data_lse[:, 1]
