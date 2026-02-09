@@ -116,8 +116,8 @@ fontsize_colorbar = 22
 
 alpha_major = collect(0.1:0.1:0.50)
 alpha_minor = collect(0.05:0.05:0.55)
-t_major = collect(0.0:0.5:2.5)
-t_minor = collect(0.0:0.1:2.5)
+t_major = collect(0.0:0.5:2.0)
+t_minor = collect(0.0:0.1:2.0)
 
 # ──────────────── Create figure ────────────────
 

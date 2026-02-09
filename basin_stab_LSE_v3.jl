@@ -31,11 +31,12 @@ const PHI_MIN     = F(0.75)           # Minimum initial alignment
 const PHI_MAX     = F(1.0)            # Maximum initial alignment
 const MAX_N_TRIALS = 512              # Maximum trials (at α_min)
 const MIN_N_TRIALS = 64               # Minimum trials (at α_max)
-const N_EQ        = 2^14 #2^14        # 2^14 = 16384 equilibration steps (unmeasured)
-const N_SAMP      = 2^10 #2^12        # 2^12 = 4096 sampling steps (measured)
+const N_EQ        = 2^14              # 2^14 = 16384 equilibration steps (unmeasured)
+const N_SAMP      = 2^12              # 2^12 = 4096 sampling steps (measured)
 
 const alpha_vec = collect(F(0.01):F(0.01):F(0.55))  # 55 values
-const T_vec     = F.(10 .^ range(-2, log10(2.5), length=50))  # log-spaced
+# const T_vec     = F.(10 .^ range(-2, log10(2.5), length=50))  # log-spaced
+const T_vec     = collect(F(0.025):F(0.05):F(2.0))   # 40 values
 const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
 const MIN_PAT   = 20000
