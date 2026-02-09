@@ -78,8 +78,8 @@ fontsize_colorbar = 22
 # Tick values
 alpha_major = collect(0.1:0.1:0.50)
 alpha_minor = collect(0.05:0.05:0.55)
-t_major = collect(0.0:0.5:2.5)
-t_minor = collect(0.0:0.1:2.5)
+t_major = collect(0.0:0.5:2.0)
+t_minor = collect(0.0:0.1:2.0)
 
 # ──────────────── Create figure ────────────────
 
@@ -98,7 +98,7 @@ hm1 = heatmap!(ax1, alpha_lse, T_lse, lse_matrix,
                colormap=cmap, colorrange=clims_val)
 
 # Theory curve
-lines!(ax1, alpha_c_lse, collect(T_theory), color=:black, linewidth=2.5)
+# lines!(ax1, alpha_c_lse, collect(T_theory), color=:black, linewidth=2.5)
 
 # Dashed line at α=0.5
 vlines!(ax1, [0.5], color=:black, linewidth=1.5, linestyle=:dash)
@@ -116,6 +116,7 @@ ax2 = Axis(fig[1, 2],
 hm2 = heatmap!(ax2, alpha_lsr, T_lsr, lsr_matrix,
                colormap=cmap, colorrange=clims_val)
 
+"""
 # Theory curve (curved portion)
 valid_idx = .!isnan.(alpha_c_lsr) .& (alpha_c_lsr .> alpha_th) .& (alpha_c_lsr .<= 0.5)
 lines!(ax2, alpha_c_lsr[valid_idx], collect(T_theory)[valid_idx],
@@ -126,6 +127,7 @@ if !isnan(T_max)
     lines!(ax2, [alpha_th, alpha_th], [T_max, maximum(T_lsr)],
            color=:black, linewidth=2.5)
 end
+"""
 
 # Dashed line at α=0.5
 vlines!(ax2, [0.5], color=:black, linewidth=1.5, linestyle=:dash)

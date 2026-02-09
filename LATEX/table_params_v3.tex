@@ -1,0 +1,38 @@
+\begin{table*}[t]
+\centering
+\caption{Monte Carlo basin stability parameters (v3) for the LSE and LSR energy models.
+All protocol settings are shared; only the energy function differs.
+The key v3 change is a split equilibration/sampling protocol so that
+$\varphi$ is not polluted by the initial transient.}
+\label{tab:mc-params-v3}
+\begin{tabular}{l c c}
+\hline\hline
+Parameter & LSE & LSR \\
+\hline
+\multicolumn{3}{l}{\textit{Energy model}} \\[2pt]
+Energy function
+  & $E = -\frac{1}{\beta_{\mathrm{net}}}\ln\!\sum_{\mu} e^{-\beta_{\mathrm{net}}(N - \boldsymbol{\xi}^{\mu}\!\cdot\mathbf{x})}$
+  & $E = -\frac{N}{b}\ln\!\sum_{\mu}\bigl[1 - b + \tfrac{b}{N}\,\boldsymbol{\xi}^{\mu}\!\cdot\mathbf{x}\bigr]_{+}$ \\[4pt]
+Model parameter
+  & $\beta_{\mathrm{net}} = 1$
+  & $b = 2 + \sqrt{2} \approx 3.414$ \\[6pt]
+%
+\multicolumn{3}{l}{\textit{Phase-space grid}} \\[2pt]
+$\alpha$ grid        & \multicolumn{2}{c}{$0.01{:}0.01{:}0.55$ \;(55 values)} \\
+$T$ grid             & \multicolumn{2}{c}{$0.025{:}0.05{:}2.50$, linear \;(50 values)} \\
+$P$ range            & \multicolumn{2}{c}{$20\,000$--$500\,000$ \;(power-law, index $\gamma=10$)} \\[6pt]
+%
+\multicolumn{3}{l}{\textit{Monte Carlo protocol}} \\[2pt]
+Initialization       & \multicolumn{2}{c}{$\varphi_{\mathrm{init}} \in [0.75,\, 1.0]$, uniform on $S^{N-1}(\!\sqrt{N})$} \\
+Equilibration        & \multicolumn{2}{c}{$2^{14} = 16\,384$ steps (unmeasured)} \\
+Sampling             & \multicolumn{2}{c}{$2^{12} = 4\,096$ steps ($\varphi$ measured)} \\
+Trials               & \multicolumn{2}{c}{$512 \to 64$, adaptive (more at low $\alpha$)} \\
+Step type            & \multicolumn{2}{c}{Metropolis on $S^{N-1}(\!\sqrt{N})$} \\[6pt]
+%
+\multicolumn{3}{l}{\textit{Implementation}} \\[2pt]
+GPU parallelism      & \multicolumn{2}{c}{Sequential over $\alpha$, all $T$ batched} \\
+Precision            & \multicolumn{2}{c}{Float32} \\
+Observable           & \multicolumn{2}{c}{$\varphi = \langle \boldsymbol{\xi}^{1}\!\cdot\mathbf{x}\rangle / N$, averaged over sampling \& trials} \\
+\hline\hline
+\end{tabular}
+\end{table*}
