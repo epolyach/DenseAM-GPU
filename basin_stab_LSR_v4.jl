@@ -166,6 +166,9 @@ function generate_reduced_patterns(N::Int, P_float::Float64, n_trials::Int)
 
     # Tail probability: P(Z > z_threshold)
     p_tail = 0.5 * erfc(z_threshold / sqrt(2.0))
+    # CRITICAL: Use the original pattern count P_float (from n_patterns_vec)
+    # NOT a recomputed P from enforced N. This ensures λ matches the intended
+    # distribution of active patterns, avoiding artificial basin stability.
     lambda = (P_float - 1) * p_tail   # Poisson mean
 
     # Generate targets on S^{N-1}(√N)
@@ -250,15 +253,17 @@ function main()
     # ── Compute N(α) with N_MIN enforcement ──
     # For α ≤ α_th: use v3 formula N = log(P)/α  (N is already large)
     # For α > α_th: N = max(N_MIN, v3_formula)
-    # P is derived from N: P = exp(α·N)
+    # IMPORTANT: Keep P = n_patterns_vec (v3's schedule) for λ computation.
+    # Do NOT recompute P from enforced N—this would change λ and the number
+    # of active patterns K, causing spurious basin stability changes.
     Ns = Int[]
-    Ps_float = Float64[]   # P can be huge (10^11), store as Float64
+    Ps_float = Float64[]   # P from v3's schedule, not recomputed from N
     for (idx, α) in enumerate(alpha_vec)
         Pt = n_patterns_vec[idx]
         N_v3 = max(round(Int, log(Pt) / Float64(α)), 2)
         N = max(N_v3, N_MIN)
         push!(Ns, N)
-        push!(Ps_float, exp(Float64(α) * N))
+        push!(Ps_float, Pt)  # Use v3's pattern count directly
     end
     @printf("N range: %d – %d\n", extrema(Ns)...)
     @printf("P range: %.2e – %.2e (derived from N)\n", extrema(Ps_float)...)
