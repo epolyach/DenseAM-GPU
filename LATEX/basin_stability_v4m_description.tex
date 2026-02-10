@@ -1,0 +1,151 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts,bm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\graphicspath{{../}}
+\usepackage{hyperref}
+
+\title{Basin Stability Protocol for Phase Diagram Measurement\\
+       in Continuous Dense Associative Memory\\
+       {\large v4m: Modified Pattern Generation}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Monte Carlo Simulations}
+\label{sec:mc}
+
+Monte Carlo simulations allow us to locate the retrieval--spin glass phase boundary numerically from first principles by generating random patterns, initializing the system in a state close to one of them, and examining the state dynamics using the Metropolis--Hastings (MH) algorithm. In essence, we seek to answer the following question: is the retrieval basin stable against thermal perturbations?
+
+Theoretical studies of the phase transition are typically carried out in the thermodynamic limit, $N\to\infty$, which simplifies the analysis by suppressing effects that are subleading in the asymptotic expansion. A key difficulty in Monte Carlo simulations of models~(\ref{eq:H_lse}) and~(\ref{eq:H_lsr}) is the need to handle an exponentially large capacity, $M \sim \exp(\alpha N)$. For the range of interest, $\alpha \in [0.01,\, 0.5]$, no single fixed value of~$N$ can ensure that the number of patterns is neither too small at the lower end of the interval nor prohibitively large for numerical simulation at the upper end. We therefore adopt an adaptive-$N$ scheme:
+\begin{equation}
+    N(\alpha) = \left\lfloor \frac{\ln M(\alpha)}{\alpha} \right\rceil,
+\end{equation}
+which keeps the number of patterns manageable across the entire range of~$\alpha$ at the cost of reducing~$N$.
+For the dependence $M(\alpha)$, we adopt a power law with exponent~$\gamma$ (see Table~\ref{tab:mc-params}).
+
+We generate $N_{\rm tr}$ states in the vicinity of a pattern with random $\varphi_{\mathrm{init}} \leq 1$:
+\begin{equation}
+    \mathbf{x}_{\mathrm{init}} = \varphi_{\mathrm{init}}\, \boldsymbol{\xi}^1
+    + \sqrt{1 - \varphi_{\mathrm{init}}^2}\;\sqrt{N}\; \hat{\mathbf{u}}_\perp
+\end{equation}
+($\hat{\mathbf{u}}_\perp$ is a random unit vector orthogonal to $\boldsymbol{\xi}^1$), each serving as the initial condition for an independent trial. Each trial is evolved for $n_{\rm eq}$ steps to reach equilibrium, followed by $n_{\rm samp}$ steps over which the trial-averaged alignment is computed. The final output of the simulation is the average over all trial averages.
+
+The MH scheme consists of two steps: (i)~propose a new state
+\begin{equation}
+    \bm{x}' = \bm{x} + \sigma\,\bm{\eta}\,,\quad
+    \bm{x}' \leftarrow \sqrt{N}\,\bm{x}'/\|\bm{x}'\|\,;\quad
+    \bm{\eta} \sim \mathcal{N}(0, I_N)\,,\quad
+    \sigma = \max(0.1,\; 2.4/\sqrt{N})\,,
+\end{equation}
+and (ii)~accept it with probability $\min(1,\, e^{-\Delta H / T})$, where $\Delta H = H(\bm{x}') - H(\bm{x})$ is the change in the Hamiltonian between the proposed and current states.
+In the LSR case, proposals that fall outside the support of all patterns are automatically rejected, enforcing the hard-wall constraint, since $H = +\infty$.
+
+The simulation parameters for both kernels are summarized in Table~\ref{tab:mc-params}. While the MC protocol (initialization, equilibration, sampling, and MH update) is identical for both models, the adaptive-$N$ scheme and memory management differ, as described below.
+
+\subsection{LSE implementation}
+\label{sec:mc-lse}
+
+For the LSE kernel, all $M$ patterns contribute to the energy at every point on the sphere, and no patterns can be discarded.
+The number of patterns follows the power-law interpolation $M(\alpha) = [\mathrm{linspace}(M_{\min}^{1/\gamma}, M_{\max}^{1/\gamma}, n_\alpha)]^\gamma$ with $M_{\min} = 20{,}000$, $M_{\max} = 500{,}000$, and $\gamma = 10$ (Table~\ref{tab:mc-params}).
+The resulting dimension $N = \lfloor \ln M / \alpha \rceil$ ranges from ${\sim}\,990$ at $\alpha = 0.01$ to ${\sim}\,24$ at $\alpha = 0.55$.
+The number of trials decreases linearly from 512 to~64 as $\alpha$ increases, reflecting the growing memory cost per trial.
+
+The dominant GPU allocation is the pattern array of shape $[N \times M \times N_{\mathrm{tr}}]$.
+All temperatures and trials are batched simultaneously, with overlap computation performed via CUBLAS \texttt{gemm\_strided\_batched}.
+The code estimates memory per~$\alpha$ and groups values into chunks fitting within the target GPU memory budget (${\sim}\,43$~GB on a 50~GB device), processing one chunk at a time with explicit memory reclamation between chunks.
+
+\subsection{LSR implementation: pattern reduction (v4m)}
+\label{sec:mc-lsr}
+
+For the LSR kernel, the $[\cdot]_+$ operator introduces a hard wall at $\varphi_c = (b-1)/b \approx 0.707$: any noise pattern~$\mu \neq 1$ whose overlap $\varphi^\mu$ with the current state satisfies $\varphi^\mu < \varphi_c$ contributes exactly zero to the energy, since $[1 - b(1-\varphi^\mu)]_+ = 0$.
+Only the small fraction of noise patterns with anomalously high overlap $\varphi^\mu > \varphi_c$ are ``active.''
+
+For a random noise pattern, the overlap $\varphi^\mu = \boldsymbol{\xi}^\mu \!\cdot\! \bm{x} / N$ is approximately Gaussian with zero mean and variance $1/N$.
+The probability of exceeding the threshold is
+\begin{equation}\label{eq:p-tail}
+    p_{\mathrm{tail}} = \Pr\bigl(\varphi^\mu > \varphi_c\bigr) = \tfrac{1}{2}\,\mathrm{erfc}\!\bigl(\varphi_c\sqrt{N/2}\bigr),
+\end{equation}
+which decreases rapidly with~$N$. 
+Since each of the $M$ noise patterns independently exceeds the threshold with probability $p_{\mathrm{tail}}$, the number of active patterns $K$ follows a Poisson distribution with mean $\lambda = M\, p_{\mathrm{tail}}$.
+For $\alpha < \alpha_{\mathrm{th}} = \tfrac{1}{2}(1-1/b)^2 \approx 0.043$, this mean is $\lambda \ll 1$ so active patterns are rare.
+For $\alpha > \alpha_{\mathrm{th}}$, $\lambda$ grows but $K \ll M$ remains small.
+
+This observation enables an $O(K)$-cost pattern generation scheme that is independent of~$M$ (which can exceed $10^{12}$):
+\begin{enumerate}
+    \item Sample the number of active patterns $K \sim \mathrm{Poisson}(\lambda)$, where $\lambda = M\, p_{\mathrm{tail}}$.
+    \item For each active pattern, sample the overlap $z$ from the truncated normal $\mathcal{N}(0,1)$ conditioned on $z > \varphi_c\sqrt{N}$, using the exponential-proposal method of Robert~\cite{Robert1995}.
+    \item Construct the full $N$-dimensional pattern vector with the prescribed overlap via Gram--Schmidt orthogonalization against the target.
+\end{enumerate}
+
+\subsubsection{Critical correction (v4m): Preserving Poisson statistics under $N_{\min}$ enforcement}
+
+The original v4 enforced a minimum dimension $N_{\min} = 50$ by taking $N = \max(N_{\mathrm{v3}}, N_{\min})$, then recomputing $M = \exp(\alpha N)$. This inadvertently changed the Poisson mean to $\lambda = M_{\mathrm{recomputed}} \cdot p_{\text{tail}}$, which differs from the intended $\lambda = M_{\mathrm{v3}} \cdot p_{\text{tail}}$. Since $M$ can exceed $10^{12}$, this shifted $\lambda$ substantially, reducing the sampled $K$ and causing the basin to appear artificially stable (spurious patterns were undersampled).
+
+v4m corrects this by decoupling $N$ and $M$:
+\begin{itemize}
+    \item Use $N_{\mathrm{v3}} = \lfloor \ln M_{\mathrm{v3}} / \alpha \rfloor$ from the v3 pattern-count schedule (Table~\ref{tab:mc-params}).
+    \item Enforce $N = \max(N_{\mathrm{v3}}, N_{\min})$ for better finite-size convergence.
+    \item \textbf{Crucially:} keep $M = M_{\mathrm{v3}}$ (do NOT recompute from enforced $N$) for the Poisson mean.
+\end{itemize}
+
+This preserves the intended Poisson distribution of active spurious patterns: $\lambda = M_{\mathrm{v3}} \cdot p_{\text{tail}}$, ensuring accurate sampling of basin stability even when $N$ is increased for convergence.
+
+The resulting pattern array has shape $[N \times K_{\max} \times N_{\mathrm{tr}}]$, where $K_{\max}$ is the maximum $K$ sampled across trials. Trials with fewer active patterns are zero-padded; these zero columns contribute zero energy. This pattern reduction enables a minimum dimension $N_{\min} = 50$ for all~$\alpha$ (Table~\ref{tab:mc-params}), up from $N = 24$ in standard adaptive schemes, significantly reducing finite-size effects in the critical region $\alpha \gtrsim 0.25$, $T \lesssim 0.5$. The number of trials is 512 for $\alpha \le 0.50$, tapering linearly to 449 at $\alpha = 0.55$ to maintain the 42.5~GB GPU memory budget.
+
+\subsection{GPU parallelization}
+
+Both LSE and LSR simulations process $\alpha$ values sequentially (or in memory-limited chunks), while all $n_T$ temperatures and $N_{\mathrm{tr}}$ trials are batched on the GPU simultaneously.
+For each $\alpha_i$, the state array has shape $[N_i \times n_T \times N_{\mathrm{tr}}]$, and the energy computation uses batched CUBLAS \texttt{gemm\_strided\_batched} for the overlap $\boldsymbol{\xi}^\mu \!\cdot\! \bm{x}$.
+Pattern generation uses a deterministic seed ($42 + i_\alpha$) per $\alpha$ index, ensuring full reproducibility.
+The same pattern set is shared across all temperatures for a given $\alpha$, isolating thermal effects from quenched-disorder fluctuations.
+
+% ──────────────── Parameter table ────────────────
+
+\begin{table*}[t]
+\centering
+\caption{Monte Carlo simulation parameters for the LSE and LSR energy models.
+Parameters that differ between the two kernels are listed separately.
+v4m uses the same parameters as v4, but corrects the Poisson mean computation to use $M_{\mathrm{v3}}$ (not recomputed from enforced $N$).}
+\label{tab:mc-params}
+\small
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l l l}
+\toprule
+Parameter & LSE & LSR (v4m) \\
+\midrule
+\multicolumn{3}{l}{\textit{Energy models}} \\[2pt]
+Kernel parameter    & $\beta_{\mathrm{net}} = 1$ & $b = 2 + \sqrt{2} \approx 3.414$ \\[4pt]
+\multicolumn{3}{l}{\textit{Phase-space grid}} \\[2pt]
+$\alpha$ grid       & \multicolumn{2}{l}{$0.01{:}0.01{:}0.55$ \;(55 values)} \\
+$T$ grid            & \multicolumn{2}{l}{$0.025{:}0.05{:}2.0$, linear \;(40 values)} \\
+$M(\alpha)$         & $20{,}000$--$500{,}000$ \;(power-law, $\gamma\!=\!10$) & $M_{\mathrm{v3}}$ \;(v3 schedule, not recomputed) \\
+$N$ range           & $24$--$990$ \;($N = \ln M / \alpha$) & $50$--$990$ \;($N_{\min} = 50$ enforced) \\
+Poisson mean        & --- & $\lambda = M_{\mathrm{v3}} \cdot p_{\text{tail}}$ \;(preserved from v3) \\
+Active patterns     & All $M$ & $K \ll M$ via Poisson + truncated normal \\[4pt]
+\multicolumn{3}{l}{\textit{Monte Carlo protocol}} \\[2pt]
+Initialization      & \multicolumn{2}{l}{$\varphi_{\mathrm{init}} \!\sim\! \mathrm{U}(0.75,\, 1.0)$} \\
+Equilibration       & \multicolumn{2}{l}{$n_{\mathrm{eq}} = 2^{14} = 16{,}384$ steps (unmeasured)} \\
+Sampling            & \multicolumn{2}{l}{$n_{\mathrm{samp}} = 2^{12} = 4{,}096$ steps ($\varphi$ measured)} \\
+Trials $N_{\mathrm{tr}}$ & $512 \to 64$ (linear in $\alpha$) & $512$ \;($\alpha \le 0.50$); $512 \to 449$ \;($\alpha > 0.50$) \\
+Step size           & \multicolumn{2}{l}{$\sigma = \max(0.1,\; 2.4/\sqrt{N})$} \\
+Update              & \multicolumn{2}{l}{Metropolis on $S^{N-1}(\sqrt{N})$} \\[4pt]
+\multicolumn{3}{l}{\textit{Implementation}} \\[2pt]
+GPU parallelism     & \multicolumn{2}{l}{All $T$ \& trials batched; sequential over $\alpha$} \\
+Precision           & \multicolumn{2}{l}{Float32} \\
+Quenched disorder   & \multicolumn{2}{l}{One fresh pattern set per trial} \\
+Observable          & \multicolumn{2}{l}{$\varphi = \langle \boldsymbol{\xi}^1 \!\cdot\! \mathbf{x}\rangle / N$} \\
+\bottomrule
+\end{tabular*}
+\end{table*}
+
+\begin{thebibliography}{99}
+\bibitem{Robert1995}
+Robert, C. P. (1995).
+Simulation of truncated normal variables.
+\textit{Statistics and Computing}, 5(2), 121--125.
+\end{thebibliography}
+
+\end{document}
