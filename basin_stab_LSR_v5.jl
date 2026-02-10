@@ -86,8 +86,8 @@ function compute_energy_lsr!(E::CuVector{F}, x::CuArray{F,3},
         end
     end
 
-    # copy back to GPU vector E
-    E .= CuVector{F}(Float32.(phi_vals))
+    # copy back to GPU vector E (use explicit GPU copy to avoid broadcast of CPU objects)
+    copyto!(E, CuArray(Float32.(phi_vals)))
     return nothing
 end
 
@@ -190,7 +190,8 @@ function main()
             mc_step!(xs, xps, Es, Eps, targets_g, β_gpu, ra, Nf, ss, K, z_threshold)
             # measure φ = (target·x)/N
             tmp = Array(sum(reshape(targets_cpu, N, 1, N_TRIALS) .* Array(xs), dims=1)) ./ Float64(Nf)
-            phis .+= CuVector{F}(Float32.(vec(tmp)))
+            tmp_gpu = CuArray(Float32.(vec(tmp)))
+            phis .+= tmp_gpu
             next!(prog)
         end
         finish!(prog)
