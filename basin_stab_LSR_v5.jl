@@ -161,7 +161,6 @@ function main()
         xps = CUDA.zeros(F, N, n_T, N_TRIALS)
         Es = CUDA.zeros(F, n_T * N_TRIALS)
         Eps = CUDA.zeros(F, n_T * N_TRIALS)
-        phis = CUDA.zeros(F, n_T * N_TRIALS)
         beta_cpu = repeat(Float32.(1.0 ./ T_vec), N_TRIALS)
         β_gpu = CuVector{F}(beta_cpu)
         ra = CUDA.zeros(F, n_T * N_TRIALS)
@@ -186,18 +185,23 @@ function main()
         finish!(prog)
 
         # sampling
+        phis_cpu = zeros(Float64, n_T * N_TRIALS)
         prog = Progress(N_SAMP, desc="Sampling: ")
         for step in 1:N_SAMP
             mc_step!(xs, xps, Es, Eps, targets_g, β_gpu, ra, Nf, ss, K, z_threshold)
             # measure φ = (target·x)/N
-            tmp = Array(sum(reshape(targets_cpu, N, 1, N_TRIALS) .* Array(xs), dims=1)) ./ Float64(Nf)
-            tmp_gpu = CuArray(Float32.(vec(tmp)))
-            phis .+= tmp_gpu
+            xs_cpu = Array(xs)
+            for t in 1:N_TRIALS
+                for j in 1:n_T
+                    idx = (t - 1) * n_T + j
+                    phis_cpu[idx] += dot(targets_cpu[:, t], xs_cpu[:, j, t]) / Float64(Nf)
+                end
+            end
             next!(prog)
         end
         finish!(prog)
 
-        phi_avg = Array(phis) ./ N_SAMP
+        phi_avg = phis_cpu ./ N_SAMP
         phi_mat = reshape(phi_avg, n_T, N_TRIALS)
         phi_grid[i, :] = vec(mean(phi_mat, dims=2))
 
@@ -215,7 +219,6 @@ function main()
         CUDA.unsafe_free!(xps)
         CUDA.unsafe_free!(Es)
         CUDA.unsafe_free!(Eps)
-        CUDA.unsafe_free!(phis)
         CUDA.unsafe_free!(β_gpu)
         CUDA.unsafe_free!(ra)
     end
