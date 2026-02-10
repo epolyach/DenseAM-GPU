@@ -26,6 +26,7 @@ using CUDA
 using Random
 using Statistics
 using LinearAlgebra
+using SpecialFunctions   # erfc
 using Printf
 using ProgressMeter
 
