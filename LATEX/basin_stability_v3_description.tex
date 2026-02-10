@@ -7,7 +7,7 @@
 \usepackage{hyperref}
 
 \title{Basin Stability Protocol for Phase Diagram Measurement\\
-       in Continuous Dense Associative Memory (v3)}
+       in Continuous Dense Associative Memory}
 \author{}
 \date{}
 
@@ -28,27 +28,9 @@ We measure the retrieval phase boundaries of Dense Associative Memory (DAM) on t
 where $\phi^\mu = \boldsymbol{\xi}^\mu \!\cdot\! \mathbf{x}/N$ is the alignment with pattern~$\mu$.
 
 The theoretical phase boundaries are derived in the thermodynamic limit $N \to \infty$ at fixed load $\alpha$.
-Monte Carlo validation at finite $N$ faces two distinct challenges:
-(i)~maintaining the exponential-capacity relationship $P = e^{\alpha N}$ at each grid point, and
-(ii)~avoiding metastability artifacts near the first-order retrieval--disorder transition.
-Our v3 protocol addresses both through an adaptive-$N$ scheme and a basin stability measurement framework.
+Monte Carlo validation at finite $N$ must maintain the exponential-capacity relationship $P = e^{\alpha N}$ at each grid point, which is achieved through an adaptive-$N$ scheme.
 
-\section{Why Basin Stability Instead of Thermal Equilibrium}
-
-Earlier approaches (v1, v2) attempted to measure the thermal equilibrium alignment $\langle\varphi\rangle_{\mathrm{eq}}$ by initializing near the target pattern and running long equilibration.
-This failed for two reasons:
-
-\paragraph{Metastability at first-order transitions.}
-The retrieval--disorder transition is first order: the free energy has two minima separated by a barrier $\Delta F \sim N^\gamma$.
-The Kramers escape time $\tau_{\mathrm{escape}} \sim e^{\Delta F/T}$ grows exponentially with $N$, so larger systems become \emph{harder} to equilibrate.
-Finite-size scaling then extrapolates an increasing metastable artifact, producing unphysical $\varphi > 1$ in the critical region.
-
-\paragraph{Low-temperature plateau.}
-At low $T$, the acceptance rate drops and the Markov chain freezes before reaching thermal equilibrium.
-With fixed equilibration time ($n_{\mathrm{eq}} = 50{,}000$), all runs below $T \approx 0.19$ converge to the same frozen state, creating an artificial plateau.
-
-\paragraph{Basin stability resolves both issues.}
-Instead of seeking thermal equilibrium, we ask: \textit{Is the retrieval basin stable against finite perturbations?}
+Instead of measuring the thermal equilibrium alignment, we adopt a \emph{basin stability} approach: \textit{Is the retrieval basin stable against finite perturbations?}
 The system is initialized with controlled random alignment $\varphi_{\mathrm{init}} \in [0.75, 1.0]$ and relaxed via Metropolis dynamics.
 The final alignment measures whether the energy landscape pulls the state back toward the target ($\varphi \to 1$, stable basin) or fails to do so ($\varphi$ drops, unstable basin).
 This requires only enough dynamics to reveal the convergence direction---not full exploration of the Boltzmann distribution---making it robust at all temperatures.
@@ -75,7 +57,7 @@ This adaptive scheme avoids the two failure modes of fixed-$N$ simulations:
 
 \section{Monte Carlo Protocol}
 
-The v3 protocol has two cleanly separated phases for each $(\alpha, T)$ point.
+The protocol has two cleanly separated phases for each $(\alpha, T)$ point.
 
 \subsection{Initialization}
 
@@ -102,7 +84,7 @@ The time-averaged alignment for trial $t$ is
     \bar{\varphi}_t = \frac{1}{N_{\mathrm{samp}}} \sum_{s=1}^{N_{\mathrm{samp}}} \varphi_t^{(s)}.
 \end{equation}
 
-The key v3 improvement over v2 is this split: by measuring $\varphi$ only during the sampling phase, the observable is not polluted by the initial transient from $\varphi_{\mathrm{init}}$.
+By measuring $\varphi$ only during the sampling phase, the observable is not polluted by the initial transient from $\varphi_{\mathrm{init}}$.
 
 \subsection{Disorder averaging}
 
@@ -126,7 +108,7 @@ For LSR, proposals that move outside all pattern supports ($H = +\infty$) are au
 
 \subsection{Parallelization strategy}
 
-The simulation processes $\alpha$ values sequentially (or in memory-limited chunks), while all $n_T = 50$ temperatures and $n_{\mathrm{trials}}$ trials are batched on the GPU simultaneously.
+The simulation processes $\alpha$ values sequentially (or in memory-limited chunks), while all $n_T$ temperatures and $n_{\mathrm{trials}}$ trials are batched on the GPU simultaneously.
 For each $\alpha_i$, the state array has shape $[N_i \times n_T \times n_{\mathrm{trials}}]$, and the Metropolis step operates via batched CUBLAS \texttt{gemm\_strided\_batched} for the energy computation.
 
 \subsection{Memory management}
@@ -192,8 +174,8 @@ The integral~\eqref{eq:boltzmann-avg} is determined by the competition between t
 \end{itemize}
 At $T = 0$, energy dominates and $\langle\varphi\rangle \to 1$.
 As $T$ increases, entropy becomes more important and $\langle\varphi\rangle$ decreases monotonically.
-For LSR with $b = 2 + \sqrt{2}$, the alignment drops from ${\approx}\,1$ at $T \to 0$ to ${\approx}\,0.77$ at $T = 2.5$---even though the retrieval basin remains the unique stable state at all temperatures (for $\alpha < \alpha_{\mathrm{th}}$).
-For LSE, the Boltzmann average follows Eq.\,33: $\varphi_{\mathrm{LSE}}(T) = \tfrac{1}{2}[-T + \sqrt{T^2 + 4}]$, which drops more steeply (reaching ${\approx}\,0.62$ at $T = 2.5$).
+For LSR with $b = 2 + \sqrt{2}$, the alignment drops from ${\approx}\,1$ at $T \to 0$ to ${\approx}\,0.78$ at $T = 2$---even though the retrieval basin remains the unique stable state at all temperatures (for $\alpha < \alpha_{\mathrm{th}}$).
+For LSE, the Boltzmann average follows Eq.\,33: $\varphi_{\mathrm{LSE}}(T) = \tfrac{1}{2}[-T + \sqrt{T^2 + 4}]$, which drops more steeply (reaching ${\approx}\,0.65$ at $T = 2$).
 
 In the thermodynamic limit ($N \to \infty$), the Boltzmann integral is dominated by its saddle point, recovering the equilibrium alignment from the mean-field equations (Eq.\,33 for LSE, Eq.\,36 for LSR).
 At finite $N$, the integral~\eqref{eq:boltzmann-avg} is evaluated numerically using the log-sum-exp trick for stability, with a fine grid of $5{,}000$ points over $[\varphi_c, 1]$.
@@ -209,12 +191,14 @@ The physically meaningful observable is the \emph{deviation} $\varphi(\alpha, T)
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=\columnwidth]{boltzmann_comparison_alpha01.png}
-\caption{Boltzmann equilibrium within the LSR retrieval basin at $\alpha = 0.1$.
+\includegraphics[width=0.45\columnwidth]{boltzmann_comparison_alpha01.eps} \hspace{5mm} \includegraphics[width=0.45\columnwidth]{phi_eq_vs_T_prod.eps}
+\caption{\textit{Left:} Boltzmann equilibrium within the LSR retrieval basin at $\alpha = 0.1$.
 Solid curve: theoretical $\langle\varphi\rangle_T$ from Eq.\,\eqref{eq:boltzmann-avg}.
 Blue circles: Monte Carlo data.
 Dotted line: hard-wall threshold $\varphi_c \approx 0.71$.
-The alignment decreases monotonically with $T$ due to the entropy--energy competition, even though the retrieval basin is perfectly stable at this load.}
+The alignment decreases monotonically with $T$ due to the entropy--energy competition, even though the retrieval basin is perfectly stable at this load.
+\textit{Right:} Equilibrium alignment $\varphi_{\mathrm{eq}}(T)$ for both kernels.
+LSE (Eq.\,33, blue) drops more steeply than LSR (Eq.\,37, red), which is bounded below by the hard wall at $\varphi_c$.}
 \label{fig:boltzmann}
 \end{figure}
 
@@ -222,9 +206,9 @@ The alignment decreases monotonically with $T$ due to the entropy--energy compet
 
 \begin{table}[h]
 \centering
-\caption{Basin stability Monte Carlo parameters (v3).
+\caption{Basin stability Monte Carlo parameters.
 Both LSE and LSR use identical settings; only the energy function differs.}
-\label{tab:mc-params-v3}
+\label{tab:mc-params}
 \small
 \begin{tabular}{ll}
 \toprule
@@ -235,7 +219,7 @@ LSE parameter       & $\beta_{\mathrm{net}} = 1$ \\
 LSR parameter       & $b = 2 + \sqrt{2} \approx 3.414$ \\[4pt]
 \multicolumn{2}{l}{\textit{Phase-space grid}} \\[2pt]
 $\alpha$ grid       & $0.01{:}0.01{:}0.55$ \;(55 values) \\
-$T$ grid            & $0.025{:}0.05{:}2.50$, linear \;(50 values) \\
+$T$ grid            & $0.025{:}0.05{:}2.0$, linear \;(40 values) \\
 $P$ range           & $20{,}000$--$500{,}000$ \;(power-law, $\gamma = 10$) \\
 $N$ range           & ${\sim}\,24$--$990$ \;(adaptive, $N = \ln P / \alpha$) \\[4pt]
 \multicolumn{2}{l}{\textit{Monte Carlo protocol}} \\[2pt]
@@ -253,23 +237,5 @@ Observable          & $\varphi = \langle \boldsymbol{\xi}^1 \!\cdot\! \mathbf{x}
 \bottomrule
 \end{tabular}
 \end{table}
-
-\section{Summary of Protocol Evolution}
-
-The v3 basin stability protocol represents the final methodology, refined through several iterations:
-
-\begin{enumerate}
-    \item \textbf{v1 (thermal equilibrium, adaptive-$N$)}: Correct phase-space coverage but suffered from metastability above $T_c$ and low-$T$ freezing.
-    Finite-size scaling extrapolation amplified metastability artifacts.
-
-    \item \textbf{v2 (thermal equilibrium, unified protocol)}: Standardized LSE and LSR parameters.
-    Identified the ``blue bay'' artifact in LSR due to hard-wall metastability.
-
-    \item \textbf{v3 (basin stability, split equilibration/sampling)}: Replaced the thermal-equilibrium question with basin stability.
-    Random initial alignment $\varphi \in [0.75, 1.0]$ eliminates the freezing plateau.
-    Split equilibration/sampling prevents transient contamination of $\varphi$.
-    Massive pattern counts ($P$ up to $500{,}000$) ensure the noise floor and spin-glass transition are correctly realized.
-    Unified protocol for both kernels.
-\end{enumerate}
 
 \end{document}
