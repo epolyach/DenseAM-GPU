@@ -98,7 +98,7 @@ function mc_step!(x::CuArray{F,3}, xp::CuArray{F,3},
     xp_cpu = Array(xp)  # get random values from GPU
     
     # Compute proposal on CPU
-    n_trials = size(x_cpu, 3)
+    n_trials = size(xp_cpu, 3)
     for t in 1:n_trials
         for j in 1:n_T
             xp_cpu[:, j, t] .= x_gpu[:, j, t] .+ ss .* xp_cpu[:, j, t]
@@ -123,19 +123,19 @@ function mc_step!(x::CuArray{F,3}, xp::CuArray{F,3},
     end
     
     # Update x and E on CPU
-    x_cpu = Array(x)
-    xp_cpu = Array(xp)
+    x_gpu_updated = Array(x)  # current x values
+    xp_gpu_updated = Array(xp)  # proposed x values
     for i in eachindex(acc_cpu)
         if acc_cpu[i]
             E_cpu[i] = Ep_cpu[i]
             # Update state indices
             t = div(i - 1, n_T) + 1
             j = mod(i - 1, n_T) + 1
-            x_cpu[:, j, t] .= xp_cpu[:, j, t]
+            x_gpu_updated[:, j, t] .= xp_gpu_updated[:, j, t]
         end
     end
     
-    copyto!(x, x_cpu)
+    copyto!(x, x_gpu_updated)
     copyto!(E, E_cpu)
     return nothing
 end
