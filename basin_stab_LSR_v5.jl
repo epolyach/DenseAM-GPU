@@ -162,7 +162,8 @@ function main()
         Es = CUDA.zeros(F, n_T * N_TRIALS)
         Eps = CUDA.zeros(F, n_T * N_TRIALS)
         phis = CUDA.zeros(F, n_T * N_TRIALS)
-        β_gpu = CuVector{F}(repeat(F.(1 ./ T_vec), N_TRIALS))
+        beta_cpu = repeat(Float32.(1.0 ./ T_vec), N_TRIALS)
+        β_gpu = CuVector{F}(beta_cpu)
         ra = CUDA.zeros(F, n_T * N_TRIALS)
 
         # initialize states near target
