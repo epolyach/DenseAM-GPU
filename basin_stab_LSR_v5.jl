@@ -86,8 +86,9 @@ function compute_energy_lsr!(E::CuVector{F}, x::CuArray{F,3},
         end
     end
 
-    # copy back to GPU vector E (use explicit GPU copy to avoid broadcast of CPU objects)
-    copyto!(E, CuArray(Float32.(phi_vals)))
+    # copy back to GPU vector E (convert Float64 to Float32 on CPU, then to GPU)
+    phi_f32 = Float32.(phi_vals)
+    E .= phi_f32
     return nothing
 end
 
