@@ -81,8 +81,9 @@ function compute_energy_lsr(x::CuArray{F,3},
         end
     end
 
-    # return as CuVector
-    return CuVector{F}(Float32.(phi_vals))
+    # return as CuVector (materialize F32 array first to avoid broadcast issues)
+    phi_f32_materialized = collect(Float32.(phi_vals))
+    return CuVector{F}(phi_f32_materialized)
 end
 
 function mc_step!(x::CuArray{F,3}, xp::CuArray{F,3},
