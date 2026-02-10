@@ -43,17 +43,12 @@ end
 
 const INF_ENERGY = F(1e30)
 
-function compute_energy_lsr!(E::CuVector{F}, x::CuArray{F,3},
-                              targets::CuArray{F,3}, Nf::F,
-                              K::Int, z_threshold::Float64)
+function compute_energy_lsr(x::CuArray{F,3},
+                             targets::CuArray{F,3}, Nf::F,
+                             K::Int, z_threshold::Float64)
     # Compute planted overlap contribution exactly
     Nb = Nf / b_lsr
-    # target is [N × 1 × n_trials], x is [N × n_T × n_trials]
-    # compute φ_target = (target · x) / N
-    # use batched gemm: overlap_target [1 × n_T × n_trials]
-    CUDA.CUBLAS.gemm_strided_batched!('T', 'N', one(F), targets, x, zero(F), CUDA.zeros(F, 1, n_T, size(x,3)))
-    # Above call is simple but we will compute target overlaps on CPU for clarity
-    # Move targets and x to CPU (small) and compute target overlaps
+    # Move targets and x to CPU and compute target overlaps
     tgt = Array(targets)[:, 1, :]
     x_cpu = Array(x)
     n_trials = size(x_cpu, 3)
@@ -72,7 +67,7 @@ function compute_energy_lsr!(E::CuVector{F}, x::CuArray{F,3},
             sum_contrib = 0.0
             for k in 1:K
                 z = rand_truncnorm_above(z_threshold)
-                φ = z / sqrt(Float64(Nf)) / Float64(sqrt(Float64(Nf)/Float64(Nf))) # simplifies to z/N? keep scaling consistent
+                φ = z / sqrt(Float64(Nf))
                 # Use same contribution formula: max(0, 1 - b + b*φ)
                 c = max(0.0, 1.0 - Float64(b_lsr) + Float64(b_lsr) * φ)
                 sum_contrib += c
@@ -86,10 +81,8 @@ function compute_energy_lsr!(E::CuVector{F}, x::CuArray{F,3},
         end
     end
 
-    # copy back to GPU vector E (materialize CPU array, convert, then copy)
-    phi_f32_gpu = CuArray(Float32.(phi_vals))
-    copyto!(E, phi_f32_gpu)
-    return nothing
+    # return as CuVector
+    return CuVector{F}(Float32.(phi_vals))
 end
 
 function mc_step!(x::CuArray{F,3}, xp::CuArray{F,3},
@@ -101,7 +94,7 @@ function mc_step!(x::CuArray{F,3}, xp::CuArray{F,3},
     nrm = sqrt.(sum(xp .^ 2, dims=1))
     @. xp = sqrt(Nf) * xp / nrm
 
-    compute_energy_lsr!(Ep, xp, targets, Nf, K, z_threshold)
+    Ep = compute_energy_lsr(xp, targets, Nf, K, z_threshold)
 
     CUDA.rand!(ra)
     acc = @. (Ep < INF_ENERGY) & (ra < exp(-(β * (Ep - E))))
@@ -161,7 +154,7 @@ function main()
         xs = CUDA.zeros(F, N, n_T, N_TRIALS)
         xps = CUDA.zeros(F, N, n_T, N_TRIALS)
         Es = CUDA.zeros(F, n_T * N_TRIALS)
-        Eps = CUDA.zeros(F, n_T * N_TRIALS)
+        Eps = CUDA.zeros(F, n_T * N_TRIALS)  # will be reassigned by compute_energy_lsr
         beta_cpu = repeat(Float32.(1.0 ./ T_vec), N_TRIALS)
         β_gpu = CuVector{F}(beta_cpu)
         ra = CUDA.zeros(F, n_T * N_TRIALS)
@@ -174,7 +167,7 @@ function main()
                 xs[:, j, t] .*= sqrt(Nf) / nrm
             end
         end
-        compute_energy_lsr!(Es, xs, targets_g, Nf, K, z_threshold)
+        Es = compute_energy_lsr(xs, targets_g, Nf, K, z_threshold)
 
         # equilibration
         ss = max(F(0.1), F(2.4) / sqrt(F(N)))
@@ -219,7 +212,9 @@ function main()
         CUDA.unsafe_free!(xs)
         CUDA.unsafe_free!(xps)
         CUDA.unsafe_free!(Es)
-        CUDA.unsafe_free!(Eps)
+        if Eps isa CuVector
+            CUDA.unsafe_free!(Eps)
+        end
         CUDA.unsafe_free!(β_gpu)
         CUDA.unsafe_free!(ra)
     end
