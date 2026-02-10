@@ -90,19 +90,53 @@ function mc_step!(x::CuArray{F,3}, xp::CuArray{F,3},
                   E::CuVector{F}, Ep::CuVector{F},
                   targets::CuArray{F,3}, β::CuVector{F}, ra::CuVector{F},
                   Nf::F, ss::F, K::Int, z_threshold::Float64)
+    # Generate random proposal on GPU
     CUDA.randn!(xp)
-    @. xp = x + ss * xp
-    nrm = sqrt.(sum(xp .^ 2, dims=1))
-    @. xp = sqrt(Nf) * xp / nrm
+    
+    # Normalization: xp = (x + ss*randn) / ||(x + ss*randn)||
+    x_gpu = Array(x)  # copy state to CPU
+    xp_cpu = Array(xp)  # get random values from GPU
+    
+    # Compute proposal on CPU
+    n_trials = size(x_cpu, 3)
+    for t in 1:n_trials
+        for j in 1:n_T
+            xp_cpu[:, j, t] .= x_gpu[:, j, t] .+ ss .* xp_cpu[:, j, t]
+            nrm = norm(xp_cpu[:, j, t])
+            xp_cpu[:, j, t] .*= sqrt(Float64(Nf)) / nrm
+        end
+    end
+    copyto!(xp, xp_cpu)  # copy back to GPU
 
     Ep = compute_energy_lsr(xp, targets, Nf, K, z_threshold)
 
     CUDA.rand!(ra)
-    acc = @. (Ep < INF_ENERGY) & (ra < exp(-(β * (Ep - E))))
-    n_trials = length(β) ÷ n_T
-    a3 = reshape(acc, 1, n_T, n_trials)
-    @. x = ifelse(a3, xp, x)
-    @. E = ifelse(acc, Ep, E)
+    ra_cpu = Array(ra)
+    acc_cpu = similar(ra_cpu, Bool)
+    
+    Ep_cpu = Array(Ep)
+    E_cpu = Array(E)
+    β_cpu = Array(β)
+    
+    for i in eachindex(ra_cpu)
+        acc_cpu[i] = (Ep_cpu[i] < Float32(INF_ENERGY)) & (ra_cpu[i] < exp(-(β_cpu[i] * (Ep_cpu[i] - E_cpu[i]))))
+    end
+    
+    # Update x and E on CPU
+    x_cpu = Array(x)
+    xp_cpu = Array(xp)
+    for i in eachindex(acc_cpu)
+        if acc_cpu[i]
+            E_cpu[i] = Ep_cpu[i]
+            # Update state indices
+            t = div(i - 1, n_T) + 1
+            j = mod(i - 1, n_T) + 1
+            x_cpu[:, j, t] .= xp_cpu[:, j, t]
+        end
+    end
+    
+    copyto!(x, x_cpu)
+    copyto!(E, E_cpu)
     return nothing
 end
 
@@ -151,24 +185,32 @@ function main()
         end
         targets_g = CuArray(reshape(targets_cpu, N, 1, N_TRIALS))
 
-        # states
-        xs = CUDA.zeros(F, N, n_T, N_TRIALS)
-        xps = CUDA.zeros(F, N, n_T, N_TRIALS)
-        Es = CUDA.zeros(F, n_T * N_TRIALS)
-        Eps = CUDA.zeros(F, n_T * N_TRIALS)  # will be reassigned by compute_energy_lsr
-        beta_cpu = repeat(Float32.(1.0 ./ T_vec), N_TRIALS)
-        β_gpu = CuVector{F}(beta_cpu)
-        ra = CUDA.zeros(F, n_T * N_TRIALS)
-
+        # states (initialize on CPU, copy to GPU)
+        xs_cpu = zeros(F, N, n_T, N_TRIALS)
+        xps_cpu = zeros(F, N, n_T, N_TRIALS)
+        Es_cpu = zeros(F, n_T * N_TRIALS)
+        
         # initialize states near target
         for t in 1:N_TRIALS
             for j in 1:n_T
-                xs[:, j, t] .= targets_cpu[:, t] .+ F(0.05) .* randn(F, N)
-                nrm = norm(xs[:, j, t])
-                xs[:, j, t] .*= sqrt(Nf) / nrm
+                xs_cpu[:, j, t] .= targets_cpu[:, t] .+ F(0.05) .* randn(F, N)
+                nrm = norm(xs_cpu[:, j, t])
+                xs_cpu[:, j, t] .*= sqrt(Nf) / nrm
             end
         end
-        Es = compute_energy_lsr(xs, targets_g, Nf, K, z_threshold)
+        
+        # Move to GPU
+        xs = CuArray(xs_cpu)
+        xps = CuArray(xps_cpu)
+        
+        beta_cpu = repeat(Float32.(1.0 ./ T_vec), N_TRIALS)
+        β_gpu = CuVector{F}(beta_cpu)
+        ra = CUDA.zeros(F, n_T * N_TRIALS)
+        
+        # Initialize energy on CPU then move to GPU
+        Es_cpu = compute_energy_lsr(xs, targets_g, Nf, K, z_threshold)
+        Es = Es_cpu
+        Eps = CUDA.zeros(F, n_T * N_TRIALS)
 
         # equilibration
         ss = max(F(0.1), F(2.4) / sqrt(F(N)))
