@@ -1,37 +1,48 @@
 #=
-LSR Basin Stability Test – GPU v5 (deterministic-K reduced patterns)
-This variant uses a deterministic number of active spurious patterns
-per-α computed as K = max(1, floor(M * p_tail)) with M = exp(α*N).
-N is chosen as N = round(Int, 27.5/α) (as requested).
+GPU-Accelerated LSR Basin Stability Test (v5)
+────────────────────────────────────────────────────────────────────────
+v5 = v3 + deterministic-K pattern reduction
 
-Alpha grid: 0.20:0.05:0.40
+Instead of storing P full patterns and computing energy via GEMM, we:
+1. Sample K ≈ M·p_tail overlaps from the truncated normal at each energy eval
+2. Compute energy as H = -(N/b) * log(Σ_k [1 - b + b·φ_k]_+)
+3. Keep deterministic K = round(exp(α·N)·p_tail) with N = 27.5/α
+
+Memory: O(K·N·n_trials) instead of O(P·N·n_trials)
+Time: O(K·n_chains) instead of O(P·n_chains) per energy eval
+
+Alpha grid: 0.20:0.05:0.40 (smaller grid for testing)
+────────────────────────────────────────────────────────────────────────
 =#
 
 using CUDA
 using Random
 using Statistics
 using LinearAlgebra
-using SpecialFunctions   # erfc
+using SpecialFunctions
 using Printf
 using ProgressMeter
 
 const F = Float32
 
-const b_lsr     = F(2 + sqrt(2))
-const phi_c_lsr = F((b_lsr - 1) / b_lsr)
-const PHI_MIN   = F(0.75)
-const PHI_MAX   = F(1.0)
+# ──────────────── LSR Parameters ────────────────
+const b_lsr       = F(2 + sqrt(2))
+const phi_c_lsr   = F((b_lsr - 1) / b_lsr)
+const PHI_MIN     = F(0.75)
+const PHI_MAX     = F(1.0)
+const N_TRIALS    = 256
+const N_EQ        = 10000
+const N_SAMP      = 5000
 
 const alpha_vec = collect(F(0.20):F(0.05):F(0.40))
 const T_vec     = F.(10 .^ range(-2, log10(2.5), length=20))
 const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
 
-const N_TRIALS  = 256
-const N_EQ      = 20000
-const N_SAMP    = 5000
+adaptive_ss(N::Int) = max(F(0.1), F(2.4) / sqrt(F(N)))
+const INF_ENERGY = F(1e30)
 
-# Robert (1995) exponential-proposal method for z > a, a > 0.
+# ──────────────── Truncated Normal Sampler (Robert 1995) ────────────────
 function rand_truncnorm_above(a::Float64)
     α_opt = 0.5 * (a + sqrt(a^2 + 4.0))
     while true
@@ -41,109 +52,128 @@ function rand_truncnorm_above(a::Float64)
     end
 end
 
-const INF_ENERGY = F(1e30)
-
-function compute_energy_lsr(x::CuArray{F,3},
-                             targets::CuArray{F,3}, Nf::F,
-                             K::Int, z_threshold::Float64)
-    # Compute planted overlap contribution exactly
+# ──────────────── Energy: Sample K overlaps from truncated normal ────────────────
+function compute_energy_lsr!(E::CuVector{F}, x::CuArray{F,3},
+                              targets::CuArray{F,3}, Nf::F,
+                              K::Int, z_threshold::Float64)
+    # Energy computation on CPU (K is small)
+    # E[i] = -(Nf/b) * log(sum of K sampled contributions)
+    
     Nb = Nf / b_lsr
-    # Move targets and x to CPU and compute target overlaps
-    tgt = Array(targets)[:, 1, :]
-    x_cpu = Array(x)
+    tgt = Array(targets)[:, 1, :]  # [N, n_trials]
+    x_cpu = Array(x)  # [N, n_T, n_trials]
     n_trials = size(x_cpu, 3)
     n_chains = n_T * n_trials
-
-    # For each chain compute deterministic K truncated-normal samples and sum contributions
-    phi_vals = zeros(Float64, n_chains)
+    
+    E_cpu = zeros(Float64, n_chains)
     idx = 1
+    
     for t in 1:n_trials
         for j in 1:n_T
-            # planted overlap
-            tgt_vec = tgt[:, t]
-            ov_t = dot(tgt_vec, x_cpu[:, j, t]) / Float64(Nf)
-
-            # sample K truncated-normal overlaps z > z_threshold (scale sqrt(N))
-            sum_contrib = 0.0
+            # Planted pattern contribution (exact)
+            ov_target = dot(tgt[:, t], x_cpu[:, j, t]) / Float64(Nf)
+            c_target = max(0.0, 1.0 - Float64(b_lsr) + Float64(b_lsr) * ov_target)
+            
+            # Sample K truncated-normal overlaps and sum contributions
+            s = c_target  # start with target
             for k in 1:K
                 z = rand_truncnorm_above(z_threshold)
-                φ = z / sqrt(Float64(Nf))
-                # Use same contribution formula: max(0, 1 - b + b*φ)
-                c = max(0.0, 1.0 - Float64(b_lsr) + Float64(b_lsr) * φ)
-                sum_contrib += c
+                phi = z / sqrt(Float64(Nf))
+                c = max(0.0, 1.0 - Float64(b_lsr) + Float64(b_lsr) * phi)
+                s += c
             end
-
-            # include planted pattern contribution
-            planted = max(0.0, 1.0 - Float64(b_lsr) + Float64(b_lsr) * ov_t)
-            s = planted + sum_contrib
-            phi_vals[idx] = s > 0 ? - (Float64(Nf) / Float64(b_lsr)) * log(s) : Float64(INF_ENERGY)
+            
+            # Energy
+            E_cpu[idx] = s > 0 ? - Float64(Nb) * log(s) : Float64(INF_ENERGY)
             idx += 1
         end
     end
-
-    # return as CuVector (materialize F32 array first to avoid broadcast issues)
-    phi_f32_materialized = collect(Float32.(phi_vals))
-    return CuVector{F}(phi_f32_materialized)
+    
+    # Copy to GPU
+    copyto!(E, CuArray(Float32.(E_cpu)))
+    return nothing
 end
 
+# ──────────────── MC Step ────────────────
 function mc_step!(x::CuArray{F,3}, xp::CuArray{F,3},
                   E::CuVector{F}, Ep::CuVector{F},
                   targets::CuArray{F,3}, β::CuVector{F}, ra::CuVector{F},
                   Nf::F, ss::F, K::Int, z_threshold::Float64)
-    # Generate random proposal on GPU
     CUDA.randn!(xp)
     
-    # Normalization: xp = (x + ss*randn) / ||(x + ss*randn)||
-    x_gpu = Array(x)  # copy state to CPU
-    xp_cpu = Array(xp)  # get random values from GPU
-    
-    # Compute proposal on CPU
+    # Proposal on CPU to avoid GPU broadcasts
+    x_cpu = Array(x)
+    xp_cpu = Array(xp)
     n_trials = size(xp_cpu, 3)
+    
     for t in 1:n_trials
         for j in 1:n_T
-            xp_cpu[:, j, t] .= x_gpu[:, j, t] .+ ss .* xp_cpu[:, j, t]
+            xp_cpu[:, j, t] .= x_cpu[:, j, t] .+ ss .* xp_cpu[:, j, t]
             nrm = norm(xp_cpu[:, j, t])
             xp_cpu[:, j, t] .*= sqrt(Float64(Nf)) / nrm
         end
     end
-    copyto!(xp, xp_cpu)  # copy back to GPU
+    copyto!(xp, xp_cpu)
 
-    Ep = compute_energy_lsr(xp, targets, Nf, K, z_threshold)
+    # Proposed energy
+    compute_energy_lsr!(Ep, xp, targets, Nf, K, z_threshold)
 
+    # Accept/reject on CPU
     CUDA.rand!(ra)
     ra_cpu = Array(ra)
-    acc_cpu = similar(ra_cpu, Bool)
-    
-    Ep_cpu = Array(Ep)
     E_cpu = Array(E)
+    Ep_cpu = Array(Ep)
     β_cpu = Array(β)
     
+    acc_cpu = similar(ra_cpu, Bool)
     for i in eachindex(ra_cpu)
-        acc_cpu[i] = (Ep_cpu[i] < Float32(INF_ENERGY)) & (ra_cpu[i] < exp(-(β_cpu[i] * (Ep_cpu[i] - E_cpu[i]))))
+        acc_cpu[i] = (Ep_cpu[i] < Float32(INF_ENERGY)) & 
+                     (ra_cpu[i] < exp(-(β_cpu[i] * (Ep_cpu[i] - E_cpu[i]))))
     end
     
-    # Update x and E on CPU
-    x_gpu_updated = Array(x)  # current x values
-    xp_gpu_updated = Array(xp)  # proposed x values
+    # Update state on CPU
+    x_cpu = Array(x)
+    xp_cpu = Array(xp)
     for i in eachindex(acc_cpu)
         if acc_cpu[i]
             E_cpu[i] = Ep_cpu[i]
-            # Update state indices
             t = div(i - 1, n_T) + 1
             j = mod(i - 1, n_T) + 1
-            x_gpu_updated[:, j, t] .= xp_gpu_updated[:, j, t]
+            x_cpu[:, j, t] .= xp_cpu[:, j, t]
         end
     end
     
-    copyto!(x, x_gpu_updated)
+    copyto!(x, x_cpu)
     copyto!(E, E_cpu)
     return nothing
 end
 
+# ──────────────── Random initialization ────────────────
+function initialize_random_alignment!(x::Array{F,3}, target::Array{F,3}, N::Int)
+    tgt = target[:, 1, :]
+    n_trials = size(x, 3)
+    
+    for t in 1:n_trials
+        for j in 1:n_T
+            phi_init = PHI_MIN + (PHI_MAX - PHI_MIN) * rand(F)
+            x_perp = randn(F, N)
+            ov = dot(tgt[:, t], x_perp) / N
+            x_perp .-= ov .* tgt[:, t]
+            x_perp ./= norm(x_perp)
+            x[:, j, t] .= phi_init .* tgt[:, t] .+ 
+                          sqrt(1 - phi_init^2) .* sqrt(F(N)) .* x_perp
+        end
+    end
+    return nothing
+end
+
+# ──────────────── Main ────────────────
 function main()
     !CUDA.functional() && error("CUDA not available")
 
-    println("LSR Basin Stability Test – GPU v5 (deterministic-K)")
+    println("=" ^ 70)
+    println("LSR Basin Stability Test – GPU v5 (deterministic-K reduction)")
+    println("=" ^ 70)
     dev = CUDA.device()
     @printf("GPU: %s (%.1f GB)\n\n", CUDA.name(dev), CUDA.totalmem(dev)/1e9)
 
@@ -163,21 +193,18 @@ function main()
 
     for (i, αf) in enumerate(alpha_vec)
         α = Float64(αf)
-        # N rule: 27.5 / α
-        N = max(2, round(Int, 27.5 / α))
+        
+        # Compute N and K
+        N = round(Int, 27.5 / α)
         Nf = F(N)
-        # threshold in z (standard normal scale sqrt(N/2) used earlier); here use z = phi_c * sqrt(N)
         z_threshold = phi_c * sqrt(N)
-
-        # tail prob and M
         p_tail = 0.5 * erfc(z_threshold / sqrt(2.0))
-        logM = α * N
-        λ = exp(logM) * p_tail
-        K = max(1, floor(Int, λ))
+        λ = exp(α * N) * p_tail
+        K = max(1, round(Int, λ))
+        
+        @printf("α=%.2f: N=%d, λ=%.2e, K=%d\n", α, N, λ, K)
 
-        @printf("α=%.2f: N=%d, p_tail=%.3e, K=%d\n", α, N, p_tail, K)
-
-        # Generate targets per trial (store exactly)
+        # Generate targets
         Random.seed!(1234 + i)
         targets_cpu = randn(F, N, N_TRIALS)
         for t in 1:N_TRIALS
@@ -185,48 +212,43 @@ function main()
         end
         targets_g = CuArray(reshape(targets_cpu, N, 1, N_TRIALS))
 
-        # states (initialize on CPU, copy to GPU)
-        xs_cpu = zeros(F, N, n_T, N_TRIALS)
-        xps_cpu = zeros(F, N, n_T, N_TRIALS)
-        Es_cpu = zeros(F, n_T * N_TRIALS)
-        
-        # initialize states near target
-        for t in 1:N_TRIALS
-            for j in 1:n_T
-                xs_cpu[:, j, t] .= targets_cpu[:, t] .+ F(0.05) .* randn(F, N)
-                nrm = norm(xs_cpu[:, j, t])
-                xs_cpu[:, j, t] .*= sqrt(Nf) / nrm
-            end
-        end
-        
-        # Move to GPU
-        xs = CuArray(xs_cpu)
-        xps = CuArray(xps_cpu)
+        # Allocate GPU arrays
+        xs = CuArray(zeros(F, N, n_T, N_TRIALS))
+        xps = CuArray(zeros(F, N, n_T, N_TRIALS))
+        Es = CuArray(zeros(F, n_T * N_TRIALS))
+        Eps = CuArray(zeros(F, n_T * N_TRIALS))
         
         beta_cpu = repeat(Float32.(1.0 ./ T_vec), N_TRIALS)
-        β_gpu = CuVector{F}(beta_cpu)
-        ra = CUDA.zeros(F, n_T * N_TRIALS)
-        
-        # Initialize energy on CPU then move to GPU
-        Es_cpu = compute_energy_lsr(xs, targets_g, Nf, K, z_threshold)
-        Es = Es_cpu
-        Eps = CUDA.zeros(F, n_T * N_TRIALS)
+        β_gpu = CuArray(beta_cpu)
+        ra = CuArray(zeros(F, n_T * N_TRIALS))
 
-        # equilibration
-        ss = max(F(0.1), F(2.4) / sqrt(F(N)))
-        prog = Progress(N_EQ, desc="Equilibration: ")
+        # Initialize on CPU, copy to GPU
+        xs_cpu = zeros(F, N, n_T, N_TRIALS)
+        initialize_random_alignment!(xs_cpu, reshape(targets_cpu, N, 1, N_TRIALS), N)
+        copyto!(xs, xs_cpu)
+
+        # Initialize energies
+        compute_energy_lsr!(Es, xs, targets_g, Nf, K, z_threshold)
+
+        ss = adaptive_ss(N)
+
+        # Equilibration
+        println("Equilibrating...")
+        prog = Progress(N_EQ, desc="Eq: ")
         for step in 1:N_EQ
             mc_step!(xs, xps, Es, Eps, targets_g, β_gpu, ra, Nf, ss, K, z_threshold)
             next!(prog)
         end
         finish!(prog)
 
-        # sampling
+        # Sampling
         phis_cpu = zeros(Float64, n_T * N_TRIALS)
-        prog = Progress(N_SAMP, desc="Sampling: ")
+        println("Sampling...")
+        prog = Progress(N_SAMP, desc="Samp: ")
         for step in 1:N_SAMP
             mc_step!(xs, xps, Es, Eps, targets_g, β_gpu, ra, Nf, ss, K, z_threshold)
-            # measure φ = (target·x)/N
+            
+            # Measure φ = (target·x)/N
             xs_cpu = Array(xs)
             for t in 1:N_TRIALS
                 for j in 1:n_T
@@ -242,7 +264,7 @@ function main()
         phi_mat = reshape(phi_avg, n_T, N_TRIALS)
         phi_grid[i, :] = vec(mean(phi_mat, dims=2))
 
-        # append to CSV
+        # Write to CSV
         open(csv_file, "a") do f
             write(f, @sprintf("%.2f", α))
             for j in 1:n_T
@@ -251,17 +273,17 @@ function main()
             write(f, "\n")
         end
 
+        # Cleanup
         CUDA.unsafe_free!(targets_g)
         CUDA.unsafe_free!(xs)
         CUDA.unsafe_free!(xps)
         CUDA.unsafe_free!(Es)
-        if Eps isa CuVector
-            CUDA.unsafe_free!(Eps)
-        end
+        CUDA.unsafe_free!(Eps)
         CUDA.unsafe_free!(β_gpu)
         CUDA.unsafe_free!(ra)
     end
-    println("Done.")
+    
+    println("\nDone. Output: $csv_file")
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

@@ -27,12 +27,12 @@ ax = Axis(fig[1, 1],
           xminorticks=0.0:0.1:2.0, xminorticksvisible=true,
           yticks=0.7:0.05:1.0,
           yminorticks=0.7:0.01:1.0, yminorticksvisible=true,
-          limits=(nothing, (0.7, 1.02)))
+          limits=(nothing, (0.68, 1.02)))
 
 # Boltzmann theory curve (solid black)
 lines!(ax, df.T, df.phi_theory,
        color=:black, linewidth=2.5,
-       label="Boltzmann ⟨φ⟩")
+       label=rich("Boltzmann φ", subscript("eq")))
 
 # MC data points (blue circles)
 scatter!(ax, df.T, df.phi_observed,
@@ -42,7 +42,8 @@ scatter!(ax, df.T, df.phi_observed,
 # Hard wall (dotted gray)
 hlines!(ax, [phi_c],
         color=:gray40, linewidth=1.5, linestyle=:dot,
-        label="φ_c = $(round(phi_c, digits=2))")
+        # label="φ_c = $(round(phi_c, digits=2))")
+        label=rich("φ", subscript("c")))
 
 # Legend
 axislegend(ax, position=:rt, labelsize=fontsize_legend, framevisible=true)

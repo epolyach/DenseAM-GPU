@@ -87,7 +87,7 @@ fig = Figure(size=(1600, 650), fontsize=fontsize_tick, figure_padding=10)
 
 # Left panel: LSE
 ax1 = Axis(fig[1, 1],
-           xlabel="α = ln(P)/N", ylabel="T",
+           xlabel="α = ln(M)/N", ylabel="T",
            xticks=alpha_major, yticks=t_major,
            xminorticks=alpha_minor, yminorticks=t_minor,
            xminorticksvisible=true, yminorticksvisible=true,
@@ -98,14 +98,14 @@ hm1 = heatmap!(ax1, alpha_lse, T_lse, lse_matrix,
                colormap=cmap, colorrange=clims_val)
 
 # Theory curve
-lines!(ax1, alpha_c_lse, collect(T_theory), color=:black, linewidth=2.5)
+# lines!(ax1, alpha_c_lse, collect(T_theory), color=:black, linewidth=2.5)
 
 # Dashed line at α=0.5
 vlines!(ax1, [0.5], color=:black, linewidth=1.5, linestyle=:dash)
 
 # Right panel: LSR
 ax2 = Axis(fig[1, 2],
-           xlabel="α = ln(P)/N", ylabel="",
+           xlabel="α = ln(M)/N", ylabel="",
            xticks=alpha_major, yticks=t_major,
            xminorticks=alpha_minor, yminorticks=t_minor,
            xminorticksvisible=true, yminorticksvisible=true,
@@ -118,6 +118,7 @@ hm2 = heatmap!(ax2, alpha_lsr, T_lsr, lsr_matrix,
 
 
 # Theory curve (curved portion)
+"""
 valid_idx = .!isnan.(alpha_c_lsr) .& (alpha_c_lsr .> alpha_th) .& (alpha_c_lsr .<= 0.5)
 lines!(ax2, alpha_c_lsr[valid_idx], collect(T_theory)[valid_idx],
        color=:black, linewidth=2.5)
@@ -127,7 +128,7 @@ if !isnan(T_max)
     lines!(ax2, [alpha_th, alpha_th], [T_max, maximum(T_lsr)],
            color=:black, linewidth=2.5)
 end
-
+"""
 
 # Dashed line at α=0.5
 vlines!(ax2, [0.5], color=:black, linewidth=1.5, linestyle=:dash)
