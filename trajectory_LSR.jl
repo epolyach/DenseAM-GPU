@@ -33,6 +33,7 @@ const alpha_vec_all = collect(0.01:0.01:0.55)
 const n_patterns_vec = range(MIN_PAT^(1/ind), MAX_PAT^(1/ind), length=n_alpha) .^ ind
 
 adaptive_ss(N::Int) = max(0.1, 2.4 / sqrt(N))
+# adaptive_ss(N::Int, T::Float64) = 2.4 * T / sqrt(N)   # v6: T-dependent σ
 
 # ──────────────── N, P for a given α ────────────────
 
@@ -117,8 +118,8 @@ end
 #  Configuration
 # ══════════════════════════════════════════════════════════════════════
 
-alpha = 0.4
-T     = 1.0
+alpha = 0.3
+T     = 0.10
 n_trials = 3
 
 # ══════════════════════════════════════════════════════════════════════
