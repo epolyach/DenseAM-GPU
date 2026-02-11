@@ -204,38 +204,38 @@ LSE (Eq.\,33, blue) drops more steeply than LSR (Eq.\,37, red), which is bounded
 
 \section{Simulation Parameters}
 
-\begin{table}[h]
+\begin{table*}[h]
 \centering
-\caption{Basin stability Monte Carlo parameters.
-Both LSE and LSR use identical settings; only the energy function differs.}
+\caption{Monte Carlo simulation parameters for the LSE and LSR energy models.
+Parameters that differ between the two kernels are listed separately.}
 \label{tab:mc-params}
 \small
-\begin{tabular}{ll}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l l l}
 \toprule
-Parameter & Value \\
+Parameter & LSE & LSR \\
 \midrule
-\multicolumn{2}{l}{\textit{Energy models}} \\[2pt]
-LSE parameter       & $\beta_{\mathrm{net}} = 1$ \\
-LSR parameter       & $b = 2 + \sqrt{2} \approx 3.414$ \\[4pt]
-\multicolumn{2}{l}{\textit{Phase-space grid}} \\[2pt]
-$\alpha$ grid       & $0.01{:}0.01{:}0.55$ \;(55 values) \\
-$T$ grid            & $0.025{:}0.05{:}2.0$, linear \;(40 values) \\
-$P$ range           & $20{,}000$--$500{,}000$ \;(power-law, $\gamma = 10$) \\
-$N$ range           & ${\sim}\,24$--$990$ \;(adaptive, $N = \ln P / \alpha$) \\[4pt]
-\multicolumn{2}{l}{\textit{Monte Carlo protocol}} \\[2pt]
-Initialization      & $\varphi_{\mathrm{init}} \!\sim\! \mathrm{U}(0.75,\, 1.0)$ \\
-Equilibration       & $2^{14} = 16{,}384$ steps (unmeasured) \\
-Sampling            & $2^{12} = 4{,}096$ steps ($\varphi$ measured) \\
-Trials              & $512 \to 64$ (adaptive, more at low $\alpha$) \\
-Step size           & $\sigma = \max(0.1,\; 2.4/\sqrt{N})$ \\
-Update              & Metropolis on $S^{N-1}(\sqrt{N})$ \\[4pt]
-\multicolumn{2}{l}{\textit{Implementation}} \\[2pt]
-GPU parallelism     & All $T$ \& trials batched; sequential over $\alpha$ \\
-Precision           & Float32 \\
-Quenched disorder   & One fresh pattern set per trial \\
-Observable          & $\varphi = \langle \boldsymbol{\xi}^1 \!\cdot\! \mathbf{x}\rangle / N$ \\
+\multicolumn{3}{l}{\textit{Energy models}} \\[2pt]
+Kernel parameter    & $\beta_{\mathrm{net}} = 1$ & $b = 2 + \sqrt{2} \approx 3.414$ \\[4pt]
+\multicolumn{3}{l}{\textit{Phase-space grid}} \\[2pt]
+$\alpha$ grid       & \multicolumn{2}{l}{$0.01{:}0.01{:}0.55$ \;(55 values)} \\
+$T$ grid            & \multicolumn{2}{l}{$0.025{:}0.05{:}2.0$, linear \;(40 values)} \\
+$P$ range           & $20{,}000$--$500{,}000$ \;(power-law, $\gamma\!=\!10$) & $e^{\alpha N}$, up to ${\sim}\,10^{12}$ \;(derived from $N$) \\
+$N$ range           & $24$--$990$ \;($N = \ln P / \alpha$) & $50$--$990$ \;($N_{\min} = 50$ enforced) \\
+Active patterns     & All $P$ & $K \ll P$ via Poisson + truncated normal \\[4pt]
+\multicolumn{3}{l}{\textit{Monte Carlo protocol}} \\[2pt]
+Initialization      & \multicolumn{2}{l}{$\varphi_{\mathrm{init}} \!\sim\! \mathrm{U}(0.75,\, 1.0)$} \\
+Equilibration       & \multicolumn{2}{l}{$2^{14} = 16{,}384$ steps (unmeasured)} \\
+Sampling            & \multicolumn{2}{l}{$2^{12} = 4{,}096$ steps ($\varphi$ measured)} \\
+Trials              & $512 \to 64$ (linear in $\alpha$) & $512$ \;($\alpha \le 0.50$); $512 \to 449$ \;($\alpha > 0.50$) \\
+Step size           & \multicolumn{2}{l}{$\sigma = \max(0.1,\; 2.4/\sqrt{N})$} \\
+Update              & \multicolumn{2}{l}{Metropolis on $S^{N-1}(\sqrt{N})$} \\[4pt]
+\multicolumn{3}{l}{\textit{Implementation}} \\[2pt]
+GPU parallelism     & \multicolumn{2}{l}{All $T$ \& trials batched; sequential over $\alpha$} \\
+Precision           & \multicolumn{2}{l}{Float32} \\
+Quenched disorder   & \multicolumn{2}{l}{One fresh pattern set per trial} \\
+Observable          & \multicolumn{2}{l}{$\varphi = \langle \boldsymbol{\xi}^1 \!\cdot\! \mathbf{x}\rangle / N$} \\
 \bottomrule
-\end{tabular}
-\end{table}
+\end{tabular*}
+\end{table*}
 
 \end{document}
