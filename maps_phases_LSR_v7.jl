@@ -1,19 +1,21 @@
 #=
-Phase Diagram Plotter for v7 Basin Stability Data
+Phase Diagram Plotter for v7 LSR Basin Stability Data
 ────────────────────────────────────────────────────────────────────────
 Reads φ(α,T) and q_EA(α,T) maps and classifies four phases:
-  Retrieval (R):     φ/φ_LSE(T) > 0.5  and  q > q_th  — pattern retrieved, frozen
-  Mixed (M):         0.1 < φ/φ_LSE(T) ≤ 0.5  and  q > q_th  — partial overlap, frozen
-  Spin-glass (SG):   φ/φ_LSE(T) ≤ 0.1  and  q > q_th  — frozen, no retrieval
+  Retrieval (R):     φ/φ_LSR(T) > 0.5  and  q > q_th  — pattern retrieved, frozen
+  Mixed (M):         0.1 < φ/φ_LSR(T) ≤ 0.5  and  q > q_th  — partial overlap, frozen
+  Spin-glass (SG):   φ/φ_LSR(T) ≤ 0.1  and  q > q_th  — frozen, no retrieval
   Paramagnetic (P):  q ≤ q_th  — ergodic, no order
 
-Theoretical phase boundary for LSE (from ICML 2026 paper):
-  φ_LSE(T) = ½[-T + √(T² + 4)]               (Eq. 33, equilibrium alignment)
-  f_ret(T)  = 1 - φ(T) - (T/2) ln[1 - φ(T)²]  (Eq. 34, retrieval free energy)
-  α_c(T)   = ½[1 - f_ret(T)]²                  (Eq. 35, critical capacity)
-  α_c(0) = 0.5; retrieval extends to high T at small α
+Theoretical phase boundary for LSR (b = 2+√2, from ICML 2026 paper):
+  φ_LSR(T) solved from quadratic: (bT+1)y² - (2+T+Tb)y + T = 0, y=1-φ
+  u(φ)    = -(1/b) ln[1 - b(1-φ)]
+  s(φ)    = ½ ln(1 - φ²)
+  f_ret(T) = u(φ) - T·s(φ)
+  α_c(T)  = ½[1 - f_ret(T)]²
+  Below T_max: vertical boundary at α_th = ½(1 - 1/b)²
 
-Outputs: maps_phases_v7.{png,pdf}
+Outputs: maps_phases_LSR_v7.{png,pdf}
 ────────────────────────────────────────────────────────────────────────
 =#
 
@@ -56,29 +58,78 @@ q_grid   = Matrix{Float64}(df_q[:, 2:end])
 @printf("φ range: %.4f – %.4f\n", extrema(phi_grid)...)
 @printf("q range: %.4f – %.4f\n", extrema(q_grid)...)
 
-# ──────────────── LSE phase boundary (ICML 2026) ────────────────
+# ──────────────── LSR phase boundary (ICML 2026) ────────────────
 
-# Equilibrium overlap φ_LSE(T) — Eq. 33
-φ_LSE(T) = 0.5 * (-T + sqrt(T^2 + 4))
+const b_lsr = 2 + sqrt(2)
 
-# Retrieval free energy f_ret(T) — Eq. 34
-f_ret_LSE(T) = let φ = φ_LSE(T)
-    1 - φ - (T / 2) * log(1 - φ^2)
+# Equilibrium overlap φ_LSR(T) — solve quadratic (bT+1)y² - (2+T+Tb)y + T = 0
+function φ_LSR(T)
+    A = b_lsr * T + 1
+    B = -(2 + T + T * b_lsr)
+    C = T
+    disc = B^2 - 4*A*C
+    disc < 0 && return NaN
+    y = (-B - sqrt(disc)) / (2*A)
+    phi = 1 - y
+    phi_c = 1 - 1/b_lsr
+    (phi <= phi_c || phi > 1 || phi < 0) && return NaN
+    return phi
 end
 
-# Critical capacity α_c(T) — Eq. 35
-α_c_LSE(T) = 0.5 * (1 - f_ret_LSE(T))^2
+# Critical capacity α_c(T) for LSR
+function α_c_LSR(T)
+    phi = φ_LSR(T)
+    isnan(phi) && return NaN
+    u = -(1/b_lsr) * log(1 - b_lsr*(1-phi))
+    s = 0.5 * log(1 - phi^2)
+    f_ret = u - T * s
+    return clamp(0.5 * (1 - f_ret)^2, 0.0, 0.5)
+end
 
-# Generate the theory curve: T → α_c(T)
-T_theory = range(0.001, 6.0, length=1000)
-α_theory = [α_c_LSE(T) for T in T_theory]
+# α_th = zero-temperature critical capacity for LSR
+const α_th_LSR = 0.5 * (1 - 1/b_lsr)^2
+
+# Find T_max: temperature above which α_c(T) < α_th (vertical portion starts)
+function find_T_max_lsr()
+    for T in range(0.01, 3.0, length=1000)
+        ac = α_c_LSR(T)
+        !isnan(ac) && ac <= α_th_LSR && return T
+    end
+    return NaN
+end
+const T_max_LSR = find_T_max_lsr()
+
+# Generate the theory curve: curved portion + vertical portion
+T_theory_curved = range(0.001, 6.0, length=1000)
+α_theory_curved = [α_c_LSR(T) for T in T_theory_curved]
+
+# Filter valid curved portion
+valid = [!isnan(a) && a > α_th_LSR for a in α_theory_curved]
+T_theory = Float64[]
+α_theory = Float64[]
+
+# Vertical portion: α = α_th from T_max up to plot limit
+if !isnan(T_max_LSR)
+    push!(T_theory, T_max_LSR + 3.0)  # top of vertical line
+    push!(α_theory, α_th_LSR)
+    push!(T_theory, T_max_LSR)
+    push!(α_theory, α_th_LSR)
+end
+
+# Curved portion (from high T down to T=0)
+for i in length(valid):-1:1
+    if valid[i]
+        push!(T_theory, T_theory_curved[i])
+        push!(α_theory, α_theory_curved[i])
+    end
+end
 
 # ──────────────── Phase classification ────────────────
 
 # Normalized overlap: φ / φ_LSE(T) — retrieval ≈ 1, non-retrieval ≈ 0
 phi_norm = similar(phi_grid)
 for j in 1:n_T
-    phi_norm[:, j] = phi_grid[:, j] ./ φ_LSE(T_vec[j])
+    phi_norm[:, j] = phi_grid[:, j] ./ max(φ_LSR(T_vec[j]), 1e-10)
 end
 
 # Phase codes: 1 = Paramagnetic, 2 = Spin-glass, 3 = Mixed, 4 = Retrieval
@@ -119,9 +170,10 @@ p1 = heatmap(alpha_vec, T_vec, phi_grid',
     color=:RdYlBu, clims=(0, 1), colorbar_title="φ",
     xlims=(alpha_vec[1], alpha_vec[end]), ylims=(T_vec[1], T_vec[end]))
 
-# LSE theory boundary on φ map
+# LSR theory boundary on φ map
 plot!(p1, α_theory, T_theory,
-    color=:white, linewidth=2, linestyle=:solid, label="α_c(T) LSE")
+    color=:white, linewidth=2, linestyle=:solid, label="α_c(T) LSR")
+plot!(p1, legend=:topright, background_color_legend=RGB(0.85, 0.85, 0.85))
 
 # Panel 2: q map (α on x, T on y)
 p2 = heatmap(alpha_vec, T_vec, q_grid',
@@ -129,9 +181,10 @@ p2 = heatmap(alpha_vec, T_vec, q_grid',
     color=:RdYlBu, clims=(0, 1), colorbar_title="q_EA",
     xlims=(alpha_vec[1], alpha_vec[end]), ylims=(T_vec[1], T_vec[end]))
 
-# LSE theory boundary on q map
+# LSR theory boundary on q map
 plot!(p2, α_theory, T_theory,
-    color=:white, linewidth=2, linestyle=:solid, label="α_c(T) LSE")
+    color=:white, linewidth=2, linestyle=:solid, label="α_c(T) LSR")
+plot!(p2, legend=:topright, background_color_legend=RGB(0.85, 0.85, 0.85))
 
 # Panel 3: Phase diagram (4 phases) — axes: α on x, T on y (ICLR convention)
 # P=blue, SG=red, M=orange, R=green
@@ -143,18 +196,21 @@ p3 = heatmap(alpha_vec, T_vec, phase_grid',
     color=phase_colors, clims=(0.5, 4.5), colorbar=false,
     xlims=(alpha_vec[1], alpha_vec[end]), ylims=(T_vec[1], T_vec[end]))
 
-# LSE theory boundary on phase diagram
+# LSR theory boundary on phase diagram
 plot!(p3, α_theory, T_theory,
     color=:white, linewidth=2.5, linestyle=:solid, label="α_c(T)")
 
-# Phase labels
-annotate!(p3, 0.05, 0.15, text("R", :white, :bold, 14))
-annotate!(p3, 0.35, 0.15, text("SG", :white, :bold, 14))
-annotate!(p3, 0.30, 1.5,  text("P", :white, :bold, 14))
+# Phase legend (invisible markers for legend entries)
+for (lab, col) in zip(["P", "SG", "M", "R"],
+                       [:royalblue, :firebrick, :orange, :limegreen])
+    scatter!(p3, [NaN], [NaN], color=col, markershape=:square,
+        markersize=8, markerstrokewidth=0, label=lab)
+end
+plot!(p3, legend=:topright, background_color_legend=RGB(0.85, 0.85, 0.85))
 
-# Panel 4: normalized φ/φ_LSE(T) vs q scatter, colored by phase
+# Panel 4: normalized φ/φ_LSR(T) vs q scatter, colored by phase
 phase_col = [:royalblue, :firebrick, :orange, :limegreen]
-p4 = plot(xlabel="φ / φ_LSE(T)", ylabel="q_EA",
+p4 = plot(xlabel="φ / φ_LSR(T)", ylabel="q_EA",
     title="Normalized overlap vs q_EA", legend=:topright)
 phase_labels = ["P", "SG", "M", "R"]
 for (code, lab, col) in zip(1:4, phase_labels, phase_col)
@@ -172,7 +228,7 @@ hline!(p4, [Q_TH],  color=:gray, linestyle=:dash, linewidth=1, label="")
 # Combine
 p = plot(p1, p2, p3, p4,
     layout=(2, 2), size=(1200, 1000), dpi=150,
-    plot_title="LSE v7 Phase Diagram (two-replica q_EA)",
+    plot_title="LSR v7 Phase Diagram (two-replica q_EA)",
     margin=5Plots.mm)
 
 png_name = "$out_base.png"
