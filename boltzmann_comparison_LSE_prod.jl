@@ -5,7 +5,7 @@ using Printf
 
 # ──────────────── Read MC data directly from basin stability CSV ────────────────
 
-data = CSV.read("basin_stab_LSE_v3.csv", DataFrame)
+data = CSV.read("basin_stab_LSE_v6.csv", DataFrame)
 
 T_cols = names(data)[2:end]
 T_vals = [parse(Float64, replace(col, "T" => "")) for col in T_cols]
@@ -57,9 +57,9 @@ phi_theory = [boltzmann_avg(N_boltz, T) for T in T_fine]
 
 # ──────────────── Production settings (1-column figure) ────────────────
 
-fontsize_label = 26
-fontsize_tick = 22
-fontsize_legend = 20
+fontsize_label = 29
+fontsize_tick = 24
+fontsize_legend = 22
 
 fig = Figure(size=(800, 550), fontsize=fontsize_tick, figure_padding=15)
 
@@ -81,13 +81,13 @@ lines!(ax, T_fine, phi_theory,
 #        label=rich("Boltzmann φ", subscript("eq"), " (N=$N_boltz)"))
 
 # MC data points
-mc_colors = [:blue, :red]
-mc_markers = [:circle, :utriangle]
-for (i, α) in enumerate(alpha_vals)
-    scatter!(ax, T_vals, phi_mc[α],
-             color=mc_colors[i], markersize=8, marker=mc_markers[i],
-             label="MC (α = $α)")
-end
+scatter!(ax, T_vals, phi_mc[alpha_vals[1]],
+         color=:blue, markersize=10, marker=:circle,
+         label="MC (α = $(alpha_vals[1]))")
+scatter!(ax, T_vals, phi_mc[alpha_vals[2]],
+         color=(:white, 0), markersize=14, marker=:utriangle,
+         strokewidth=2, strokecolor=:red,
+         label="MC (α = $(alpha_vals[2]))")
 
 # Legend
 axislegend(ax, position=:rt, labelsize=fontsize_legend, framevisible=true)
