@@ -92,16 +92,23 @@ function run_trial(alpha::Float64, T::Float64; seed::Int=42)
     E = compute_energy(x, patterns, N)
     n_total = N_EQ + N_SAMP
     phi_traj = Vector{Float64}(undef, n_total)
+    qEA_traj = Vector{Float64}(undef, n_total)
     accept_count = 0
+    x_ref = zeros(N)
 
     for s in 1:n_total
         E, acc = mc_step!(x, E, patterns, N, T, σ)
         accept_count += acc
         phi_traj[s] = dot(target, x) / N
+        if s == N_EQ
+            x_ref .= x
+        end
+        qEA_traj[s] = dot(x_ref, x) / N
     end
 
     acc_rate = accept_count / n_total
-    return phi_traj, N, P, phi_init, acc_rate
+    q_EA = mean(qEA_traj[N_EQ + N_SAMP÷2 + 1 : end])
+    return phi_traj, N, P, phi_init, acc_rate, q_EA, qEA_traj
 end
 
 # ══════════════════════════════════════════════════════════════════════
@@ -109,7 +116,7 @@ end
 # ══════════════════════════════════════════════════════════════════════
 
 alpha = 0.1
-T     = 1.05
+T     = 1.0
 n_trials = 3
 
 # ══════════════════════════════════════════════════════════════════════
@@ -137,15 +144,17 @@ println("="^70)
 
 n_total = N_EQ + N_SAMP
 all_trajs = Matrix{Float64}(undef, n_total, n_trials)
+all_qEA   = Matrix{Float64}(undef, n_total, n_trials)
 
 for t in 1:n_trials
     seed = 1000 * round(Int, 100*alpha) + 100 * round(Int, 100*T) + t
-    phi_traj, _, _, phi_init, acc_rate = run_trial(alpha, T; seed=seed)
+    phi_traj, _, _, phi_init, acc_rate, q_EA, qEA_traj = run_trial(alpha, T; seed=seed)
     all_trajs[:, t] = phi_traj
+    all_qEA[:, t]   = qEA_traj
 
     φ_samp = mean(phi_traj[N_EQ+1:end])
-    @printf("  Trial %d: φ_init = %.3f, ⟨φ⟩_samp = %.4f, acc = %.1f%%\n",
-            t, phi_init, φ_samp, 100 * acc_rate)
+    @printf("  Trial %d: φ_init = %.3f, ⟨φ⟩_samp = %.4f, acc = %.1f%%, q_EA = %.4f\n",
+            t, phi_init, φ_samp, 100 * acc_rate, q_EA)
 end
 
 # ──────────────── Save CSV ────────────────
@@ -153,6 +162,7 @@ end
 df = DataFrame(:step => 1:n_total)
 for t in 1:n_trials
     df[!, Symbol("trial_$t")] = all_trajs[:, t]
+    df[!, Symbol("qEA_$t")]   = all_qEA[:, t]
 end
 
 csv_name = "$base_name.csv"
@@ -161,27 +171,42 @@ println("\n✓ CSV saved: $csv_name")
 
 # ──────────────── Plot ────────────────
 
+step_thin = 8
+steps = 1:step_thin:n_total
+
+# ── Panel 1: φ trajectory ──
 y_lo = floor(minimum(all_trajs) - 0.05; digits=1)
 y_hi = ceil(maximum(all_trajs) + 0.05; digits=1)
 
-p = plot(size=(900, 400), dpi=150,
-         title=@sprintf("LSE trajectory:  α = %.2f,  T = %.2f  (N = %d)", alpha, T, N),
-         xlabel="MC step", ylabel="Alignment φ",
-         legend=:topright, ylims=(y_lo, y_hi))
+p1 = plot(title=@sprintf("LSE trajectory:  α = %.2f,  T = %.2f  (N = %d)", alpha, T, N),
+          ylabel="Alignment φ", legend=:topright, ylims=(y_lo, y_hi))
 
-vline!(p, [N_EQ], color=:gray, linestyle=:dash, linewidth=1, label="eq → samp")
-
-hline!(p, [φ_boltz], color=:black, linewidth=2, linestyle=:dot,
+vline!(p1, [N_EQ], color=:gray, linestyle=:dash, linewidth=1, label="eq → samp")
+hline!(p1, [φ_boltz], color=:black, linewidth=2, linestyle=:dot,
        label=@sprintf("φ_eq = %.3f", φ_boltz))
 
-step_thin = 8
-steps = 1:step_thin:n_total
 for t in 1:n_trials
     φ_samp = mean(all_trajs[N_EQ+1:end, t])
-    plot!(p, collect(steps), all_trajs[steps, t],
+    plot!(p1, collect(steps), all_trajs[steps, t],
           linewidth=1, alpha=0.8,
           label=@sprintf("trial %d (⟨φ⟩=%.3f)", t, φ_samp))
 end
+
+# ── Panel 2: q_EA self-overlap trajectory ──
+p2 = plot(xlabel="MC step", ylabel="q(τ) = x(t₀)·x(t₀+τ)/N",
+          legend=:topright)
+
+vline!(p2, [N_EQ], color=:gray, linestyle=:dash, linewidth=1, label="")
+hline!(p2, [0.0], color=:gray40, linewidth=1, linestyle=:dot, label="")
+
+for t in 1:n_trials
+    q_val = mean(all_qEA[N_EQ + N_SAMP÷2 + 1 : end, t])
+    plot!(p2, collect(steps), all_qEA[steps, t],
+          linewidth=1, alpha=0.8,
+          label=@sprintf("trial %d (q_EA=%.3f)", t, q_val))
+end
+
+p = plot(p1, p2, layout=(2, 1), size=(900, 700), dpi=150)
 
 png_name = "$base_name.png"
 savefig(p, png_name)
