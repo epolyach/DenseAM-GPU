@@ -13,9 +13,9 @@ phi_c = (b - 1) / b  # ≈ 0.707
 
 # ──────────────── Production settings (1-column figure) ────────────────
 
-fontsize_label = 26
-fontsize_tick = 22
-fontsize_legend = 20
+fontsize_label = 29
+fontsize_tick = 24
+fontsize_legend = 22
 
 fig = Figure(size=(800, 550), fontsize=fontsize_tick, figure_padding=15)
 
@@ -36,7 +36,7 @@ lines!(ax, df.T, df.phi_theory,
 
 # MC data points (blue circles)
 scatter!(ax, df.T, df.phi_observed,
-         color=:blue, markersize=8, marker=:circle,
+         color=:blue, markersize=10, marker=:circle,
          label="MC (α = 0.1)")
 
 # Hard wall (dotted gray)

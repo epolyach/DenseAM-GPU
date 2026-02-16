@@ -7,14 +7,14 @@ using Statistics
 # LSE parameters
 betanet = 1.0
 
-alpha = 0.02
+alpha = 0.10
 
 println("="^70)
 println("Boltzmann Statistics vs Observed Data for LSE, α = $alpha")
 println("="^70)
 
 # Read data
-data = CSV.read("basin_stab_LSE_v3.csv", DataFrame)
+data = CSV.read("basin_stab_LSE_v6.csv", DataFrame)
 row_idx = findfirst(data.alpha .== alpha)
 row_data = data[row_idx, :]
 

@@ -14,7 +14,7 @@ println("="^70)
 
 # Read data
 # data = CSV.read("lsr_longeq.csv", DataFrame)
-data = CSV.read("basin_stab_LSR_v3.csv", DataFrame)
+data = CSV.read("basin_stab_LSR_v6.csv", DataFrame)
 
 # Extract α = 0.1 data
 alpha = 0.1

@@ -50,7 +50,8 @@ const N_SAMP      = 2^12              # 4096 sampling steps (measured)
 # For α > α_th the old formula gave N = 24–46; we enforce N ≥ 50.
 const N_MIN       = 50
 
-const alpha_vec = collect(F(0.01):F(0.01):F(0.55))  # 55 values
+# const alpha_vec = collect(F(0.01):F(0.01):F(0.55))  # 55 values
+const alpha_vec = collect(F(0.3):F(0.02):F(0.4))  # 55 values
 const T_vec     = collect(F(0.025):F(0.05):F(2.0))   # 40 values
 const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
