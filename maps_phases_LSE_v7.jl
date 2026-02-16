@@ -28,7 +28,7 @@ using Statistics
 # Input files
 phi_csv = "basin_stab_LSE_v7.csv"
 q_csv   = "basin_stab_LSE_v7_q.csv"
-out_base = "maps_phases_v7"
+out_base = "maps_phases_LSE_v7"
 
 # Phase classification thresholds
 const Q_TH   = 0.1     # q above this → frozen (non-ergodic)
@@ -122,6 +122,7 @@ p1 = heatmap(alpha_vec, T_vec, phi_grid',
 # LSE theory boundary on φ map
 plot!(p1, α_theory, T_theory,
     color=:white, linewidth=2, linestyle=:solid, label="α_c(T) LSE")
+plot!(p1, legend=:topright, background_color_legend=RGB(0.85, 0.85, 0.85))
 
 # Panel 2: q map (α on x, T on y)
 p2 = heatmap(alpha_vec, T_vec, q_grid',
@@ -132,6 +133,7 @@ p2 = heatmap(alpha_vec, T_vec, q_grid',
 # LSE theory boundary on q map
 plot!(p2, α_theory, T_theory,
     color=:white, linewidth=2, linestyle=:solid, label="α_c(T) LSE")
+plot!(p2, legend=:topright, background_color_legend=RGB(0.85, 0.85, 0.85))
 
 # Panel 3: Phase diagram (4 phases) — axes: α on x, T on y (ICLR convention)
 # P=blue, SG=red, M=orange, R=green
@@ -147,10 +149,13 @@ p3 = heatmap(alpha_vec, T_vec, phase_grid',
 plot!(p3, α_theory, T_theory,
     color=:white, linewidth=2.5, linestyle=:solid, label="α_c(T)")
 
-# Phase labels
-annotate!(p3, 0.05, 0.15, text("R", :white, :bold, 14))
-annotate!(p3, 0.35, 0.15, text("SG", :white, :bold, 14))
-annotate!(p3, 0.30, 1.5,  text("P", :white, :bold, 14))
+# Phase legend (invisible markers for legend entries)
+for (lab, col) in zip(["P", "SG", "M", "R"],
+                       [:royalblue, :firebrick, :orange, :limegreen])
+    scatter!(p3, [NaN], [NaN], color=col, markershape=:square,
+        markersize=8, markerstrokewidth=0, label=lab)
+end
+plot!(p3, legend=:topright, background_color_legend=RGB(0.85, 0.85, 0.85))
 
 # Panel 4: normalized φ/φ_LSE(T) vs q scatter, colored by phase
 phase_col = [:royalblue, :firebrick, :orange, :limegreen]
