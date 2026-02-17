@@ -99,12 +99,7 @@ function find_T_max_lsr()
 end
 const T_max_LSR = find_T_max_lsr()
 
-# Generate the theory curve: curved portion + vertical portion
-T_theory_curved = range(0.001, 6.0, length=1000)
-α_theory_curved = [α_c_LSR(T) for T in T_theory_curved]
-
-# Filter valid curved portion
-valid = [!isnan(a) && a > α_th_LSR for a in α_theory_curved]
+# Generate the theory curve: vertical portion + curved portion (physical branch only)
 T_theory = Float64[]
 α_theory = Float64[]
 
@@ -116,11 +111,13 @@ if !isnan(T_max_LSR)
     push!(α_theory, α_th_LSR)
 end
 
-# Curved portion (from high T down to T=0)
-for i in length(valid):-1:1
-    if valid[i]
-        push!(T_theory, T_theory_curved[i])
-        push!(α_theory, α_theory_curved[i])
+# Curved portion (from T_max down to T≈0, only physical branch where f_ret < 1)
+T_curve_range = range(0.001, isnan(T_max_LSR) ? 6.0 : T_max_LSR, length=500)
+for i in length(T_curve_range):-1:1
+    ac = α_c_LSR(T_curve_range[i])
+    if !isnan(ac)
+        push!(T_theory, T_curve_range[i])
+        push!(α_theory, ac)
     end
 end
 
