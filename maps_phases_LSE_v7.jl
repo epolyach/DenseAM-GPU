@@ -31,8 +31,8 @@ q_csv   = "basin_stab_LSE_v7_q.csv"
 out_base = "maps_phases_LSE_v7"
 
 # Phase classification thresholds
-const Q_TH   = 0.1     # q above this → frozen (non-ergodic)
-const PHI_R   = 0.5     # φ/φ_LSE(T) above this → retrieval
+const Q_TH   = 0.15     # q above this → frozen (non-ergodic)
+const PHI_R   = 0.99     # φ/φ_LSE(T) above this → retrieval
 const PHI_M   = 0.1     # φ/φ_LSE(T) above this (but < PHI_R) → mixed
 
 # ──────────────── Read data ────────────────
@@ -111,6 +111,29 @@ n_total = n_alpha * n_T
 @printf("  Spin-glass (SG):   %d (%.1f%%)\n", n_SG, 100*n_SG/n_total)
 @printf("  Paramagnetic (P):  %d (%.1f%%)\n", n_P, 100*n_P/n_total)
 
+# ──────────────── Threshold contour extraction ────────────────
+
+# For each T row, find α where grid crosses level (linear interpolation)
+function threshold_contour(alpha_vec, T_vec, grid, level)
+    αc = Float64[]
+    Tc = Float64[]
+    for j in eachindex(T_vec)
+        for i in 1:length(alpha_vec)-1
+            v1, v2 = grid[i, j], grid[i+1, j]
+            if (v1 - level) * (v2 - level) < 0
+                frac = (level - v1) / (v2 - v1)
+                push!(αc, alpha_vec[i] + frac * (alpha_vec[i+1] - alpha_vec[i]))
+                push!(Tc, T_vec[j])
+            end
+        end
+    end
+    return αc, Tc
+end
+
+α_φR, T_φR = threshold_contour(alpha_vec, T_vec, phi_norm, PHI_R)
+α_φM, T_φM = threshold_contour(alpha_vec, T_vec, phi_norm, PHI_M)
+α_qth, T_qth = threshold_contour(alpha_vec, T_vec, q_grid, Q_TH)
+
 # ──────────────── Plot ────────────────
 
 # Panel 1: φ map (α on x, T on y)
@@ -122,6 +145,8 @@ p1 = heatmap(alpha_vec, T_vec, phi_grid',
 # LSE theory boundary on φ map
 plot!(p1, α_theory, T_theory,
     color=:white, linewidth=2, linestyle=:solid, label="α_c(T) LSE")
+plot!(p1, α_φR, T_φR, color=:black, linewidth=1.5, linestyle=:dash, label="φ/φ_th=$PHI_R")
+plot!(p1, α_φM, T_φM, color=:green, linewidth=1.5, linestyle=:dash, label="φ/φ_th=$PHI_M")
 plot!(p1, legend=:topright, background_color_legend=RGB(0.85, 0.85, 0.85))
 
 # Panel 2: q map (α on x, T on y)
@@ -133,6 +158,7 @@ p2 = heatmap(alpha_vec, T_vec, q_grid',
 # LSE theory boundary on q map
 plot!(p2, α_theory, T_theory,
     color=:white, linewidth=2, linestyle=:solid, label="α_c(T) LSE")
+plot!(p2, α_qth, T_qth, color=:cyan, linewidth=2, linestyle=:dash, label="q=$Q_TH")
 plot!(p2, legend=:topright, background_color_legend=RGB(0.85, 0.85, 0.85))
 
 # Panel 3: Phase diagram (4 phases) — axes: α on x, T on y (ICLR convention)
@@ -148,6 +174,9 @@ p3 = heatmap(alpha_vec, T_vec, phase_grid',
 # LSE theory boundary on phase diagram
 plot!(p3, α_theory, T_theory,
     color=:white, linewidth=2.5, linestyle=:solid, label="α_c(T)")
+plot!(p3, α_φR, T_φR, color=:black, linewidth=1.5, linestyle=:dash, label="φ/φ_th=$PHI_R")
+plot!(p3, α_φM, T_φM, color=:green, linewidth=1.5, linestyle=:dash, label="φ/φ_th=$PHI_M")
+plot!(p3, α_qth, T_qth, color=:cyan, linewidth=2, linestyle=:dash, label="q=$Q_TH")
 
 # Phase legend (invisible markers for legend entries)
 for (lab, col) in zip(["P", "SG", "M", "R"],
@@ -170,9 +199,9 @@ for (code, lab, col) in zip(1:4, phase_labels, phase_col)
 end
 
 # Phase boundary lines
-vline!(p4, [PHI_R], color=:gray, linestyle=:dash, linewidth=1, label="")
-vline!(p4, [PHI_M], color=:gray, linestyle=:dot,  linewidth=1, label="")
-hline!(p4, [Q_TH],  color=:gray, linestyle=:dash, linewidth=1, label="")
+vline!(p4, [PHI_R], color=:black, linestyle=:dash, linewidth=1, label="")
+vline!(p4, [PHI_M], color=:green, linestyle=:dash, linewidth=1, label="")
+hline!(p4, [Q_TH],  color=:cyan, linestyle=:dash, linewidth=1, label="")
 
 # Combine
 p = plot(p1, p2, p3, p4,
