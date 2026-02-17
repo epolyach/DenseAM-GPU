@@ -1,0 +1,190 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{Absence of the Spin-Glass Phase in Dense Associative Memories}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Spin-Glass Phase in the Classical Hopfield Model}
+
+In the classical Hopfield model~\cite{Amit1987}, the coupling matrix is
+\begin{equation}
+  J_{ij} = \frac{1}{N} \sum_{\mu=1}^{p} \xi_i^\mu \xi_j^\mu,
+\end{equation}
+and the local field acting on spin $S_i$ in a state aligned with pattern $\nu$ is
+\begin{equation}
+  h_i = \sum_{j \neq i} J_{ij} S_j
+      = \xi_i^\nu (1 + \delta_i),
+  \qquad
+  \delta_i = \frac{1}{N} \sum_{j \neq i} \sum_{\mu \neq \nu}
+             \xi_i^\mu \xi_j^\mu \xi_j^\nu,
+\end{equation}
+where $\delta_i$ is cross-talk noise with variance
+$\langle \delta_i^2 \rangle = (p-1)/N$.
+For $p = \alpha N$, this noise is $O(\sqrt{\alpha})$ and independent of $N$.
+
+\subsection{Order parameters}
+
+The mean-field theory uses two order parameters:
+\begin{itemize}
+  \item Overlap (magnetization):
+    $m^\mu = \frac{1}{N} \sum_i \langle S_i \rangle \xi_i^\mu$
+    --- measures alignment with pattern $\mu$.
+  \item Edwards--Anderson parameter:
+    $q = \langle N^{-1} \sum_i \langle S_i \rangle^2 \rangle$
+    --- measures freezing (non-ergodicity).
+\end{itemize}
+
+\subsection{Phase diagram (Amit, Gutfreund, Sompolinsky 1987)}
+
+The system exhibits three phases:
+\begin{enumerate}
+  \item \textbf{Paramagnetic (P):} $m = 0$, $q = 0$.
+        Above $T_g = 1 + \sqrt{\alpha}$, the system is ergodic.
+
+  \item \textbf{Spin-glass (SG):} $m = 0$, $q > 0$.
+        Below $T_g$ (for $\alpha > \alpha_c \approx 0.138$ at $T = 0$),
+        the system freezes into a random state with no macroscopic overlap
+        with any stored pattern.
+        The SG order parameter satisfies $q \simeq T_g - T$ near the transition.
+
+  \item \textbf{Retrieval / Ferromagnetic (FM):} $m \neq 0$, $q > 0$.
+        Below $T_M(\alpha)$, the system retrieves a stored pattern.
+        For $\alpha < \alpha_c$, this is the ground state.
+\end{enumerate}
+
+The SG phase arises because the coupling matrix $J_{ij}$ is a rank-$p$
+perturbation of what is effectively a random symmetric matrix.
+From random matrix theory, $J$ has $p$ outlier eigenvalues (corresponding to
+the stored patterns) sitting on a \emph{semicircular bulk} of width
+$\sim 2\sqrt{\alpha}$. When $\alpha > \alpha_c$, the outliers merge into the bulk,
+and the random-matrix structure dominates the energy landscape, creating an
+exponentially large number of metastable states --- the spin-glass phase.
+
+\section{Dense Associative Memories: LSE and LSR}
+
+In dense (modern) associative memories, the energy function is qualitatively
+different.  For the two models considered here:
+
+\subsection{LSE (Log-Sum-Exp)}
+\begin{equation}
+  E_{\mathrm{LSE}}(\mathbf{S})
+    = -\log \sum_{\mu=1}^{p}
+      \exp\!\Bigl(\tfrac{1}{2}\,(\boldsymbol{\xi}^\mu \cdot \mathbf{S})^2 / N\Bigr).
+\end{equation}
+
+\subsection{LSR (Log-Sum with $b = 2 + \sqrt{2}$)}
+\begin{equation}
+  E_{\mathrm{LSR}}(\mathbf{S})
+    = -\frac{1}{b}\,\log \sum_{\mu=1}^{p}
+      \exp\!\Bigl(\tfrac{b}{2}\,(\boldsymbol{\xi}^\mu \cdot \mathbf{S})^2 / N\Bigr),
+  \qquad b = 2 + \sqrt{2}.
+\end{equation}
+
+The $\exp(\cdot)$ inside the $\log\text{-sum}$ acts as a \textbf{soft-max}:
+it exponentially amplifies the overlap with the best-matching pattern
+and suppresses all others.
+
+\section{Why No Spin-Glass Phase in Dense AM}
+
+\subsection{Suppression of cross-talk}
+
+In the Hopfield model, the local field is \emph{linear} in the overlaps:
+\begin{equation}
+  h_i^{\text{Hopf}} = \frac{1}{N}\sum_\mu m^\mu \xi_i^\mu
+    = \frac{m^\nu}{N}\,\xi_i^\nu + \underbrace{\frac{1}{N}\sum_{\mu \neq \nu} m^\mu \xi_i^\mu}_{\text{cross-talk noise}}.
+\end{equation}
+All $p$ patterns contribute equally to the local field, regardless of their
+overlap magnitude. The cross-talk noise scales as $\sqrt{\alpha}$ and generates
+the frustrated landscape responsible for the SG phase.
+
+In dense AM, the effective local field is dominated by the
+\textbf{exponentially weighted} leading pattern:
+\begin{equation}
+  h_i^{\text{dense}} \propto
+    \frac{\sum_\mu (\boldsymbol{\xi}^\mu \cdot \mathbf{S})\,\xi_i^\mu \,
+    e^{\frac{b}{2}(\boldsymbol{\xi}^\mu \cdot \mathbf{S})^2/N}}
+    {\sum_\mu e^{\frac{b}{2}(\boldsymbol{\xi}^\mu \cdot \mathbf{S})^2/N}}.
+\end{equation}
+The softmax weights $\propto e^{b\,N\,(m^\mu)^2/2}$ ensure that the pattern with
+the largest overlap exponentially dominates the sum.
+All other overlaps are suppressed by a factor
+$\sim e^{-bN[(m^{\max})^2 - (m^\mu)^2]/2}$, which vanishes exponentially in $N$.
+
+\subsection{No frustrated landscape at high $\alpha$}
+
+The key consequence: when $\alpha$ exceeds the critical capacity $\alpha_c$,
+the stored patterns become destabilized, but the cross-talk noise
+\emph{does not create its own metastable states}.
+
+\begin{itemize}
+  \item \textbf{Hopfield:}
+    $\alpha > \alpha_c$ $\Rightarrow$ patterns unstable, but the linear cross-talk
+    creates $\sim e^{cN}$ random metastable states $\Rightarrow$ SG phase
+    ($m = 0$, $q > 0$).
+
+  \item \textbf{Dense AM:}
+    $\alpha > \alpha_c$ $\Rightarrow$ patterns unstable, and the exponential
+    suppression kills the diffuse noise that would form SG states.
+    No metastable states survive $\Rightarrow$ paramagnetic phase
+    ($m = 0$, $q = 0$).
+\end{itemize}
+
+Physically, the $\log$-$\sum$-$\exp$ energy landscape has deep, narrow wells
+around stored patterns (exponentially deep in $N$), but the regions between
+wells are \emph{smooth} --- no rugged random-matrix structure.
+When the wells disappear at high $\alpha$, the landscape becomes flat, and
+the system is ergodic.
+
+\subsection{Direct R $\to$ P transition}
+
+The phase diagram of dense AM therefore contains only two phases:
+\begin{center}
+\begin{tabular}{lcc}
+  \hline
+  Phase & $\varphi/\varphi_{\mathrm{th}}(T)$ & $q_{\mathrm{EA}}$ \\
+  \hline
+  Retrieval (R)      & $\approx 1$   & $> 0$ \\
+  Paramagnetic (P)   & $\approx 0$   & $\approx 0$ \\
+  \hline
+\end{tabular}
+\end{center}
+with a direct R $\to$ P transition at $\alpha = \alpha_c(T)$,
+and no intermediate SG phase.
+
+This is confirmed by our basin stability simulations (v7), which show
+$\text{SG} = 0$ for both LSE and LSR across the entire explored
+$(\alpha, T)$ range.
+
+\subsection{Summary}
+
+The absence of the spin-glass phase in dense AM is a direct consequence
+of the nonlinear (exponential) energy function:
+\begin{enumerate}
+  \item The softmax mechanism concentrates the energy on the dominant overlap,
+        suppressing cross-talk.
+  \item Without cross-talk, there is no Sherrington--Kirkpatrick-like
+        frustrated coupling structure.
+  \item Without frustration, no exponentially many metastable states form.
+  \item Therefore, when retrieval fails ($\alpha > \alpha_c$), the system
+        goes directly to the paramagnetic phase.
+\end{enumerate}
+
+This is one of the key advantages of dense associative memories over the
+classical Hopfield model: a cleaner phase diagram with no spin-glass
+contamination.
+
+\begin{thebibliography}{9}
+\bibitem{Amit1987}
+  D.~J.~Amit, H.~Gutfreund, and H.~Sompolinsky,
+  ``Statistical mechanics of neural networks near saturation,''
+  \textit{Ann.\ Phys.} \textbf{173}, 30--67 (1987).
+\end{thebibliography}
+
+\end{document}
