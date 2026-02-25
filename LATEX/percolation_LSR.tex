@@ -5,6 +5,7 @@
 \usepackage{bm}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage{float}
 \geometry{margin=1in}
 
 \newcommand{\vp}{\varphi}
@@ -26,15 +27,23 @@ has energy
 \begin{equation}\label{eq:E_LSR}
   E(\bS) = -\frac{N}{b}\,\ln \sum_{\mu=1}^{M}
     \bigl[\,1 - b + b\,\vp_\mu(\bS)\,\bigr]_+,
-  \qquad b = 2 + \sqrt{2},
+  \qquad b \ge 2 + \sqrt{2},
 \end{equation}
 where $\vp_\mu(\bS) = (\bxi^\mu \cdot \bS)/N$ is the overlap
 and $[\cdot]_+ = \max(0, \cdot)$.
+The LSR-optimal value $b = 2 + \sqrt{2}$ maximizes
+capacity among $b = O(1)$ choices; Section~\ref{sec:b_scaling}
+explores the regime $b \gg 1$.
 
-The hard wall activates at $\vp_c = (b-1)/b = 1/\sqrt{2} \approx 0.707$:
+The hard wall activates at
+\begin{equation}\label{eq:phic}
+  \vp_c = \frac{b-1}{b}\,:
+\end{equation}
 pattern $\mu$ contributes to the energy only when
 $\vp_\mu(\bS) > \vp_c$.  When no pattern is active, the argument
 of the logarithm vanishes and $E = +\infty$.
+For the optimal $b = 2 + \sqrt{2}$ one obtains
+$\vp_c = 1/\sqrt{2} \approx 0.707$.
 
 \paragraph{Basin of a single pattern.}
 For an isolated target $\bxi^1$, the accessible region is the
@@ -58,26 +67,77 @@ $X_\mu \cap X_\nu \neq \varnothing$.
 Along any continuous path through $X_\mu \cap X_\nu$,
 both terms are simultaneously positive, so the energy
 is always finite---the state never encounters $\ln 0$.
-The energy does increase at the ``bottleneck'' (narrowest
-part of the overlap corridor), creating a finite barrier
+The energy does increase along the path, reaching a maximum
+at the ``bottleneck'' where the geodesic from $\bxi^\mu$ to
+$\bxi^\nu$ crosses the boundary of basin~$X_\nu$.
+At this saddle point, pattern~$\nu$'s term has just activated
+($\vp_\nu = \vp_c$, contributing zero) while the overlap
+with pattern~$\mu$ is
+$\vp_\mu^* = q\,\vp_c + \sqrt{(1-q^2)(1-\vp_c^2)}$.
+The barrier height is
 \begin{equation}\label{eq:barrier}
-  \Delta E \;\sim\; \frac{N}{2b}\,\ln\frac{1}{q},
+  \Delta E \;=\; \frac{N}{b}\,\ln\frac{1}{b(\vp_\mu^* - \vp_c)}\,,
+  \qquad
+  \vp_\mu^* = q\,\vp_c + \sqrt{(1-q^2)(1-\vp_c^2)}\,,
 \end{equation}
-where $q = (\bxi^\mu \cdot \bxi^\nu)/N$ is the mutual overlap,
-but this barrier is finite for any $q > 0$.
+where $q = (\bxi^\mu \cdot \bxi^\nu)/N$ is the mutual overlap.
+The barrier diverges at the \emph{geometric threshold}
+$q_{\rm geom} = 2\vp_c^2 - 1$
+(where the two caps just touch and $\vp_\mu^* = \vp_c$)
+and is finite for all $q > q_{\rm geom}$.
 
 \paragraph{Geometric overlap criterion.}
-Two spherical caps of angular radius $\theta_c = \arccos\vp_c = \pi/4$
+Two spherical caps of angular radius $\theta_c = \arccos\vp_c$
 overlap when the angle between their centers satisfies
-$\theta < 2\theta_c = \pi/2$, i.e.\ when
+$\theta < 2\theta_c$, i.e.\ when
 \begin{equation}\label{eq:geom_overlap}
-  q = \frac{\bxi^\mu \cdot \bxi^\nu}{N} > \cos\!\bigl(\tfrac{\pi}{2}\bigr) = 0.
+  q = \frac{\bxi^\mu \cdot \bxi^\nu}{N}
+  > \cos(2\theta_c) = 2\vp_c^2 - 1
+  \;\equiv\; q_{\rm geom}.
 \end{equation}
-Since random patterns have $q \sim \mathcal{N}(0, 1/N)$,
-approximately $M/2$ patterns satisfy $q > 0$ geometrically.
-However, the energy barrier~\eqref{eq:barrier} scales as
-$\sim (N/4b)\ln N$ for $q \sim 1/\sqrt{N}$, making such
+For $b = 2 + \sqrt{2}$, $\theta_c = \pi/4$ and
+$q_{\rm geom} = 0$, so approximately $M/2$ random patterns
+satisfy $q > 0$ geometrically.
+However, for small $q > 0$ the
+barrier~\eqref{eq:barrier} reduces to
+$\Delta E \approx (N/b)\ln(\sqrt{2}/(bq))$, which scales as
+$\sim (N/2b)\ln N$ for $q \sim 1/\sqrt{N}$.
+For $b = O(1)$ this diverges as $O(N\ln N)$, making such
 corridors thermally inaccessible.
+For $b = \beta N$ the same formula gives $\Delta E \sim (\ln N)/(2\beta)$,
+which still diverges but only logarithmically, and may be
+thermally accessible at finite temperature
+(see Section~\ref{sec:b_scaling}).
+For general $b > 2 + \sqrt{2}$, the geometric threshold
+$q_{\rm geom} > 0$ is positive, and the barrier diverges
+as $q \to q_{\rm geom}^+$.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{barrier_profile.png}
+  \caption{%
+    Energy $E \cdot b/N$ along the geodesic from basin centre $\bxi^\mu$
+    (left, $\psi/\theta = 0$) to basin centre $\bxi^\nu$
+    (right, $\psi/\theta = 1$), for four values of the mutual
+    overlap $q = \bxi^\mu \cdot \bxi^\nu / N$
+    ($b = 2+\sqrt{2}$, $\vp_c = 1/\sqrt{2}$).
+    The shaded region marks the \emph{corridor} where both
+    patterns are active simultaneously.
+    \textbf{Diamonds~($\diamond$)} mark the corridor edges,
+    where one pattern just activates ($\vp_\nu = \vp_c$):
+    these are the energy maxima along the path and set the
+    Monte Carlo barrier $\Delta E$ from Eq.~\eqref{eq:barrier}.
+    \textbf{Circles~($\bullet$)} mark the midpoint $\psi = \theta/2$,
+    which is a true critical point ($\nabla E = 0$ by symmetry)
+    --- the \emph{col} or mountain pass --- and lies \emph{below}
+    the corridor edges.
+    As $q \to \vp_c \approx 0.707$ (purple curve) the corridor
+    widens to its maximum and the barrier vanishes;
+    as $q \to 0$ (red curve, narrow corridor) the barrier grows
+    as $(N/b)\ln(\sqrt{2}/(bq))$.%
+  }
+  \label{fig:barrier_profile}
+\end{figure}
 
 
 \section{Percolation framework}
@@ -112,12 +172,62 @@ where $M = e^{N\alpha}$ and we used the Mill's ratio
 approximation for the Gaussian tail.
 
 \paragraph{Finite-$N$ correction.}
-The exact overlap distribution on $S^{N-1}$ has density
-$f(q) \propto (1 - q^2)^{(N-3)/2}$, which has a lighter tail
-than the Gaussian for moderate $N$.  The Mill's ratio
-therefore \emph{overestimates} $\lambda$; the true percolation
-threshold is shifted to higher $\alpha$ for finite $N$.
-This correction vanishes as $N \to \infty$.
+If $\bxi$ is drawn uniformly on $S^{N-1}(\sqrt{N})$,
+the overlap $q = (\bxi \cdot \bxi^1)/N$ is
+the projection of a uniform spherical point onto a fixed axis,
+rescaled by $\sqrt{N}$.  The marginal density of such a
+projection is the $(N{-}1)$-dimensional area element of the
+sphere at latitude $q$, which gives the exact density
+\begin{equation}\label{eq:f_sphere}
+  f(q) = \frac{1}{B\!\bigl(\tfrac{1}{2}, \tfrac{N-1}{2}\bigr)}\,
+  (1 - q^2)^{(N-3)/2}, \qquad q \in (-1, 1),
+\end{equation}
+where $B$ is the beta function
+(equivalently, $(q+1)/2 \sim \mathrm{Beta}(\tfrac{1}{2},\tfrac{N-1}{2})$).
+
+\paragraph{Comparison with the Gaussian tail.}
+The Mill's ratio approximation in~\eqref{eq:lambda} treats
+$q$ as $\mathcal{N}(0, 1/N)$, matching the first two moments of
+$f(q)$.  However, the tails differ.  Write
+$(1 - q^2)^{(N-3)/2} = \exp\!\bigl[\tfrac{N-3}{2}\ln(1 - q^2)\bigr]$
+and expand the logarithm:
+\begin{equation}\label{eq:tail_expand}
+  \frac{N{-}3}{2}\,\ln(1 - q^2)
+  = -\frac{N{-}3}{2}\,q^2
+    \;-\;\frac{N{-}3}{4}\,q^4
+    \;-\;\cdots
+\end{equation}
+The leading term $-\frac{N-3}{2}\,q^2$ differs from the
+Gaussian exponent $-\frac{N}{2}\,q^2$ by $+\frac{3}{2}q^2$,
+which is $O(1)$ and independent of~$N$.
+This constant shift is absorbed into the normalization:
+the prefactor $1/B(\tfrac{1}{2},\tfrac{N-1}{2})$ of the exact
+density~\eqref{eq:f_sphere} differs from the Gaussian prefactor
+$\sqrt{N/(2\pi)}$ precisely to compensate, so that both
+distributions integrate to unity.
+The next term $-\frac{N-3}{4}\,q^4$, however, provides
+\emph{extra suppression} that is $O(N)$ at fixed~$q$
+and \emph{cannot} be absorbed into the normalization.
+At the threshold $q = \vp_c$, this correction is
+$-\frac{N-3}{4}\,\vp_c^4$, so the exact
+tail probability is smaller than the Gaussian tail by a factor
+$\sim e^{-(N/4)\vp_c^4}$.
+For $b = 2 + \sqrt{2}$ ($\vp_c = 1/\sqrt{2}$),
+this gives $\sim e^{-N/16}$.
+
+The Mill's ratio therefore \emph{overestimates} $\lambda$;
+the true percolation threshold is shifted to higher $\alpha$
+for finite~$N$.  The empirical correction
+$\langle K \rangle \cdot e^{cN}$ with $c \approx 0.083$
+(Fig.~\ref{fig:percolation_LSR}, Panel~2)
+collapses the exact-sphere data onto the analytical curves,
+consistent with the $e^{-N/16} \approx e^{-0.0625\,N}$ estimate
+(the remaining discrepancy in $c$ comes from higher-order
+terms in~\eqref{eq:tail_expand} and subleading prefactor
+corrections).
+As $N \to \infty$, the relative correction $q^4/q^2 = q^2$
+becomes negligible for the relevant $q \sim 1/\sqrt{N}$ regime,
+and the Gaussian approximation becomes exact.
 
 \subsection{Percolation transition}
 
@@ -132,11 +242,13 @@ $q_\mathrm{eff} = \vp_c$:
 \begin{equation}\label{eq:alpha_c}
   \boxed{\alpha_c = \frac{\vp_c^2}{2} + \frac{\ln(\vp_c\sqrt{2\pi N})}{N}
     \;\;\xrightarrow{N\to\infty}\;\;
-    \frac{\vp_c^2}{2} = \frac{1}{4} = 0.25\,.}
+    \frac{\vp_c^2}{2}
+    = \frac{1}{2}\Bigl(1 - \frac{1}{b}\Bigr)^{\!2}\,.}
 \end{equation}
 This coincides exactly with the zero-temperature critical capacity
-$\alpha_\mathrm{th} = \tfrac{1}{2}(1 - 1/b)^2 = \tfrac{1}{2}\vp_c^2$
+$\alpha_\mathrm{th} = \tfrac{1}{2}\vp_c^2$
 from the mean-field theory.
+For the optimal $b = 2 + \sqrt{2}$, $\alpha_c \to 1/4$.
 
 \paragraph{Physical picture.}
 \begin{itemize}
@@ -171,6 +283,173 @@ $q_\mathrm{eff}(T) = 1 - f_\mathrm{ret}(T)$ connects
 the percolation threshold to the thermodynamic phase boundary.
 
 
+\subsection{Dependence on the nonlinearity parameter $b$}
+\label{sec:b_scaling}
+
+The preceding sections hold for any $b \ge 2 + \sqrt{2}$,
+with $\vp_c = (b{-}1)/b$ and
+$q_{\rm geom} = 2\vp_c^2 - 1$.
+The LSR-optimal value $b = 2 + \sqrt{2}$ is special:
+$\vp_c = 1/\sqrt{2}$ and the ``accidental'' identity
+$\cos(2\arccos\vp_c) = \cos(\pi/2) = 0$
+gives $q_{\rm geom} = 0$, so approximately $M/2$
+random patterns satisfy the geometric overlap criterion,
+and the infinite energy barrier at $q = 0$ is the sole
+mechanism confining the state.
+For any $b > 2 + \sqrt{2}$, $q_{\rm geom} > 0$ and fewer
+patterns overlap geometrically.
+
+It is instructive to ask what happens when $b$ is taken large,
+in particular $b = \beta N$ with $\beta > 0$ fixed.
+Three qualitative changes occur simultaneously.
+
+\paragraph{1. Barriers become $O(1)$.}
+The barrier~\eqref{eq:barrier} has prefactor $N/b$,
+which for $b = \beta N$ becomes $1/\beta$:
+\begin{equation}\label{eq:barrier_bN}
+  \Delta E \;=\; \frac{1}{\beta}\,
+  \ln\frac{1}{\beta N\,(\vp_\mu^* - \vp_c)}\,.
+\end{equation}
+For geometrically overlapping pairs,
+$\vp_\mu^* - \vp_c \approx (q - q_{\rm geom})/(2\vp_c)$
+is $O(1/N)$, so $\beta N(\vp_\mu^* - \vp_c) = O(1)$
+and the barrier is $O(1/\beta)$.
+In contrast to the $b = O(1)$ case where $\Delta E = O(N)$,
+here thermal fluctuations of order $T$ can overcome the barrier
+for all geometrically overlapping basins.  The distinction between
+geometric and thermal connectivity disappears:
+$q_\mathrm{eff}(T) \approx q_\mathrm{geom}$ for any $T > 0$.
+
+\paragraph{2. Basins shrink to microscopic caps.}
+The hard-wall threshold becomes
+\begin{equation}\label{eq:phic_bN}
+  \vp_c = 1 - \frac{1}{\beta N},
+\end{equation}
+so the angular radius of each basin is
+$\theta_c = \arccos\vp_c \approx \sqrt{2/(\beta N)} \to 0$.
+The geometric overlap of two caps now requires
+\begin{equation}\label{eq:geom_bN}
+  q > 2\vp_c^2 - 1 = 1 - \frac{4}{\beta N}
+    + \frac{2}{\beta^2 N^2}
+  \approx 1 - \frac{4}{\beta N}.
+\end{equation}
+For random patterns with $q \sim \mathcal{N}(0, 1/N)$,
+this requires $q$ to be within $O(1/N)$ of $1$---a
+$\sqrt{N}$-sigma event with probability
+$\sim e^{-N/2}$, far out in the Gaussian tail.
+
+\paragraph{3. Percolation threshold shifts to $\alpha_c = 1/2$.}
+The Poisson rate becomes
+\begin{equation}
+  \lambda \;\approx\;
+  \frac{e^{N\alpha}}{\vp_c\sqrt{2\pi N}}\,
+  e^{-N\vp_c^2/2}.
+\end{equation}
+Since $\vp_c^2 = (1 - 1/(\beta N))^2 \to 1$ as $N \to \infty$,
+setting $\lambda = 1$ gives
+\begin{equation}\label{eq:alpha_c_bN}
+  \alpha_c \;\to\; \frac{\vp_c^2}{2} \;\to\; \frac{1}{2}
+  \qquad (b = \beta N \to \infty).
+\end{equation}
+This is exactly the critical capacity of the exponential
+(Modern Hopfield) associative memory
+$E \propto -\ln\sum_\mu e^{N\vp_\mu}$, which corresponds to
+the formal limit $b \to \infty$ of the LSR energy~\eqref{eq:E_LSR}.
+
+\paragraph{Physical interpretation.}
+The two limits represent qualitatively different physics:
+\begin{center}
+\begin{tabular}{lcc}
+\hline
+  & $b = O(1)$ (LSR) & $b = \beta N$ (exp.\ AM) \\
+\hline
+Barrier height   & $O(N)$, hard confinement
+                 & $O(1)$, easy hopping \\
+Cap angular radius & $O(1)$
+                   & $O(1/\sqrt{N})$ \\
+Geometric neighbors & $\sim M/2$ ($q > 0$)
+                    & exponentially rare \\
+Percolation threshold & $\alpha_c = \tfrac{1}{4}$
+                      & $\alpha_c = \tfrac{1}{2}$ \\
+Confinement mechanism & energy barriers
+                      & geometric isolation \\
+Temperature role & lowers $q_\mathrm{eff}$,
+                   shrinks retrieval
+                 & negligible (barriers already $O(1)$) \\
+\hline
+\end{tabular}
+\end{center}
+In the $b = O(1)$ regime, basins are wide but tall barriers
+select which connections are thermally accessible---the phase
+boundary depends on $T$ via $q_\mathrm{eff}(T)$.
+In the $b = O(N)$ regime, basins are narrow and geometrically
+isolated; barriers are irrelevant because they are $O(1)$,
+and the phase boundary is temperature-independent at leading
+order.
+
+\paragraph{Interpolation.}
+For intermediate $b = N^\gamma$ with $0 < \gamma < 1$,
+the barrier scales as $N^{1-\gamma}$ and the cap radius as
+$N^{-\gamma/2}$.  The crossover between the two regimes
+occurs at $\gamma = 1$, where barriers become $O(1)$
+and confinement switches from energetic to geometric.
+The percolation threshold interpolates smoothly:
+\begin{equation}\label{eq:alpha_c_gamma}
+  \alpha_c \;=\; \frac{\vp_c^2}{2}
+  \;=\; \frac{1}{2}\Bigl(1 - \frac{1}{b}\Bigr)^2
+  \;\xrightarrow{b\to\infty}\; \frac{1}{2}.
+\end{equation}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{percolation_bscaling.png}
+  \caption{\textbf{Percolation with $b$-scaling: from LSR ($b = 2{+}\sqrt{2}$)
+    to exponential AM ($b = N$).}
+  %
+  \textbf{Panel~1} (top-left): Percolation threshold $\alpha_c(b)$
+  from~\eqref{eq:alpha_c_gamma} at $N \to \infty$ (solid),
+  $N = 25$ (dashed), $50$ (dash-dotted), $150$ (dotted).
+  Red dots mark the tested values
+  $b \in \{3.41,\,4,\,5,\,10,\,25\}$.
+  The threshold interpolates from $\alpha_c = 1/4$ at $b = 2{+}\sqrt{2}$
+  (LSR) toward $\alpha_c = 1/2$ (exponential AM, $b \to \infty$),
+  with finite-$N$ corrections moving $\alpha_c$ upward.
+  %
+  \textbf{Panel~2} (top-right): Gaussian-approximate neighbor count
+  $\lambda(\alpha)$ (dashed) and exact $\langle K \rangle$ (circles)
+  for $b = 3.41, 4, 5$ at $N = 25$.
+  For each $b$, the data points fall below the corresponding $\lambda$
+  curve by a factor that grows with $b$ (equivalently, with $\varphi_c$),
+  reflecting the increasingly large finite-$N$ spherical correction.
+  Analytical curves for $b = 10$ and $b = 25$ are shown without data:
+  at these thresholds ($\varphi_c = 0.9$ and $0.96$),
+  the exact spherical cap probability is so small that
+  $\langle K \rangle = 0$ in all Monte Carlo trials.
+  %
+  \textbf{Panel~3} (bottom-left): Spherical correction factor
+  $P_{\mathrm{sphere}}/P_{\mathrm{Gauss}}$ vs~$b$ at $N = 25$.
+  The solid curve is obtained by numerically integrating the exact
+  density $f(q) \propto (1 - q^2)^{(N-3)/2}$ and dividing by the
+  Gaussian tail $\bar\Phi(\varphi_c\sqrt{N})$.
+  Diamond markers show the empirical ratio
+  $\langle K \rangle / \lambda$ averaged over all tested $\alpha$ values.
+  The agreement confirms that the Gaussian approximation overestimates
+  the cap probability by a factor that depends on $b$ (via $\varphi_c$)
+  but is approximately constant in $\alpha$.
+  %
+  \textbf{Panel~4} (bottom-right): Energy barrier
+  $\Delta E = \frac{N}{b}\ln\!\bigl(1/\bigl[b(\varphi_\mu^* - \varphi_c)\bigr]\bigr)$
+  from~\eqref{eq:barrier}, plotted vs.\ the mutual overlap~$q$
+  at $N = 50$.
+  For $b = O(1)$ (LSR), barriers are $O(N)$ and confine the state
+  even at moderate temperature.
+  For $b = \beta N$, barriers collapse to $O(1)$
+  (below the red dashed line $T \sim 1$), and thermal fluctuations
+  easily overcome them---confinement becomes purely geometric.}
+  \label{fig:bscaling}
+\end{figure}
+
+
 \section{BFS depth: chain connections}
 
 Starting from the target, we explore the basin connectivity
@@ -198,21 +477,27 @@ where $u_\mu, u_\nu$ are random unit vectors in the $(N{-}1)$-dimensional
 subspace perpendicular to the target.
 
 The deterministic part satisfies
-$\vp_\mu \cdot \vp_\nu < \vp_c^2 = 1/2 < \vp_c = 1/\sqrt{2}$,
+$\vp_\mu \cdot \vp_\nu < \vp_c^2 < \vp_c$
+(since $\vp_c < 1$),
 and the random fluctuation $\sim \mathcal{O}(1/\sqrt{N})$ cannot bridge the
-gap $\vp_c - \vp_c^2 \approx 0.207$ for large $N$.
+gap $\vp_c - \vp_c^2 = \vp_c(1 - \vp_c)$ for large $N$.
 
 At finite $N$, the fluctuation has standard deviation
-$\sim 0.5/\sqrt{N-1}$, requiring a $\sim 0.207\sqrt{N}$~sigma
-event for a depth-2 connection.  For $N = 25$: $\sim 1\,\sigma$
-(rare but possible); for $N = 50$: $\sim 1.5\,\sigma$ (very rare);
+$\sim \sqrt{(1-\vp_c^2)(1-\vp_\nu^2)}/\sqrt{N-1}$,
+requiring a $\sim \vp_c(1-\vp_c)\sqrt{N}$~sigma event
+for a depth-2 connection.
+For $b = 2 + \sqrt{2}$ ($\vp_c = 1/\sqrt{2}$), the gap is
+$\approx 0.207$ and the requirement is $\sim 0.207\sqrt{N}$~sigma:
+for $N = 25$: $\sim 1\,\sigma$ (rare but possible);
+for $N = 50$: $\sim 1.5\,\sigma$ (very rare);
 for $N \geq 100$: negligible.
 
 
 \section{Simulation design}
 
 The accompanying script \texttt{percolation\_LSR.jl}
-tests four aspects of the percolation hypothesis:
+tests four aspects of the percolation hypothesis
+at the optimal $b = 2 + \sqrt{2}$ ($\vp_c = 1/\sqrt{2}$):
 
 \begin{enumerate}
   \item \textbf{Panel~1: Analytical $\lambda(\alpha)$}
@@ -245,6 +530,57 @@ tests four aspects of the percolation hypothesis:
     Confirms that $\langle K_2 \rangle \ll \langle K_1 \rangle$:
     the BFS effectively terminates at depth~1.
 \end{enumerate}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{percolation_LSR.png}
+  \caption{\textbf{Basin percolation in the LSR model.}
+  %
+  \textbf{Panel~1} (top-left): Analytical expected neighbor count
+  $\lambda(\alpha)$ from the Mill's ratio approximation~\eqref{eq:lambda}
+  for $N = 30, 50, 75, 150$.
+  All curves cross the percolation threshold $\lambda = 1$ (dashed line)
+  near $\alpha \approx 0.25$; the finite-$N$ shift
+  $\alpha_c(N) - \alpha_\infty \sim \ln N / N$ is clearly visible.
+  %
+  \textbf{Panel~2} (top-right): Comparison of the Gaussian
+  (Mill's ratio) prediction for $\lambda$ (dashed curves) with the
+  mean neighbor count $\langle K \rangle$ obtained by exact enumeration
+  on $S^{N-1}(\!\sqrt{N})$ (filled circles; $N = 25, 50$).
+  The systematic downward shift of $\langle K \rangle$ relative to
+  $\lambda$ arises because the Mill's ratio uses the Gaussian tail
+  $\bar\Phi(x) \approx \phi(x)/x$, whereas the exact overlap
+  distribution on the sphere,
+  $f(q) \propto (1 - q^2)^{(N-3)/2}$, has a \emph{lighter}
+  tail than the Gaussian for finite~$N$.
+  Open circles show the corrected values
+  $\langle K \rangle \cdot e^{cN}$ with $c \approx 0.083$,
+  which collapse onto the analytical curves, confirming that the
+  discrepancy is a multiplicative finite-$N$ effect that
+  vanishes as $N \to \infty$.
+  %
+  \textbf{Panel~3} (bottom-left): Survival probability of a
+  Galton--Watson branching process with $\mathrm{Poisson}(\lambda)$
+  offspring ($N = 50$), truncated at BFS depths $1, 3, 10$, and~$50$.
+  The depth-1 curve matches the analytical
+  $P = 1 - e^{-\lambda}$ (dashed), while deeper explorations sharpen
+  the transition into a step function at
+  $\alpha_c \approx 0.305$ (dotted vertical line),
+  analogous to finite-size scaling in standard percolation.
+  %
+  \textbf{Panel~4} (bottom-right): Mean BFS neighbor counts at
+  depth~1 ($\langle K_1 \rangle$, circles) and depth~2
+  ($\langle K_2 \rangle$, squares) from exact enumeration on
+  $S^{N-1}(\!\sqrt{N})$ ($N = 25$, 200~realizations per $\alpha$).
+  The depth-1 count tracks the analytical $\lambda$ (dashed),
+  while new depth-2 neighbors remain negligible
+  ($\langle K_2 \rangle \ll \langle K_1 \rangle$),
+  confirming that connectivity is established at depth~1 and the
+  BFS effectively terminates---consistent with the analytical
+  argument that two depth-1 patterns cannot bridge to a common
+  depth-2 pattern when $\varphi_c^2 < \varphi_c$.}
+  \label{fig:percolation_LSR}
+\end{figure}
 
 
 \section{Implications for the simulation protocol}
