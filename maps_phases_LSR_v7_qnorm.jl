@@ -105,18 +105,23 @@ end
 
 @printf("\nq_eq(T) = φ_LSR(T)² verified: q/φ² ≈ 1.0000 at α=0.1\n")
 
-# ──────────────── Phase classification ────────────────
+# ──────────────── Normalized fields ────────────────
 
 phi_norm = similar(phi_grid)
+q_norm   = similar(q_grid)
 for j in 1:n_T
-    phi_norm[:, j] = phi_grid[:, j] ./ max(φ_LSR(T_vec[j]), 1e-10)
+    φeq = φ_LSR(T_vec[j])
+    phi_norm[:, j] = phi_grid[:, j] ./ max(φeq, 1e-10)
+    q_norm[:, j]   = q_grid[:, j]   ./ max(φeq^2, 1e-10)
 end
+
+# ──────────────── Phase classification (all normalized) ────────────────
 
 phase_grid = zeros(Int, n_alpha, n_T)
 for i in 1:n_alpha, j in 1:n_T
     φn = phi_norm[i, j]
-    q  = q_grid[i, j]
-    if q < Q_TH
+    qn = q_norm[i, j]
+    if qn < Q_TH
         phase_grid[i, j] = 1       # P
     elseif φn >= PHI_R
         phase_grid[i, j] = 4       # R
@@ -153,15 +158,7 @@ end
 
 α_φR, T_φR = threshold_contour(alpha_vec, T_vec, phi_norm, PHI_R)
 α_φM, T_φM = threshold_contour(alpha_vec, T_vec, phi_norm, PHI_M)
-α_qth, T_qth = threshold_contour(alpha_vec, T_vec, q_grid, Q_TH)
-
-# ──────────────── Normalized q: divide by φ_eq(T)² ────────────────
-
-q_norm = similar(q_grid)
-for j in 1:n_T
-    φeq = φ_LSR(T_vec[j])
-    q_norm[:, j] = q_grid[:, j] ./ max(φeq^2, 1e-10)
-end
+α_qth, T_qth = threshold_contour(alpha_vec, T_vec, q_norm, Q_TH)
 
 # ──────────────── Plot ────────────────
 
@@ -224,6 +221,7 @@ plot!(p4, φn_ref, φn_ref.^2, color=:black, linewidth=1.5, linestyle=:solid,
 # Threshold lines
 vline!(p4, [PHI_R], color=:black, linestyle=:dash, linewidth=1, label="")
 vline!(p4, [PHI_M], color=:green, linestyle=:dash, linewidth=1, label="")
+hline!(p4, [Q_TH],  color=:cyan, linestyle=:dash, linewidth=1, label="q/φ_eq²=$Q_TH")
 hline!(p4, [1.0],   color=:gray, linestyle=:dot,  linewidth=1, label="q = φ_eq²")
 
 # Combine
