@@ -96,20 +96,20 @@ To unambiguously detect a spin-glass phase, one would need to measure the self-o
 \section{Phase Classification}
 \label{sec:phases}
 
-Using the normalized overlap $\tilde\varphi = \varphi / \varphi_{\mathrm{eq}}(T)$, where $\varphi_{\mathrm{eq}}(T)$ is the theoretical equilibrium overlap at temperature~$T$, the $(\alpha, T)$ plane is classified into four phases:
+Using the normalized overlap $\tilde\varphi = \varphi / \varphi_{\mathrm{eq}}(T)$ and the normalized Edwards--Anderson parameter $\tilde q = q_{\mathrm{EA}} / \varphi_{\mathrm{eq}}(T)^2$, where $\varphi_{\mathrm{eq}}(T)$ is the theoretical equilibrium overlap at temperature~$T$, the $(\alpha, T)$ plane is classified into four phases:
 
 \begin{table}[h]
 \centering
-\caption{Phase classification thresholds and definitions.}
+\caption{Phase classification thresholds and definitions. All thresholds are applied to normalized quantities.}
 \label{tab:phases}
 \begin{tabular}{llll}
 \toprule
 Phase & Symbol & Condition & Physical meaning \\
 \midrule
-Retrieval      & R  & $\tilde\varphi > \varphi_R$ and $q > q_{\mathrm{th}}$ & Pattern retrieved, frozen \\
-Mixed          & M  & $\varphi_M < \tilde\varphi \le \varphi_R$ and $q > q_{\mathrm{th}}$ & Partial overlap, frozen \\
-Spin-glass     & SG & $\tilde\varphi \le \varphi_M$ and $q > q_{\mathrm{th}}$ & No retrieval, frozen \\
-Paramagnetic   & P  & $q \le q_{\mathrm{th}}$ & Ergodic, no order \\
+Retrieval      & R  & $\tilde\varphi > \varphi_R$ and $\tilde q > q_{\mathrm{th}}$ & Pattern retrieved, frozen \\
+Mixed          & M  & $\varphi_M < \tilde\varphi \le \varphi_R$ and $\tilde q > q_{\mathrm{th}}$ & Partial overlap, frozen \\
+Spin-glass     & SG & $\tilde\varphi \le \varphi_M$ and $\tilde q > q_{\mathrm{th}}$ & No retrieval, frozen \\
+Paramagnetic   & P  & $\tilde q \le q_{\mathrm{th}}$ & Ergodic, no order \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -117,10 +117,13 @@ Paramagnetic   & P  & $q \le q_{\mathrm{th}}$ & Ergodic, no order \\
 \noindent
 The threshold values used are:
 \begin{align}
-    q_{\mathrm{th}} &= 0.15  && \text{(frozen/ergodic boundary)}\,,\\
-    \varphi_R &= 0.99  && \text{(retrieval/mixed boundary)}\,,\\
-    \varphi_M &= 0.1   && \text{(mixed/spin-glass boundary)}\,.
+    q_{\mathrm{th}} &= 0.15  && \text{(frozen/ergodic boundary on } \tilde q\text{)}\,,\\
+    \varphi_R &= 0.99  && \text{(retrieval/mixed boundary on } \tilde\varphi\text{)}\,,\\
+    \varphi_M &= 0.1   && \text{(mixed/spin-glass boundary on } \tilde\varphi\text{)}\,.
 \end{align}
+
+\noindent
+Applying all thresholds to normalized quantities removes the trivial temperature dependence of the equilibrium state: a raw $q_{\mathrm{EA}}$ threshold would misclassify high-temperature retrieval states as paramagnetic, since $q_{\mathrm{EA}} \approx \varphi_{\mathrm{eq}}(T)^2$ decreases with~$T$ even deep in the retrieval phase.
 
 The normalization by the equilibrium overlap $\varphi_{\mathrm{eq}}(T)$ accounts for the temperature dependence of the retrieval state. For the LSR kernel, $\varphi_{\mathrm{eq}}(T)$ is obtained by solving the quadratic equation
 \begin{equation}
@@ -135,7 +138,7 @@ The phase maps (Figure~\ref{fig:phases}) overlay three threshold contour lines e
 \begin{itemize}
     \item $\tilde\varphi = \varphi_R = 0.99$ (black dashed) --- retrieval boundary,
     \item $\tilde\varphi = \varphi_M = 0.1$ (green dashed) --- mixed/spin-glass boundary,
-    \item $q_{\mathrm{EA}} = q_{\mathrm{th}} = 0.15$ (cyan dashed) --- frozen/ergodic boundary.
+    \item $\tilde q = q_{\mathrm{th}} = 0.15$ (cyan dashed) --- frozen/ergodic boundary.
 \end{itemize}
 
 \noindent

@@ -123,19 +123,23 @@ end
 
 # ──────────────── Phase classification ────────────────
 
-# Normalized overlap: φ / φ_LSE(T) — retrieval ≈ 1, non-retrieval ≈ 0
+# Normalized overlap: φ / φ_LSR(T) — retrieval ≈ 1, non-retrieval ≈ 0
 phi_norm = similar(phi_grid)
+q_norm   = similar(q_grid)
 for j in 1:n_T
-    phi_norm[:, j] = phi_grid[:, j] ./ max(φ_LSR(T_vec[j]), 1e-10)
+    φeq = φ_LSR(T_vec[j])
+    phi_norm[:, j] = phi_grid[:, j] ./ max(φeq, 1e-10)
+    q_norm[:, j]   = q_grid[:, j]   ./ max(φeq^2, 1e-10)
 end
 
 # Phase codes: 1 = Paramagnetic, 2 = Spin-glass, 3 = Mixed, 4 = Retrieval
+# All thresholds applied to normalized quantities
 phase_grid = zeros(Int, n_alpha, n_T)
 for i in 1:n_alpha
     for j in 1:n_T
         φn = phi_norm[i, j]
-        q  = q_grid[i, j]
-        if q < Q_TH
+        qn = q_norm[i, j]
+        if qn < Q_TH
             phase_grid[i, j] = 1       # Paramagnetic (ergodic)
         elseif φn >= PHI_R
             phase_grid[i, j] = 4       # Retrieval
@@ -180,7 +184,7 @@ end
 
 α_φR, T_φR = threshold_contour(alpha_vec, T_vec, phi_norm, PHI_R)
 α_φM, T_φM = threshold_contour(alpha_vec, T_vec, phi_norm, PHI_M)
-α_qth, T_qth = threshold_contour(alpha_vec, T_vec, q_grid, Q_TH)
+α_qth, T_qth = threshold_contour(alpha_vec, T_vec, q_norm, Q_TH)
 
 # ──────────────── Plot ────────────────
 
@@ -235,14 +239,14 @@ for (lab, col) in zip(["P", "SG", "M", "R"],
 end
 plot!(p3, legend=:topright, background_color_legend=RGB(0.85, 0.85, 0.85))
 
-# Panel 4: normalized φ/φ_LSR(T) vs q scatter, colored by phase
+# Panel 4: normalized φ/φ_LSR(T) vs q/φ_eq² scatter, colored by phase
 phase_col = [:royalblue, :firebrick, :orange, :limegreen]
-p4 = plot(xlabel="φ / φ_LSR(T)", ylabel="q_EA",
-    title="Normalized overlap vs q_EA", legend=:topright)
+p4 = plot(xlabel="φ / φ_LSR(T)", ylabel="q_EA / φ_LSR(T)²",
+    title="Normalized overlap vs q_EA / φ_eq²", legend=:topright)
 phase_labels = ["P", "SG", "M", "R"]
 for (code, lab, col) in zip(1:4, phase_labels, phase_col)
     mask = vec(phase_grid) .== code
-    any(mask) && scatter!(p4, vec(phi_norm)[mask], vec(q_grid)[mask],
+    any(mask) && scatter!(p4, vec(phi_norm)[mask], vec(q_norm)[mask],
         markersize=5, markershape=:circle, markerstrokewidth=0,
         alpha=0.6, color=col, label=lab)
 end
