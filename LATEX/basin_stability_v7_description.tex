@@ -54,6 +54,45 @@ The Edwards--Anderson parameter is the cross-overlap averaged over sampling step
 
 The key advantage of $q_{\mathrm{EA}}$ is that it distinguishes the spin-glass phase (frozen but no retrieval, $\varphi \approx 0$, $q \gg 0$) from the paramagnetic phase (ergodic, $\varphi \approx 0$, $q \approx 0$), which cannot be differentiated by the alignment~$\varphi$ alone.
 
+\subsection{Equilibrium $q_{\mathrm{EA}}$ and the parabolic law}
+\label{sec:q-parabolic}
+
+In the retrieval state, each replica independently aligns with the stored pattern $\boldsymbol{\xi}^1$ up to thermal fluctuations in the perpendicular subspace:
+\begin{equation}\label{eq:replica-decomp}
+    \mathbf{x}_{a} = \varphi\, \boldsymbol{\xi}^1 + \sqrt{1 - \varphi^2}\;\sqrt{N}\;\hat{\mathbf{u}}_{a}^{\perp}\,,
+\end{equation}
+where $\hat{\mathbf{u}}_{a}^{\perp}$ is a unit vector in the $(N\!-\!1)$-dimensional subspace orthogonal to $\boldsymbol{\xi}^1$, and similarly for replica~$b$. Since the two replicas evolve with independent Monte Carlo noise, $\hat{\mathbf{u}}_{a}^{\perp}$ and $\hat{\mathbf{u}}_{b}^{\perp}$ are uncorrelated, so their dot product vanishes for large~$N$:
+\begin{equation}
+    q_{\mathrm{EA}} = \frac{\mathbf{x}_a \!\cdot\! \mathbf{x}_b}{N}
+    = \varphi^2 + (1-\varphi^2)\,\frac{\hat{\mathbf{u}}_a^{\perp}\!\cdot\!\hat{\mathbf{u}}_b^{\perp}}{1}
+    \;\xrightarrow{N\to\infty}\; \varphi^2\,.
+\end{equation}
+At thermal equilibrium with overlap $\varphi_{\mathrm{eq}}(T)$, the predicted inter-replica overlap is therefore
+\begin{equation}\label{eq:q-eq}
+    q_{\mathrm{eq}}(T) = \varphi_{\mathrm{eq}}(T)^2\,.
+\end{equation}
+
+This prediction is verified numerically to four-decimal accuracy: at $\alpha = 0.1$ (deep retrieval regime), $q_{\mathrm{EA}} / \varphi^2 = 1.0000 \pm 0.0005$ across all temperatures $T \in [0.025,\, 2.0]$.
+
+\paragraph{Normalized scatter plot.}
+Dividing $q_{\mathrm{EA}}$ by $\varphi_{\mathrm{eq}}(T)^2$ removes the trivial thermal decrease visible in the raw $q_{\mathrm{EA}}(\alpha, T)$ map (Figure~\ref{fig:phases}, top right). In the normalized scatter plot (Figure~\ref{fig:phases}, bottom right), points at $(\tilde\varphi,\, q_{\mathrm{EA}}/\varphi_{\mathrm{eq}}^2)$ should lie on the parabola
+\begin{equation}\label{eq:parabolic-law}
+    \frac{q_{\mathrm{EA}}}{\varphi_{\mathrm{eq}}^2} = \tilde\varphi^2\,,\quad
+    \tilde\varphi \equiv \varphi / \varphi_{\mathrm{eq}}\,,
+\end{equation}
+if both replicas independently achieve the same reduced overlap~$\tilde\varphi$ with the pattern. This is indeed observed for both the Retrieval (R) and Mixed (M) phases, confirming that the mixed phase represents \emph{partial retrieval} --- the system is partially attracted to the pattern, and both replicas track it to the same degree. The paramagnetic (P) points fall below the parabola, indicating that the replicas have decorrelated beyond what partial alignment with the pattern would predict.
+
+\subsection{Limitations: spin-glass detection}
+\label{sec:sg-limitation}
+
+The quantity $q_{12} = \mathbf{x}_a \!\cdot\! \mathbf{x}_b / N$ measured here is the \emph{inter-replica} overlap, not the Edwards--Anderson self-overlap $q_{\mathrm{EA}}^{\mathrm{(self)}} = \lim_{t\to\infty} \langle S_i(t)\, S_i(0) \rangle$ in the strict sense.
+In a true spin-glass phase with many degenerate metastable states, the two replicas would generically fall into \emph{different} spurious minima. Since random points on $S^{N-1}(\sqrt{N})$ have overlap $\sim 0$, the inter-replica overlap would be $q_{12} \approx 0$ --- indistinguishable from the paramagnetic phase.
+
+The initialization protocol partially mitigates this: both replicas start near the same stored pattern ($\varphi_{\mathrm{init}} \in [0.75, 1]$), so if a dominant alternative minimum exists near the retrieval basin, both replicas may slide into it, yielding $q_{12} > 0$ with $\varphi \approx 0$ (correctly classified as SG). However, this is not guaranteed in a landscape with many degenerate minima.
+
+The observation of 0\% spin-glass cells in the LSR data is therefore consistent with two interpretations: (i)~the LSR model genuinely has no spin-glass phase (as argued on theoretical grounds), or (ii)~the protocol cannot detect it because the replicas fall into different spurious states.
+To unambiguously detect a spin-glass phase, one would need to measure the self-overlap (time autocorrelation within a single replica) or the full overlap distribution~$P(q)$.
+
 \section{Phase Classification}
 \label{sec:phases}
 
@@ -112,8 +151,8 @@ Below $T_{\max}$ (the temperature at which $\alpha_c(T)$ reaches the zero-temper
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.99\textwidth]{maps_phases_LSR_v7.png}
-    \caption{LSR v7 phase diagram. \textbf{Top left:} alignment $\varphi(\alpha, T)$ with theoretical boundary (white) and threshold contour lines. \textbf{Top right:} Edwards--Anderson parameter $q_{\mathrm{EA}}(\alpha, T)$. \textbf{Bottom left:} four-phase classification (R = green, M = orange, SG = red, P = blue). \textbf{Bottom right:} scatter plot of normalized overlap vs.\ $q_{\mathrm{EA}}$, colored by phase.}
+    \includegraphics[width=0.99\textwidth]{maps_phases_LSR_v7_qnorm.png}
+    \caption{LSR v7 phase diagram. \textbf{Top left:} alignment $\varphi(\alpha, T)$ with theoretical boundary (white) and threshold contour lines. \textbf{Top right:} Edwards--Anderson parameter $q_{\mathrm{EA}}(\alpha, T)$. \textbf{Bottom left:} four-phase classification (R~=~green, M~=~orange, SG~=~red, P~=~blue). \textbf{Bottom right:} normalized scatter plot of $\tilde\varphi = \varphi/\varphi_{\mathrm{eq}}$ vs.\ $q_{\mathrm{EA}}/\varphi_{\mathrm{eq}}^2$; the black curve is the parabolic law~\eqref{eq:parabolic-law} expected for two independent replicas at overlap~$\varphi$.}
     \label{fig:phases}
 \end{figure}
 
