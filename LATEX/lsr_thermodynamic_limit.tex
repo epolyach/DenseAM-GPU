@@ -1,0 +1,503 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{geometry}
+\usepackage{booktabs}
+\geometry{margin=1in}
+
+\newtheorem{observation}{Observation}
+\newtheorem{remark}{Remark}
+
+\title{Thermodynamic Limit and Basin Scaling in the LSR Energy\\
+\large Analysis of Hoover et al.\ (ICLR 2025 Workshop)}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Setup and Notation}
+
+The LSR (log-sum-ReLU) energy function introduced in~\cite{Hoover2025} is
+\begin{equation}\label{eq:lsr}
+  E_{\mathrm{LSR}}(\mathbf{x})
+  = -\frac{1}{\beta}\log\!\left(
+      \epsilon + \sum_{\mu=1}^{M}
+      \mathrm{ReLU}\!\left(1 - \frac{\beta}{2}\|\mathbf{x}-\boldsymbol{\xi}_\mu\|^2\right)
+    \right),
+\end{equation}
+where $\boldsymbol{\xi}_\mu \in \{-1,+1\}^D$ are stored memories, $\beta > 0$
+is the inverse temperature, and $\epsilon \geq 0$ is a regularization constant.
+
+The support region around memory $\mu$ is
+$\mathrm{S}_\mu = \{\mathbf{x} : \|\mathbf{x}-\boldsymbol{\xi}_\mu\| \leq \sqrt{2/\beta}\}$.
+Outside $\bigcup_\mu \mathrm{S}_\mu$ (with $\epsilon = 0$) the energy is infinite
+and the gradient vanishes.
+
+For comparison, the standard LSE (log-sum-exp) energy is
+\begin{equation}\label{eq:lse}
+  E_{\mathrm{LSE}}(\mathbf{x})
+  = -\frac{1}{\beta}\log\sum_{\mu=1}^{M}
+    \exp\!\left(-\frac{\beta}{2}\|\mathbf{x}-\boldsymbol{\xi}_\mu\|^2\right).
+\end{equation}
+
+%----------------------------------------------------------------------
+\section{Recap of the Main Theorems and Their Intuition}
+
+We first summarize the three theorems of~\cite{Hoover2025} and explain what
+they say in plain terms.
+
+\subsection{Theorem~1: Exact retrieval from basins}
+
+\textbf{Statement (paraphrased).}
+Let $r = \min_{\mu\neq\nu}\|\boldsymbol{\xi}_\mu - \boldsymbol{\xi}_\nu\|$
+be the minimum distance between any two memories.  For basin radius
+$\Delta \in (0,r)$ and $\beta = 2/(r-\Delta)^2$, every input
+$\mathbf{x}\in S_\mu(\Delta) \equiv \{\mathbf{x}:\|\mathbf{x}-\boldsymbol{\xi}_\mu\|\leq\Delta\}$
+is retrieved exactly as $\boldsymbol{\xi}_\mu$ via energy gradient descent.
+With an appropriate learning rate, a \emph{single} gradient step suffices.
+
+\textbf{Intuition.}
+The ReLU separation function has finite reach: memory~$\mu$ only influences
+points within distance $\sqrt{2/\beta}$ from it.  If $\beta$ is large enough,
+this reach is $\sqrt{2/\beta} = r - \Delta < r$.  So any point at distance
+$\leq \Delta$ from memory~$\mu$ is within the support of~$\mu$ but
+\emph{outside} the support of every other memory (since the nearest other
+memory is at distance $\geq r$ away, and $\Delta + (r-\Delta) = r$).
+The gradient then points purely toward~$\boldsymbol{\xi}_\mu$, with no
+interference from other memories.
+
+\textbf{Hidden constraint: $\Delta \leq r/2$.}
+Note a subtlety glossed over in~\cite{Hoover2025}.  The proof claims that for
+$\mathbf{x}\in S_\mu(\Delta)$, we have $B(\mathbf{x}) = \{\mu\}$, meaning
+$\mathbf{x}$ is in the support of memory~$\mu$.  This requires
+$\|\mathbf{x}-\boldsymbol{\xi}_\mu\| \leq \sqrt{2/\beta} = r - \Delta$.
+But since $\|\mathbf{x}-\boldsymbol{\xi}_\mu\|\leq\Delta$ by definition of the
+basin, we need $\Delta \leq r - \Delta$, i.e.,
+\begin{equation}
+  \Delta \;\leq\; \frac{r}{2}.
+\end{equation}
+If $\Delta > r/2$, then points at the outer edge of the ``basin'' are
+\emph{outside} the support of their own memory --- they sit in a dead zone
+with zero gradient.  So the effective basin can never exceed half the
+inter-memory distance.
+
+\subsection{What happens when $\beta \neq 2/(r-\Delta)^2$?}
+
+The prescribed value $\beta = 2/(r-\Delta)^2$ is a knife-edge.  It is
+instructive to consider what happens on either side, since the paper does not
+discuss this.  The three regimes are controlled by the support radius
+$R = \sqrt{2/\beta}$:
+
+\medskip
+\textbf{Case 1: $\beta > 2/(r-\Delta)^2$ \;(``too cold'', $R < r-\Delta$).}
+The support radius shrinks below $r - \Delta$.  This is \emph{more} than
+enough to isolate each memory (neighboring supports are still disjoint), so
+there is no interference.  However, the effective basin of attraction also
+shrinks: it is no longer $\Delta$ but the support radius $R = \sqrt{2/\beta}$
+itself.  Any point farther than $R$ from all memories is in a dead zone.
+
+In this regime:
+\begin{itemize}
+  \item Retrieval is exact for $\|\mathbf{x}-\boldsymbol{\xi}_\mu\| \leq R$,
+  \item but the basin is \emph{smaller} than desired ($R < r - \Delta < \Delta$
+        for $\Delta$ near $r/2$),
+  \item and a larger fraction of space is dead (zero gradient).
+\end{itemize}
+
+\textbf{Case 2: $\beta = 2/(r-\Delta)^2$ \;(the Theorem~1 prescription,
+$R = r-\Delta$).}
+This is the optimal trade-off: the support radius is as large as possible
+while keeping each basin free of interference from other memories.  Every
+$\mathbf{x}\in S_\mu(\Delta)$ sees exactly one memory, retrieval is exact.
+
+\textbf{Case 3: $\beta < 2/(r-\Delta)^2$ \;(``too hot'', $R > r-\Delta$).}
+The support balls now overlap: a point $\mathbf{x}$ near memory~$\mu$ may
+also fall within the support of a neighboring memory~$\nu$ (specifically,
+whenever $\|\mathbf{x}-\boldsymbol{\xi}_\nu\| \leq R$ while
+$\|\boldsymbol{\xi}_\mu - \boldsymbol{\xi}_\nu\| = r < 2R$).  In the overlap
+region, $|B(\mathbf{x})| > 1$, and the gradient becomes an average over
+multiple memories.  Gradient descent no longer converges to any individual
+$\boldsymbol{\xi}_\mu$ but instead to the centroid
+$|B|^{-1}\sum_{\mu\in B}\boldsymbol{\xi}_\mu$ --- an \emph{emergent minimum}.
+
+In this regime:
+\begin{itemize}
+  \item Original memories are no longer guaranteed to be retrieved from
+        their full basin $S_\mu(\Delta)$,
+  \item but they remain local minima (at $\mathbf{x} = \boldsymbol{\xi}_\mu$
+        the gradient is still zero),
+  \item and new local minima (centroids) appear in the overlap regions.
+\end{itemize}
+This is exactly the regime of Theorem~3.
+
+\medskip
+\textbf{Summary: the three regimes.}
+\begin{center}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccc}
+\toprule
+& \textbf{Too cold} & \textbf{Knife-edge} & \textbf{Too hot} \\
+& $\beta > \frac{2}{(r-\Delta)^2}$ & $\beta = \frac{2}{(r-\Delta)^2}$ &
+  $\beta < \frac{2}{(r-\Delta)^2}$ \\
+\midrule
+Support radius $R$ & $< r - \Delta$ & $= r - \Delta$ & $> r - \Delta$ \\
+Supports overlap? & No & No (tangent) & Yes \\
+Effective basin & $R < \Delta$ & $\Delta$ & $< \Delta$ (contaminated) \\
+Emergent minima & None & None & Yes (centroids) \\
+Dead zone fraction & Larger & Moderate & Smaller \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{remark}[Monotonicity illusion]
+One might expect that increasing $\beta$ (``lowering temperature'') always
+sharpens retrieval.  In LSE this is true: larger $\beta$ makes the softmax
+peakier, which improves basin size.  In LSR the opposite happens at large
+$\beta$: the support shrinks and the basin \emph{decreases}, because the
+ReLU simply cuts off rather than smoothly suppressing distant memories.
+The finite support fundamentally changes the role of temperature.
+\end{remark}
+
+\subsection{Theorem~2: Exponential memory capacity}
+
+\textbf{Statement (paraphrased).}
+Consider $M$ memories sampled uniformly from $\{-1,+1\}^D$.  With probability
+at least $\delta$, all memories are retrievable as per Theorem~1, provided
+\begin{equation}
+  M = O\!\left(\sqrt{\log(1/\delta)}\;\exp(\alpha^2 D/2)\right),
+\end{equation}
+where $\alpha \in (0,1)$ is a parameter controlling the trade-off between
+capacity and basin size.
+
+\textbf{What is $\alpha$?}
+The parameter $\alpha$ is the \emph{maximum cosine similarity} between any
+pair of stored memories.  In the proof (Lemma~1 of~\cite{Hoover2025}),
+random binary vectors $\boldsymbol{\xi}_\mu, \boldsymbol{\xi}_\nu \in
+\{-1,+1\}^D$ satisfy
+\begin{equation}
+  \frac{|\langle \boldsymbol{\xi}_\mu, \boldsymbol{\xi}_\nu\rangle|}
+       {\|\boldsymbol{\xi}_\mu\|\,\|\boldsymbol{\xi}_\nu\|}
+  \;\leq\; \alpha
+\end{equation}
+with high probability (by concentration of measure).  This translates into a
+lower bound on the minimum pairwise Euclidean distance:
+\begin{equation}\label{eq:r-bound}
+  r = \min_{\mu\neq\nu}\|\boldsymbol{\xi}_\mu - \boldsymbol{\xi}_\nu\|
+  \;\geq\; \sqrt{2D(1-\alpha)}.
+\end{equation}
+Smaller $\alpha$ means the memories are more spread out (closer to
+orthogonal), giving larger $r$ and larger basins, but fewer memories can be
+packed.  Larger $\alpha$ allows more memories at the cost of tighter spacing.
+The capacity $M \sim \exp(\alpha^2 D/2)$ grows with $\alpha$: the more
+overlap you tolerate, the more patterns you can store.
+
+\textbf{Intuition.}
+Random binary vectors in high dimensions are nearly orthogonal: their cosine
+similarity concentrates around zero with fluctuations of order $1/\sqrt{D}$.
+This means $\sim\!\exp(cD)$ of them can be packed into $\{-1,+1\}^D$ with all
+pairwise cosines below~$\alpha$.  Since they are well-separated, Theorem~1
+applies to each.
+
+\subsection{Theorem~3: Emergent local minima}
+
+\textbf{Statement (paraphrased).}
+Under the same configuration, for any $\mathbf{x}$ that lies in the support
+of more than one memory ($|B(\mathbf{x})| > 1$ where
+$B(\mathbf{x}) = \{\mu : \|\mathbf{x}-\boldsymbol{\xi}_\mu\|\leq\sqrt{2/\beta}\}$),
+the energy gradient descent converges to the centroid
+$\frac{1}{|B(\mathbf{x})|}\sum_{\mu\in B(\mathbf{x})}\boldsymbol{\xi}_\mu$,
+which is \emph{not} any stored memory.
+
+\textbf{Intuition.}
+In the overlap region where two or more support balls intersect, all the
+corresponding memories pull on the state simultaneously.  Since the ReLU
+separation function is linear (not exponential), no single memory dominates ---
+the gradient is a balanced average.  The fixed point is therefore the centroid
+of the contributing memories: a \emph{new pattern} that was never stored.
+The total number of such emergent minima (one per non-empty subset of memories
+with intersecting supports) can be as large as $2^M$.
+
+This is impossible in LSE: the exponential separation function always makes
+one memory dominate the softmax, suppressing the others.
+
+%----------------------------------------------------------------------
+\section{Implicit Scaling: $\beta$ Cannot Be Fixed as $D\to\infty$}
+
+\subsection{What the theorems require}
+
+From Theorem~2, the minimum pairwise distance satisfies
+$r \geq \sqrt{2D(1-\alpha)}$, and exact retrieval with basin radius
+$\Delta \in (0,r)$ requires (Theorem~1)
+\begin{equation}\label{eq:beta-bound}
+  \beta \;=\; \frac{2}{(r-\Delta)^2}.
+\end{equation}
+
+\subsection{Why $\Delta$ must be proportional to $r$}
+
+The basin radius $\Delta$ is the maximum corruption from which a memory can be
+recovered.  To be a useful associative memory, $\Delta$ must scale with the
+natural noise level.  Consider a stored binary pattern
+$\boldsymbol{\xi}_\mu\in\{-1,+1\}^D$ corrupted by flipping a fraction~$f$ of
+its bits.  The corrupted vector $\tilde{\boldsymbol{\xi}}$ satisfies
+\begin{equation}
+  \|\tilde{\boldsymbol{\xi}} - \boldsymbol{\xi}_\mu\|^2
+  = 4fD
+  \quad\Longrightarrow\quad
+  \|\tilde{\boldsymbol{\xi}} - \boldsymbol{\xi}_\mu\| = 2\sqrt{fD}.
+\end{equation}
+Since $r \sim \sqrt{2D}$, this corruption distance is
+$\sim (2\sqrt{f}/\sqrt{2})\,r = \sqrt{2f}\;r$.
+Retrieving a pattern with fraction~$f$ of bits flipped requires
+$\Delta \geq 2\sqrt{fD} \propto r$.  If $\Delta$ did not grow with $r$ (and
+hence with $\sqrt{D}$), the memory could only correct a \emph{vanishing}
+fraction of bit flips as $D\to\infty$ --- an increasingly useless memory.
+
+More directly: the basin must be large enough that no other memory falls inside
+it, which requires $\Delta < r$, but small enough that the support ball
+$\sqrt{2/\beta} = r - \Delta$ stays within the exclusive zone.  The only
+consistent choice is $\Delta = \eta\, r$ for some fixed $\eta \in (0,1)$.
+
+\subsection{$\beta = O(1/D)$ follows immediately}
+
+With $\Delta = \eta\, r$ and $r \sim \sqrt{2D(1-\alpha)}$:
+\begin{equation}
+  \beta
+  \;=\; \frac{2}{(r - \eta r)^2}
+  \;=\; \frac{2}{(1-\eta)^2 r^2}
+  \;\sim\; \frac{2}{(1-\eta)^2 \cdot 2D(1-\alpha)}
+  \;=\; \frac{1}{(1-\eta)^2(1-\alpha)\,D}.
+\end{equation}
+More generally, for any fixed ratio $\Delta/r < 1$, we obtain
+$\beta = O(1/D)$.  The inverse temperature must vanish as $D\to\infty$.
+
+This is never stated explicitly in~\cite{Hoover2025}, but it is embedded in
+every theorem.
+
+\subsection{Consequence for the support radius}
+
+The support radius of each memory is
+\begin{equation}
+  R_{\mathrm{supp}} = \sqrt{2/\beta} = O(\sqrt{D}),
+\end{equation}
+which matches the natural length scale of the hypercube $\{-1,+1\}^D$
+(where all points lie at distance $\sqrt{D}$ from the origin and typical
+inter-point distances are $\sim\!\sqrt{2D}$).
+
+If instead $\beta$ were held fixed as $D\to\infty$:
+\begin{itemize}
+  \item $R_{\mathrm{supp}} = \sqrt{2/\beta} = O(1)$, a fixed constant;
+  \item inter-memory distance $r \sim \sqrt{2D} \to \infty$;
+  \item each memory becomes an isolated island of finite energy in a space
+        where all scales grow as $\sqrt{D}$;
+  \item the fraction of space with any gradient signal goes to zero
+        exponentially.
+\end{itemize}
+
+\subsection{Contrast with LSE}
+
+For the LSE energy~\eqref{eq:lse}, $\beta$ can remain $O(1)$ as $D\to\infty$.
+The exponential separation function has infinite support: every point
+$\mathbf{x}\in\mathbb{R}^D$ receives a nonzero gradient pointing toward the
+softmax-weighted centroid of the memories.  The basins of attraction have
+radius $O(\sqrt{D})$ even with $\beta = O(1)$.  No dead zones exist.
+
+%----------------------------------------------------------------------
+\section{The Thermodynamic Limit}
+
+\subsection{Mean-field scaling}
+
+Define a rescaled inverse temperature
+\begin{equation}
+  \tilde\beta = \beta D, \qquad \text{so that } \beta = \tilde\beta/D,
+\end{equation}
+and hold $\tilde\beta$ fixed as $D\to\infty$.  The energy becomes
+\begin{equation}
+  E_{\mathrm{LSR}}(\mathbf{x})
+  = -\frac{D}{\tilde\beta}\,\log\!\left(
+      \epsilon + \sum_{\mu=1}^{M}
+      \mathrm{ReLU}\!\left(
+        1 - \frac{\tilde\beta}{2D}\|\mathbf{x}-\boldsymbol{\xi}_\mu\|^2
+      \right)
+    \right).
+\end{equation}
+
+Since $\|\mathbf{x}-\boldsymbol{\xi}_\mu\|^2 = O(D)$ for typical
+configurations, the ReLU argument is $1 - O(\tilde\beta) = O(1)$, and
+\begin{equation}
+  E_{\mathrm{LSR}} = -\frac{D}{\tilde\beta}\,\log\bigl(O(1)\bigr) = O(D).
+\end{equation}
+
+\begin{observation}[Extensivity]
+The energy is extensive (proportional to system size $D$), as required for a
+well-defined thermodynamic limit.  The correct limit is
+\[
+  D \to \infty, \qquad \tilde\beta = \beta D \;\text{fixed}, \qquad
+  M \sim e^{cD} \;\text{for some } c > 0.
+\]
+This is analogous to the mean-field scaling $J \sim 1/\sqrt{N}$ in classical
+spin glass models.
+\end{observation}
+
+\subsection{Comparison of scaling regimes}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Quantity} & \textbf{LSE} & \textbf{LSR} \\
+\midrule
+Inverse temperature $\beta$ & $O(1)$ & $O(1/D)$ \\
+Rescaled temperature $\tilde\beta = \beta D$ & grows as $D$ & $O(1)$ \\
+Support radius $\sqrt{2/\beta}$ & $\infty$ (global) & $O(\sqrt{D})$ \\
+Basin radius $\Delta$ & $O(\sqrt{D})$ & $O(\sqrt{D})$ \\
+Memory capacity $M$ & $\sim e^{cD}$ & $\sim e^{cD}$ \\
+Energy $E$ & $O(D)$ & $O(D)$ \\
+Dead zones & None & Yes \\
+\bottomrule
+\end{tabular}
+\caption{Scaling comparison between LSE and LSR in the $D\to\infty$ limit.}
+\label{tab:comparison}
+\end{table}
+
+%----------------------------------------------------------------------
+\section{The Basin Shrinkage Problem}
+
+\subsection{Absolute vs.\ relative basin size}
+
+In absolute terms, the basin radius $\Delta \sim \sqrt{D}$ \emph{grows} with
+dimension.  The support radius $\sqrt{2/\beta}\sim\sqrt{D}$ also grows.
+All natural length scales ($r$, $\Delta$, $R_{\mathrm{supp}}$, $\|\boldsymbol{\xi}_\mu\|$)
+are $O(\sqrt{D})$, so the geometry is self-similar across dimensions.
+
+In relative terms, however, the \emph{volume fraction} of a $D$-dimensional
+ball of radius $c\sqrt{D}$ inside the hypercube $[-1,1]^D$ behaves as
+\begin{equation}
+  \frac{\mathrm{Vol}(B_{c\sqrt{D}})}{\mathrm{Vol}([-1,1]^D)}
+  \;\sim\;
+  \left(\frac{\pi e\, c^2}{4}\right)^{D/2}
+  \!\!\cdot\; \text{(subexponential prefactor)}.
+\end{equation}
+For moderate $c$ this ratio decays exponentially with $D$.  But this is
+equally true for LSE --- the basins of attraction for LSE are also balls of
+radius $O(\sqrt{D})$ covering an exponentially small fraction of the space.
+
+\subsection{The qualitative difference: dead zones}
+
+The fundamental distinction is not basin size but what happens \emph{outside}
+all basins:
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+& \textbf{LSE} & \textbf{LSR} \\
+\midrule
+Outside all basins & Gradient exists & \textbf{Gradient is zero} \\
+Random initialization & Always converges & May land in dead zone \\
+Retrieval from corruption & Works if $\|\delta\| < \Delta$ &
+  Same condition \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For the \textbf{retrieval task} (starting from a corrupted version of a
+stored memory with bounded noise), both models work identically well:
+the corrupted input is at distance $O(\sqrt{D})$ from the true memory,
+which lies within the basin.
+
+For \textbf{random initialization} or unconstrained generation, LSR has a
+fundamental problem: any initial point outside $\bigcup_\mu \mathrm{S}_\mu$
+has zero gradient and will not move under gradient descent.  The model is
+blind in these regions.
+
+\subsection{Emergent minima in the thermodynamic limit}
+
+With $\beta = \tilde\beta/D$ and $\tilde\beta$ fixed, the support radius
+$R_{\mathrm{supp}} = \sqrt{2D/\tilde\beta}$ and the inter-memory distance
+$r \sim \sqrt{2D}$.  Two memories at distance $r$ have overlapping support
+regions whenever $2R_{\mathrm{supp}} > r$, i.e.,
+\begin{equation}
+  2\sqrt{2D/\tilde\beta} > \sqrt{2D}
+  \quad\Longleftrightarrow\quad
+  \tilde\beta < 4.
+\end{equation}
+So for $\tilde\beta < 4$, supports overlap, emergent minima (centroids of
+memory subsets) appear, and their number can be as large as $2^M$.  The
+basin radius for exact retrieval of the original memories requires
+$\tilde\beta > 2/(1 - \Delta/r)^2 \cdot (1/D) \cdot D = 2D/(r-\Delta)^2$;
+substituting $r \sim \sqrt{2D}$ and $\Delta = \eta r$ for $\eta < 1$:
+\begin{equation}
+  \tilde\beta \;\geq\; \frac{1}{(1-\eta)^2(1-\alpha)}.
+\end{equation}
+Thus the regime of simultaneous memorization and generation is
+\begin{equation}
+  \frac{1}{(1-\eta)^2(1-\alpha)} \;\leq\; \tilde\beta \;<\; 4,
+\end{equation}
+which exists for sufficiently small $\eta$ and $\alpha$.
+
+%----------------------------------------------------------------------
+\section{Summary}
+
+\begin{enumerate}
+  \item \textbf{$\beta$ is not fixed.}
+    The theorems in~\cite{Hoover2025} implicitly require $\beta = O(1/D)$.
+    At fixed $\beta$, the support regions become negligibly small relative
+    to the ambient space as $D\to\infty$.
+
+  \item \textbf{A thermodynamic limit exists} with mean-field scaling
+    $\tilde\beta = \beta D$ held fixed.  The energy is extensive, $E = O(D)$,
+    and memory capacity remains exponential.
+
+  \item \textbf{Basins grow as $\sqrt{D}$} in absolute terms, matching all
+    other length scales.  The exponential shrinkage of volume fractions
+    affects both LSE and LSR equally.
+
+  \item \textbf{Dead zones are the real cost} of finite support.
+    Unlike LSE, which provides a gradient signal everywhere, LSR has regions
+    of zero gradient that cover an increasing fraction of the space.
+    This is the price paid for the emergent minima property.
+
+  \item \textbf{Finite support is a double-edged sword.}
+    The same mechanism that creates emergent local minima (overlapping
+    finite support regions) also creates dead zones (regions outside all
+    supports).  The paper's strength and weakness are two sides of the same
+    coin.
+\end{enumerate}
+
+\begin{thebibliography}{9}
+\bibitem{Hoover2025}
+  B.~Hoover, K.~Balasubramanian, D.~Krotov, and P.~Ram,
+  ``Dense Associative Memory with Epanechnikov Energy,''
+  in \emph{New Frontiers in Associative Memory} (Workshop at ICLR 2025),
+  2025.
+  Available at: \texttt{https://openreview.net/forum?id=LSR\_DenseAM}
+
+\bibitem{Krotov2016}
+  D.~Krotov and J.~J.~Hopfield,
+  ``Dense associative memory for pattern recognition,''
+  \emph{Advances in Neural Information Processing Systems}, vol.~29, 2016.
+
+\bibitem{Ramsauer2021}
+  H.~Ramsauer, B.~Sch\"afl, J.~Lehner, P.~Seidl, M.~Widrich, L.~Gruber,
+  et al.,
+  ``Hopfield networks is all you need,''
+  in \emph{International Conference on Learning Representations}, 2021.
+
+\bibitem{Lucibello2024}
+  C.~Lucibello and M.~M\'ezard,
+  ``Exponential capacity of dense associative memories,''
+  \emph{Physical Review Letters}, vol.~132, no.~7, p.~077301, 2024.
+
+\bibitem{Epanechnikov1969}
+  V.~A.~Epanechnikov,
+  ``Non-parametric estimation of a multivariate probability density,''
+  \emph{Theory of Probability \& Its Applications}, vol.~14, no.~1,
+  pp.~153--158, 1969.
+
+\bibitem{WandJones1994}
+  M.~P.~Wand and M.~C.~Jones,
+  \emph{Kernel Smoothing}, CRC Press, 1994.
+\end{thebibliography}
+
+\end{document}
