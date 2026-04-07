@@ -1,0 +1,863 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{booktabs}
+\geometry{margin=1in}
+
+\newcommand{\vp}{\varphi}
+\newcommand{\bS}{\mathbf{S}}
+\newcommand{\bxi}{\boldsymbol{\xi}}
+
+\title{Geometric Basin Connectivity in the Large-$b$ Regime:\\
+  Exact Spherical Analysis}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study geometric connectivity of pattern basins in the
+LSR associative memory when the nonlinearity parameter scales as
+$b = \beta N$ with $\beta > 0$ fixed.
+The analysis proceeds in two stages: first purely geometric
+(do the spherical caps overlap at all?), then energetic
+(can the state traverse the corridor?).
+For $b = \beta N$, we show that energy barriers between
+geometrically overlapping basins are $O(1/\beta)$,
+so geometry is the sole bottleneck.
+We then compute the expected number of geometric neighbours
+$\lambda$ using the \emph{exact} spherical overlap distribution
+and compare with the Gaussian (Mill's ratio) approximation.
+The two predictions differ by a super-exponential factor:
+the Gaussian gives a percolation threshold
+$\alpha_c^{\rm Gauss} \to 1/2$,
+while the exact sphere gives
+$\alpha_c^{\rm sphere} \approx \tfrac{1}{2}\ln(\beta N/8)$,
+which diverges with~$N$.
+We conclude that for $b = \beta N$ and large $N$,
+every basin is geometrically isolated at any fixed load~$\alpha$.
+The phase transition at $\alpha = 1/2$ in the exponential
+associative memory is driven by signal-to-noise competition
+in the softmax energy, not by basin connectivity.
+\end{abstract}
+
+
+%% ==================================================================
+\section{The model}
+\label{sec:model}
+
+The Log-Sum-ReLU (LSR) associative memory stores $M$ patterns
+$\bxi^1, \ldots, \bxi^M$ drawn uniformly on the sphere
+$S^{N-1}(\sqrt{N})$ (i.e.\ $|\bxi^\mu|^2 = N$).
+The energy of a state $\bS \in S^{N-1}(\sqrt{N})$ is
+\begin{equation}\label{eq:E}
+  E(\bS) = -\frac{N}{b}\sum_{\mu=1}^{M}
+    \ln\bigl[\,1 - b + b\,\vp_\mu(\bS)\,\bigr]_+\,,
+\end{equation}
+where $\vp_\mu(\bS) = (\bxi^\mu \cdot \bS)/N$ is the overlap
+between the state and pattern~$\mu$,
+$[\cdot]_+ = \max(0, \cdot)$,
+and $b > 0$ is the nonlinearity parameter.
+The number of patterns scales exponentially with dimension:
+$M = e^{N\alpha}$, where $\alpha > 0$ is the load.
+
+Throughout this note we work in the regime
+\begin{equation}\label{eq:b_regime}
+  b = \beta N, \qquad \beta > 0 \;\text{fixed},
+  \qquad \beta N \gg 1.
+\end{equation}
+
+
+\subsection{Hard-wall threshold and basins}
+
+The argument of the logarithm in~\eqref{eq:E} is
+$1 - b + b\,\vp_\mu = b(\vp_\mu - \vp_c)$,
+where
+\begin{equation}\label{eq:phic}
+  \vp_c \;=\; \frac{b-1}{b} \;=\; 1 - \frac{1}{b}
+  \;=\; 1 - \frac{1}{\beta N}\,.
+\end{equation}
+Pattern $\mu$ contributes to the energy only when
+$\vp_\mu(\bS) > \vp_c$; otherwise $[\cdots]_+ = 0$.
+If \emph{no} pattern is active, the sum is empty and
+$E = +\infty$ (the state is energetically forbidden).
+
+The \textbf{basin} of pattern $\mu$ is the spherical cap
+\begin{equation}\label{eq:basin}
+  X_\mu = \bigl\{\, \bS \in S^{N-1}(\sqrt{N})
+  \;:\; \vp_\mu(\bS) > \vp_c \,\bigr\}.
+\end{equation}
+The boundary $\vp_\mu = \vp_c$ is an infinite energy barrier
+($\ln 0^+ = -\infty$ in the energy, so $E \to +\infty$).
+Within a single basin, the state is permanently confined.
+
+
+\subsection{Angular radius of a basin}
+
+The condition $\vp_\mu > \vp_c$ is equivalent to
+$\cos\theta < \vp_c$, where $\theta$ is the angle between
+$\bS$ and $\bxi^\mu$.  The cap has angular radius
+\begin{equation}\label{eq:thetac}
+  \theta_c = \arccos\vp_c
+  = \arccos\!\Bigl(1 - \frac{1}{\beta N}\Bigr)
+  \approx \sqrt{\frac{2}{\beta N}}
+  \qquad (\beta N \gg 1),
+\end{equation}
+using $\arccos(1 - x) \approx \sqrt{2x}$ for $x \ll 1$.
+So each basin is a tiny cap whose angular radius shrinks as
+$1/\sqrt{\beta N}$.
+
+
+%% ==================================================================
+\section{Geometric overlap of two basins}
+\label{sec:geom_overlap}
+
+\subsection{Criterion for cap intersection}
+
+Two spherical caps of equal angular radius $\theta_c$ overlap
+if and only if the angle $\theta_{\mu\nu}$ between their
+centres satisfies $\theta_{\mu\nu} < 2\theta_c$.
+In terms of the mutual overlap
+$q = (\bxi^\mu \cdot \bxi^\nu)/N = \cos\theta_{\mu\nu}$,
+the caps overlap when
+\begin{equation}\label{eq:qgeom}
+  q > q_{\rm geom}
+  \;\equiv\; \cos(2\theta_c)
+  = 2\cos^2\theta_c - 1
+  = 2\vp_c^2 - 1.
+\end{equation}
+Substituting $\vp_c = 1 - 1/(\beta N)$:
+\begin{equation}\label{eq:qgeom_explicit}
+  q_{\rm geom}
+  = 2\Bigl(1 - \frac{1}{\beta N}\Bigr)^{\!2} - 1
+  = 1 - \frac{4}{\beta N} + \frac{2}{\beta^2 N^2}\,.
+\end{equation}
+This is extremely close to~$1$: the two patterns must be
+nearly identical for their basins to touch.
+
+If $q < q_{\rm geom}$, the caps are disjoint and no continuous
+path connects them without leaving all basins (hitting $E = +\infty$).
+No amount of thermal energy can bridge a gap where no corridor
+exists.
+
+
+\subsection{The corridor between overlapping basins}
+
+When $q > q_{\rm geom}$, the caps $X_\mu$ and $X_\nu$ share
+a non-empty intersection: the \textbf{corridor}
+$X_\mu \cap X_\nu$.  Along any path through the corridor,
+at least two patterns are active, and the energy remains finite.
+
+To compute the energy along the corridor, consider the geodesic
+(great-circle arc) from $\bxi^\mu$ to $\bxi^\nu$ on
+$S^{N-1}(\sqrt{N})$.
+Parametrise it by the angle $\psi \in [0, \theta_{\mu\nu}]$
+from $\bxi^\mu$:
+\begin{equation}\label{eq:geodesic}
+  \bS(\psi)
+  = \frac{\sin(\theta_{\mu\nu} - \psi)}{\sin\theta_{\mu\nu}}\,\bxi^\mu
+  + \frac{\sin\psi}{\sin\theta_{\mu\nu}}\,\bxi^\nu.
+\end{equation}
+The overlaps along this geodesic are
+\begin{align}
+  \vp_\mu(\psi) &= \frac{\bxi^\mu \cdot \bS(\psi)}{N}
+  = \frac{\sin(\theta_{\mu\nu} - \psi)}{\sin\theta_{\mu\nu}}
+  + q\,\frac{\sin\psi}{\sin\theta_{\mu\nu}}\,,
+  \label{eq:phi_mu_psi} \\[4pt]
+  \vp_\nu(\psi) &= \frac{\bxi^\nu \cdot \bS(\psi)}{N}
+  = q\,\frac{\sin(\theta_{\mu\nu} - \psi)}{\sin\theta_{\mu\nu}}
+  + \frac{\sin\psi}{\sin\theta_{\mu\nu}}\,.
+  \label{eq:phi_nu_psi}
+\end{align}
+At $\psi = 0$ (centre of $\mu$): $\vp_\mu = 1$, $\vp_\nu = q$.
+At $\psi = \theta_{\mu\nu}$ (centre of $\nu$):
+$\vp_\mu = q$, $\vp_\nu = 1$.
+
+
+%% ==================================================================
+\section{Energy barrier along the geodesic}
+\label{sec:barrier}
+
+\subsection{Energy of a single active pattern}
+
+When only pattern $\mu$ is active (with overlap $\vp_\mu > \vp_c$),
+its contribution to the energy is
+\begin{equation}\label{eq:E_single}
+  E_\mu = -\frac{N}{b}\,\ln\bigl[1 - b + b\,\vp_\mu\bigr]
+  = -\frac{N}{b}\,\ln\bigl[b(\vp_\mu - \vp_c)\bigr].
+\end{equation}
+At the basin centre ($\vp_\mu = 1$):
+\begin{equation}
+  E_\mu^{\rm centre}
+  = -\frac{N}{b}\,\ln\bigl[b(1 - \vp_c)\bigr]
+  = -\frac{N}{b}\,\ln 1
+  = 0\,,
+\end{equation}
+using $b(1 - \vp_c) = b \cdot (1/b) = 1$.
+
+At the basin boundary ($\vp_\mu \to \vp_c^+$):
+$E_\mu \to -\frac{N}{b}\ln 0^+ = +\infty$.
+
+
+\subsection{Energy at the bottleneck}
+
+The energy is highest at the ``bottleneck''---the point on the
+geodesic where one pattern has just activated.
+By symmetry of the barrier calculation, consider the point $\psi^*$
+where pattern $\nu$ just activates: $\vp_\nu(\psi^*) = \vp_c$.
+At this point, $\nu$ contributes $\ln(0^+ + 1) = 0$ to the
+energy, and the entire energy comes from pattern $\mu$:
+\begin{equation}
+  E(\psi^*) = -\frac{N}{b}\,\ln\bigl[b(\vp_\mu^* - \vp_c)\bigr],
+\end{equation}
+where $\vp_\mu^*$ is the overlap with $\mu$ when $\vp_\nu = \vp_c$.
+
+To find $\vp_\mu^*$, we use a coordinate decomposition.
+Write $\bxi^\nu = q\,\bxi^\mu + \sqrt{1-q^2}\;\hat{\bxi}^\perp$,
+where $\hat{\bxi}^\perp$ is a unit vector (rescaled to
+$|\hat\bxi^\perp|^2 = N$) orthogonal to $\bxi^\mu$.
+Then at any state $\bS$:
+\begin{equation}\label{eq:overlap_decomp}
+  \vp_\nu = q\,\vp_\mu + \sqrt{1-q^2}\;\vp_\perp,
+\end{equation}
+where $\vp_\perp = (\hat{\bxi}^\perp \cdot \bS)/N$.
+Setting $\vp_\nu = \vp_c$ and solving for $\vp_\mu$
+on the geodesic (where $\vp_\mu^2 + \vp_\perp^2
+\leq 1$ with appropriate normalisation),
+one finds the overlap with $\mu$ at the $\nu$-activation
+boundary.  On the geodesic in the $(\vp_\mu, \vp_\perp)$ plane,
+the state satisfies $\vp_\mu = \cos\psi$,
+$\vp_\perp = \sin\psi \cdot \sqrt{1 - q^2}/\sin\theta_{\mu\nu}$
+(to leading order for small angles).
+
+The result is:
+\begin{equation}\label{eq:phi_star}
+  \boxed{%
+  \vp_\mu^* = q\,\vp_c + \sqrt{(1-q^2)(1-\vp_c^2)}\,.}
+\end{equation}
+This can be verified geometrically: the point where
+the geodesic from $\bxi^\mu$ to $\bxi^\nu$ crosses the
+boundary of cap $X_\nu$ (the circle $\vp_\nu = \vp_c$)
+has overlap $\vp_\mu^*$ with pattern $\mu$.
+
+\paragraph{Check at $q = q_{\rm geom}$.}
+When the caps just touch ($q = 2\vp_c^2 - 1$):
+\begin{align}
+  \vp_\mu^*
+  &= (2\vp_c^2 - 1)\vp_c
+    + \sqrt{(1 - (2\vp_c^2-1)^2)(1-\vp_c^2)}
+  \nonumber\\
+  &= (2\vp_c^2 - 1)\vp_c
+    + \sqrt{4\vp_c^2(1-\vp_c^2) \cdot (1-\vp_c^2)}
+  \nonumber\\
+  &= (2\vp_c^2 - 1)\vp_c + 2\vp_c(1-\vp_c^2)
+  \nonumber\\
+  &= \vp_c\bigl[2\vp_c^2 - 1 + 2 - 2\vp_c^2\bigr]
+  = \vp_c\,.
+\end{align}
+So $\vp_\mu^* = \vp_c$: both patterns are marginal, confirming
+the caps just touch.
+
+
+\subsection{The barrier height}
+
+The \textbf{barrier} is the energy difference between the
+bottleneck and the basin centre:
+\begin{equation}\label{eq:barrier}
+  \boxed{%
+  \Delta E = E(\psi^*) - E_\mu^{\rm centre}
+  = -\frac{N}{b}\ln\bigl[b(\vp_\mu^* - \vp_c)\bigr]
+  = \frac{N}{b}\,\ln\frac{1}{b\,(\vp_\mu^* - \vp_c)}\,.}
+\end{equation}
+The barrier diverges as $q \to q_{\rm geom}^+$
+(where $\vp_\mu^* \to \vp_c$), confirming that caps which
+just barely touch have an infinite barrier.
+
+
+\subsection{Barrier scaling for $b = \beta N$}
+
+For $b = \beta N$, the prefactor is $N/b = 1/\beta$.
+The overlap excess is
+\begin{equation}\label{eq:phi_excess}
+  \vp_\mu^* - \vp_c
+  = q\,\vp_c + \sqrt{(1-q^2)(1-\vp_c^2)} - \vp_c
+  = \vp_c(q - 1) + \sqrt{(1-q^2)(1-\vp_c^2)}\,.
+\end{equation}
+For $q$ slightly above $q_{\rm geom}$,
+write $q = q_{\rm geom} + \epsilon$
+with $\epsilon \ll 1$.
+Using $1 - \vp_c^2 \approx 2/(\beta N)$ and
+$1 - q_{\rm geom} \approx 4/(\beta N)$:
+\begin{equation}
+  \vp_\mu^* - \vp_c
+  \;\approx\; \frac{\epsilon}{2\vp_c}
+  \;\approx\; \frac{\epsilon}{2}\,.
+\end{equation}
+The argument of the logarithm in~\eqref{eq:barrier}:
+\begin{equation}
+  b(\vp_\mu^* - \vp_c)
+  \approx \beta N \cdot \frac{\epsilon}{2}
+  = \frac{\beta N\,\epsilon}{2}\,.
+\end{equation}
+For a ``typical'' geometrically overlapping pair,
+$\epsilon = O(1/(\beta N))$ (the overlap just barely exceeds
+the threshold), so $b(\vp_\mu^* - \vp_c) = O(1)$ and
+\begin{equation}\label{eq:barrier_bN}
+  \boxed{%
+  \Delta E = \frac{1}{\beta}\,
+  \ln\frac{1}{\beta N\,(\vp_\mu^* - \vp_c)}
+  = O(1/\beta)\,.}
+\end{equation}
+This is a finite, $N$-independent barrier.
+Any temperature $T > 0$ (even $T \ll 1$) overcomes it
+on an $O(1)$ timescale, via Kramers-type thermal activation
+$\tau \sim e^{\Delta E / T}$ with $\Delta E/T = O(1)$.
+
+\paragraph{Contrast with $b = O(1)$.}
+For $b = O(1)$, the prefactor $N/b = O(N)$, giving
+$\Delta E = O(N)$: an extensive barrier that grows with
+system size and is thermally impassable at any fixed $T$.
+
+\paragraph{Conclusion.}
+For $b = \beta N$, \textbf{geometry is the sole bottleneck}.
+If two caps overlap ($q > q_{\rm geom}$), the barrier is $O(1/\beta)$
+and thermally irrelevant.
+If the caps do not overlap ($q < q_{\rm geom}$), no corridor
+exists and no amount of thermal energy helps.
+We therefore focus entirely on the geometric question:
+how many caps overlap?
+
+
+%% ==================================================================
+\section{Overlap distribution on the sphere}
+\label{sec:overlap}
+
+For two independent random points on $S^{N-1}(\sqrt{N})$,
+the normalised overlap $q = (\bxi^\mu \cdot \bxi^\nu)/N$
+is the cosine of the angle between them.
+It has the exact marginal density
+\begin{equation}\label{eq:fq}
+  f(q) = \frac{(1 - q^2)^{(N-3)/2}}{B\!\bigl(\tfrac{1}{2},\,
+    \tfrac{N-1}{2}\bigr)}\,,
+  \qquad q \in (-1, 1),
+\end{equation}
+where $B(a,b) = \Gamma(a)\Gamma(b)/\Gamma(a+b)$ is the
+beta function.
+
+\paragraph{Derivation.}
+Fix $\bxi^\mu$ (say, along the first coordinate axis).
+The overlap $q = \xi^\nu_1/\sqrt{N}$ (the first component of
+$\bxi^\nu$, rescaled).
+For a uniform point on $S^{N-1}(\sqrt{N})$, the projection
+onto any axis has the distribution of $\sqrt{N}\cos\Theta$
+where $\Theta$ is the polar angle.
+The surface area element at polar angle $\Theta$ on
+$S^{N-1}$ is proportional to $\sin^{N-2}\Theta\,d\Theta$.
+Changing variables to $q = \cos\Theta$:
+$dq = -\sin\Theta\,d\Theta$ and
+$\sin^{N-2}\Theta = (1-q^2)^{(N-2)/2}$.
+Thus $f(q) \propto (1-q^2)^{(N-2)/2}/\sin\Theta
+= (1-q^2)^{(N-2)/2}/(1-q^2)^{1/2}
+= (1-q^2)^{(N-3)/2}$.
+The normalisation constant is $1/B(1/2, (N{-}1)/2)$
+by the beta-function integral
+$\int_{-1}^{1}(1-q^2)^{(N-3)/2}\,dq = B(1/2, (N{-}1)/2)$.
+
+\paragraph{Moments.}
+$\mathbb{E}[q] = 0$ (by symmetry),
+$\mathbb{E}[q^2] = 1/(N{-}1) \approx 1/N$.
+
+\paragraph{Gaussian approximation.}
+Matching the first two moments, one approximates
+$q \sim \mathcal{N}(0, 1/N)$.  This is accurate for
+$q = O(1/\sqrt{N})$ but breaks down catastrophically
+in the tail near $q = 1$, as we now show.
+
+
+%% ==================================================================
+\section{Tail probability: sphere vs.\ Gaussian}
+\label{sec:tail}
+
+The expected number of geometric neighbours depends on
+the tail probability $P(q > q_{\rm geom})$.
+
+\subsection{Exact spherical tail near $q = 1$}
+
+For $q_0$ close to $1$, set $q = 1 - t$ with
+$\delta = 1 - q_0 \ll 1$:
+\begin{equation}
+  1 - q^2 = (1-q)(1+q) = t(2-t) \approx 2t
+  \qquad (t \ll 1).
+\end{equation}
+Then:
+\begin{align}
+  P_{\rm sphere}(q > q_0)
+  &= \int_{q_0}^{1} f(q)\,dq
+  = C_N \int_0^{\delta}(2t)^{(N-3)/2}\,dt
+  \nonumber\\[3pt]
+  &= C_N \cdot 2^{(N-3)/2}
+    \cdot \frac{\delta^{(N-1)/2}}{(N{-}1)/2}\,,
+  \label{eq:Psphere}
+\end{align}
+where $C_N = 1/B(1/2,(N{-}1)/2)$.
+
+For the normalisation constant, use Stirling's approximation
+on the beta function:
+\begin{equation}
+  B\Bigl(\frac{1}{2},\frac{N{-}1}{2}\Bigr)
+  = \frac{\sqrt{\pi}\;\Gamma\!\bigl(\frac{N-1}{2}\bigr)}
+         {\Gamma\!\bigl(\frac{N}{2}\bigr)}
+  \approx \sqrt{\frac{2\pi}{N-1}}
+  \approx \sqrt{\frac{2\pi}{N}}\,,
+\end{equation}
+so $C_N \approx \sqrt{N/(2\pi)}$.
+
+Combining:
+\begin{equation}\label{eq:Psphere_full}
+  P_{\rm sphere}
+  \approx \sqrt{\frac{N}{2\pi}}
+  \cdot \frac{2^{(N-3)/2}\,\delta^{(N-1)/2}}{(N{-}1)/2}
+  = \frac{(2\delta)^{(N-1)/2}}{(N{-}1)\sqrt{2\delta}}
+    \cdot \sqrt{\frac{2N}{\pi}}\,.
+\end{equation}
+The leading exponential is:
+\begin{equation}\label{eq:lnPsphere}
+  \boxed{%
+  \ln P_{\rm sphere}
+  = \frac{N{-}1}{2}\,\ln(2\delta)
+  + O(\ln N)\,,}
+\end{equation}
+where $\delta = 1 - q_{\rm geom} = 4/(\beta N)$, giving
+\begin{equation}\label{eq:lnPsphere_explicit}
+  \ln P_{\rm sphere}
+  = \frac{N{-}1}{2}\,\ln\frac{8}{\beta N}
+  + O(\ln N).
+\end{equation}
+Since $\beta N \gg 1$, we have $\ln(8/(\beta N)) < 0$
+and $P_{\rm sphere}$ is exponentially small---but the
+exponent is $(N/2)\ln(8/(\beta N))$, not $-N/2$.
+
+
+\subsection{Gaussian tail}
+
+Under $q \sim \mathcal{N}(0, 1/N)$, the standardised
+variable is $z = q\sqrt{N}$ and
+$z_0 = q_{\rm geom}\sqrt{N}
+  \approx \sqrt{N} - 4/(\beta\sqrt{N})$.
+By Mill's ratio ($\bar\Phi(z) \approx \phi(z)/z$
+for $z \gg 1$):
+\begin{equation}\label{eq:PGauss}
+  P_{\rm Gauss}
+  = \bar\Phi(z_0)
+  \approx \frac{e^{-z_0^2/2}}{z_0\sqrt{2\pi}}\,.
+\end{equation}
+The exponent:
+\begin{equation}
+  -\frac{z_0^2}{2}
+  = -\frac{N\,q_{\rm geom}^2}{2}
+  \approx -\frac{N}{2}
+    \Bigl(1 - \frac{8}{\beta N}\Bigr)
+  = -\frac{N}{2} + \frac{4}{\beta}\,,
+\end{equation}
+so
+\begin{equation}\label{eq:lnPgauss}
+  \boxed{%
+  \ln P_{\rm Gauss}
+  = -\frac{N}{2} + \frac{4}{\beta} + O(\ln N)\,.}
+\end{equation}
+
+
+\subsection{The discrepancy}
+\label{sec:discrepancy}
+
+Taking the ratio:
+\begin{align}
+  \ln\frac{P_{\rm sphere}}{P_{\rm Gauss}}
+  &= \frac{N}{2}\ln\frac{8}{\beta N}
+    - \Bigl(-\frac{N}{2} + \frac{4}{\beta}\Bigr)
+    + O(\ln N)
+  \nonumber\\[4pt]
+  &= \frac{N}{2}\Bigl(\ln\frac{8}{\beta N} + 1\Bigr)
+    - \frac{4}{\beta}
+    + O(\ln N)
+  \nonumber\\[4pt]
+  &= -\frac{N}{2}\Bigl(\ln\frac{\beta N}{8} - 1\Bigr)
+    + O(\ln N).
+  \label{eq:ratio}
+\end{align}
+\begin{equation}
+  \boxed{%
+  \frac{P_{\rm sphere}}{P_{\rm Gauss}}
+  \;\approx\;
+  \exp\!\Bigl[-\frac{N}{2}\Bigl(
+    \ln\frac{\beta N}{8} - 1\Bigr)\Bigr].}
+\end{equation}
+For $\beta N > 8e \approx 21.7$, the exponent is negative
+and the sphere gives a \emph{smaller} tail than the Gaussian.
+The discrepancy grows as $(N/2)\ln(\beta N)$---this is
+\textbf{super-exponential} in $N$.
+
+\paragraph{Why the Gaussian fails.}
+The exact log-density is
+\begin{equation}
+  \ln f(q) = \text{const} + \frac{N{-}3}{2}\ln(1-q^2).
+\end{equation}
+Expanding around $q = 0$:
+\begin{equation}\label{eq:series}
+  \frac{N{-}3}{2}\ln(1-q^2)
+  = -\frac{N{-}3}{2}\,q^2
+  - \frac{N{-}3}{4}\,q^4
+  - \frac{N{-}3}{6}\,q^6
+  - \cdots
+\end{equation}
+The Gaussian keeps only the $q^2$ term.
+For $q = O(1/\sqrt{N})$, the $q^4$ correction is $O(1)$
+and can be absorbed into the normalisation.
+But for $q \to 1$, \emph{every term is $O(N)$}:
+$q^{2k} \approx 1$ and the $k$-th term is $-(N{-}3)/(2k)$.
+The full series sums to the exact $\ln(1-q^2)$, which
+diverges as $q \to 1$---qualitatively different from
+the finite Gaussian exponent $-Nq^2/2 \approx -N/2$.
+
+
+%% ==================================================================
+\section{Geometric percolation threshold}
+\label{sec:threshold}
+
+\subsection{Expected number of geometric neighbours}
+
+The expected number of patterns whose basins overlap with a given
+pattern's basin is
+\begin{equation}\label{eq:lambda}
+  \lambda = (M - 1) \cdot P(q > q_{\rm geom})
+  \approx e^{N\alpha} \cdot P.
+\end{equation}
+When $\lambda > 1$, a typical pattern has at least one
+geometric neighbour; when $\lambda \gg 1$, a giant connected
+component forms in the random geometric graph on the sphere.
+The percolation threshold $\lambda = 1$ gives
+$\alpha_c = -(\ln P)/N$.
+
+\subsection{Gaussian prediction}
+
+From~\eqref{eq:lnPgauss}:
+\begin{equation}\label{eq:ac_gauss}
+  \alpha_c^{\rm Gauss}
+  = \frac{1}{2} - \frac{4}{\beta N}
+  + \frac{O(\ln N)}{N}
+  \;\;\xrightarrow{N \to \infty}\;\;
+  \frac{1}{2}\,.
+\end{equation}
+This is the standard result cited for the exponential
+associative memory.
+
+\subsection{Exact spherical prediction}
+
+From~\eqref{eq:lnPsphere_explicit}:
+\begin{equation}\label{eq:ac_sphere}
+  \boxed{%
+  \alpha_c^{\rm sphere}
+  = -\frac{1}{N}\cdot\frac{N{-}1}{2}\,\ln\frac{8}{\beta N}
+  + \frac{O(\ln N)}{N}
+  \;\approx\;
+  \frac{1}{2}\ln\frac{\beta N}{8}
+  = \frac{\ln\beta + \ln N - \ln 8}{2}\,.}
+\end{equation}
+This diverges as $\tfrac{1}{2}\ln N$ for any fixed $\beta > 0$.
+
+For any fixed load $\alpha$, the condition
+$\alpha > \alpha_c^{\rm sphere}$ is violated once
+\begin{equation}\label{eq:Ncrit}
+  N > N_{\rm crit} = \frac{8}{\beta}\,e^{2\alpha}.
+\end{equation}
+Beyond $N_{\rm crit}$, $\lambda \to 0$ super-exponentially
+and every basin is geometrically isolated.
+
+
+\subsection{Numerical comparison}
+
+\begin{center}
+\begin{tabular}{cccccc}
+\toprule
+$N$ & $\beta$ & $\beta N$ &
+  $\alpha_c^{\rm Gauss}$ &
+  $\alpha_c^{\rm sphere}$ &
+  $\ln(P_{\rm sphere}/P_{\rm Gauss})$ \\
+\midrule
+ 10 & 1 &  10 & 0.50 & 0.11 & $+1$ \\
+ 20 & 1 &  20 & 0.50 & 0.46 & $-1$ \\
+ 50 & 1 &  50 & 0.50 & 0.93 & $-22$ \\
+100 & 1 & 100 & 0.50 & 1.26 & $-68$ \\
+200 & 1 & 200 & 0.50 & 1.61 & $-183$ \\
+\midrule
+ 50 & 0.2 & 10 & 0.50 & 0.11 & $+2$ \\
+ 50 & 0.5 & 25 & 0.50 & 0.57 & $-4$ \\
+ 50 & 2.0 & 100 & 0.50 & 1.26 & $-39$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For $\beta N \lesssim 20$, the two predictions are comparable
+(the sphere even gives a \emph{heavier} tail than the Gaussian
+for $\beta N = 10$, because the leading-order
+formula~\eqref{eq:lnPsphere} drops polynomial prefactors
+that matter at small~$\beta N$).
+For $\beta N \gtrsim 30$, the Gaussian overestimates
+$\lambda$ by many orders of magnitude.
+
+\paragraph{Example: $\alpha = 0.5$, $\beta = 1$.}
+The Gaussian predicts $\lambda \approx 1$ (percolation threshold).
+The exact sphere gives $N_{\rm crit} = 8e \approx 22$.
+For $N = 50$: $\lambda_{\rm sphere} \approx e^{50 \cdot 0.5
++ 25\ln(8/50)} \approx e^{25 - 46} = e^{-21} \approx 10^{-9}$.
+The basin has zero geometric neighbours with overwhelming probability.
+
+
+%% ==================================================================
+\section{Structure of the geometric graph}
+\label{sec:graph}
+
+\subsection{When chains can form}
+
+For $\alpha > \alpha_c^{\rm sphere}
+= \tfrac{1}{2}\ln(\beta N/8)$, the geometric random
+graph on $S^{N-1}$ has $\lambda > 1$ and forms a
+giant connected component with chain structure:
+\begin{itemize}
+  \item Each hop covers angular distance
+    $\sim 2\theta_c \approx 2\sqrt{2/(\beta N)}$.
+  \item To traverse $O(1)$ angular distance requires
+    $k \sim \sqrt{\beta N}/2$ hops.
+  \item At each step, the frontier shell (annulus of width
+    $\sim \theta_c$ beyond the current boundary) contains
+    $\sim \lambda$ candidate patterns.
+  \item After $k$ hops, the cluster contains $\sim \lambda^k$
+    patterns, which is sub-exponential in~$N$ for
+    $k = O(\sqrt{N})$.
+\end{itemize}
+
+\subsection{Why chains are absent at fixed $\alpha$}
+
+For any fixed $\alpha$ and $N > N_{\rm crit}
+= 8e^{2\alpha}/\beta$:
+\begin{itemize}
+  \item $\lambda \to 0$ super-exponentially.
+  \item Each basin is an isolated island with no geometric
+    neighbours.
+  \item The BFS from any starting state terminates at depth~0:
+    no patterns are found beyond the initial basin.
+\end{itemize}
+
+\subsection{State-space BFS at $\alpha \approx 0.5$}
+
+Starting at $s_0 \in X_{\mu_0}$ and walking to the boundary:
+\begin{itemize}
+  \item $\beta N \lesssim 20$:
+    the geometric graph is non-trivial; chains of a few hops
+    may exist.  This is the small-$\beta N$ regime where
+    the Gaussian approximation is qualitatively adequate.
+  \item $\beta N \approx 22$: crossover.  $\lambda \approx 1$.
+  \item $\beta N \gtrsim 30$:
+    $\lambda \ll 1$; no geometric neighbours exist.
+    The BFS terminates immediately.
+\end{itemize}
+
+
+%% ==================================================================
+\section{What drives the phase transition at $\alpha = 1/2$?}
+\label{sec:softmax}
+
+The exponential associative memory
+($b \to \infty$ limit of~\eqref{eq:E})
+has energy $E = -\frac{1}{\beta}\ln\sum_\mu e^{\beta N\vp_\mu}$
+and a well-established phase transition at $\alpha_c = 1/2$.
+Since geometric percolation requires
+$\alpha \gg 1/2$ for large~$N$,
+this transition must be driven by a different mechanism.
+
+\subsection{Signal-to-noise analysis}
+
+At the target centre $\bS = \bxi^1$, the energy gradient
+is proportional to a softmax-weighted sum of patterns:
+\begin{equation}
+  \nabla E \propto \sum_\mu w_\mu\,\bxi^\mu, \qquad
+  w_\mu = \frac{e^{\beta N\vp_\mu}}{\sum_\nu e^{\beta N\vp_\nu}}.
+\end{equation}
+The \textbf{signal} is the target's contribution:
+$e^{\beta N \cdot 1} = e^{\beta N}$.
+The \textbf{noise} is the sum of all other contributions:
+\begin{equation}
+  \text{Noise} = \sum_{\mu \neq 1} e^{\beta N\vp_\mu}.
+\end{equation}
+For random overlaps $\vp_\mu \sim \mathcal{N}(0, 1/N)$
+(in the Gaussian approximation), the moment generating
+function gives
+$\mathbb{E}[e^{\beta N\vp}] = e^{\beta^2 N/2}$.
+Therefore:
+\begin{equation}\label{eq:Enoise}
+  \mathbb{E}[\text{Noise}]
+  = (M - 1)\,e^{\beta^2 N/2}
+  \approx e^{N\alpha + \beta^2 N/2}.
+\end{equation}
+The target dominates when
+$e^{\beta N} \gg e^{N\alpha + \beta^2 N/2}$, i.e.
+\begin{equation}\label{eq:retrieval_condition}
+  \boxed{%
+  \alpha < \beta - \frac{\beta^2}{2}
+  = \beta\Bigl(1 - \frac{\beta}{2}\Bigr).}
+\end{equation}
+For $\beta = 1$: $\alpha_c = 1/2$.
+The maximum over $\beta$ is at $\beta^* = 1$, giving
+$\alpha_c^{\max} = 1/2$.
+
+\subsection{Nature of the transition}
+
+This is an \textbf{information-theoretic} transition:
+\begin{itemize}
+  \item The state does not walk to other basins.
+    Each basin is geometrically isolated for $\beta N \gg 1$.
+  \item Exponentially many patterns contribute to the softmax
+    through their weights $e^{\beta N\vp_\mu}$, even though
+    \emph{none} of them are ``active'' in the hard-wall sense
+    (all have $\vp_\mu < \vp_c = 1 - 1/(\beta N)$ at the
+    target centre).
+  \item When $\alpha > 1/2$, the collective noise from
+    $\sim e^{N/2}$ patterns overwhelms the target signal.
+    The target ceases to be a stable fixed point of the dynamics.
+\end{itemize}
+
+\paragraph{Key distinction from $b = O(1)$.}
+For $b = O(1)$ (the LSR regime), the hard wall at $\vp_c = O(1)$
+creates genuine infinite barriers between well-separated basins.
+The phase transition occurs when the state can percolate
+through a network of corridors.
+For $b = \beta N$, the hard wall at $\vp_c = 1 - O(1/N)$ is
+so restrictive that basins are microscopic and isolated.
+The transition occurs because the softmax energy is effectively
+a global interaction---every pattern contributes everywhere on
+the sphere through its exponential weight, regardless of the
+hard-wall constraint.
+
+\subsection{Spherical correction to the signal-to-noise threshold}
+
+The Gaussian MGF $\mathbb{E}[e^{\beta N q}] = e^{\beta^2 N/2}$
+receives corrections from the exact spherical distribution.
+The exact MGF is
+\begin{equation}\label{eq:MGF_sphere}
+  \mathbb{E}_{\rm sphere}[e^{\beta N q}]
+  = C_N \int_{-1}^{1} e^{\beta N q}\,(1-q^2)^{(N-3)/2}\,dq.
+\end{equation}
+For large $N$, evaluate by saddle point.  The exponent is
+$g(q) = \beta N q + \tfrac{N-3}{2}\ln(1 - q^2)$,
+with $g'(q) = \beta N - (N{-}3)q/(1-q^2) = 0$, giving
+\begin{equation}\label{eq:saddle}
+  q^* = \frac{\beta(1 - q^{*2})}{1 - 3/N}
+  \;\approx\; \beta(1 - q^{*2}).
+\end{equation}
+For $\beta < 1$: $q^* \in (0, 1)$ and the saddle is in the
+interior.
+For $\beta = 1$: $q^* = (\sqrt{5}-1)/2 \approx 0.618$
+(the golden ratio minus one).
+The saddle-point exponent $g(q^*)$ determines the leading
+behaviour of the MGF.  When $g(q^*)$ differs from
+$\beta^2 N/2$ (the Gaussian result), the signal-to-noise
+threshold $\alpha_c$ shifts.
+A systematic evaluation of this correction is an important
+direction for future work.
+
+
+%% ==================================================================
+\section{Finite-$\beta N$ crossover}
+\label{sec:crossover}
+
+The results of the preceding sections delineate two regimes:
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+  & Small $\beta N$ & Large $\beta N$ \\
+\midrule
+Basins & wide caps, $\theta_c = O(1)$
+       & microscopic, $\theta_c \sim 1/\sqrt{\beta N}$ \\
+Geometric overlaps & abundant
+                   & exponentially rare \\
+Energy barriers & $O(N/b)$, extensive
+               & $O(1/\beta)$, thermal \\
+Connectivity bottleneck & energy
+                        & geometry \\
+Phase transition mechanism & basin percolation
+                          & softmax signal-to-noise \\
+$\alpha_c$ & $\frac{1}{2}(1-1/b)^2$
+           & $1/2$ (S/N), or $\frac{1}{2}\ln(\beta N/8)$ (geom.) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The crossover between the two regimes is determined by
+the condition
+\begin{equation}
+  \alpha_c^{\rm sphere}(\beta, N) = \alpha,
+  \qquad\text{i.e.}\qquad
+  \beta N = 8\,e^{2\alpha}.
+\end{equation}
+At $\alpha = 0.5$: $\beta N_{\rm cross} \approx 22$.
+At $\alpha = 1.0$: $\beta N_{\rm cross} \approx 59$.
+At $\alpha = 2.0$: $\beta N_{\rm cross} \approx 436$.
+
+\paragraph{Finite-$N$ corrections.}
+The leading formula~\eqref{eq:ac_sphere} drops polynomial
+prefactors.  Retaining them from~\eqref{eq:Psphere_full}:
+\begin{equation}\label{eq:ac_refined}
+  \alpha_c^{\rm sphere}
+  = \frac{1}{2}\ln\frac{\beta N}{8}
+  + \frac{1}{N}\ln\sqrt{\frac{\pi\,\beta N}{4}}
+  + O\!\Bigl(\frac{\ln N}{N}\Bigr).
+\end{equation}
+The subleading correction is positive and $O(\ln N / N)$,
+slightly increasing $\alpha_c$ at finite~$N$.
+
+
+%% ==================================================================
+\section{Summary}
+\label{sec:summary}
+
+\begin{enumerate}
+  \item \textbf{Geometry first, energy second.}
+    For $b = \beta N$, energy barriers between geometrically
+    overlapping basins are $O(1/\beta)$---thermally irrelevant.
+    The question reduces to: do any caps overlap?
+
+  \item \textbf{The Gaussian approximation fails catastrophically
+    for $\beta N \gg 1$.}
+    At $q_{\rm geom} = 1 - 4/(\beta N)$,
+    the Gaussian overestimates the tail probability by
+    $\exp\!\bigl[\tfrac{N}{2}(\ln(\beta N/8) - 1)\bigr]$,
+    a super-exponential factor.
+
+  \item \textbf{Geometric percolation requires
+    $\alpha \sim \tfrac{1}{2}\ln N$.}
+    For any fixed load $\alpha$, the geometric graph has
+    no edges once $N > 8e^{2\alpha}/\beta$.
+    At $\alpha = 0.5$, $\beta = 1$: no neighbours for $N > 22$.
+
+  \item \textbf{The transition at $\alpha = 1/2$ is not
+    geometric percolation.}
+    It is driven by signal-to-noise competition in the softmax:
+    $e^{N/2}$ individually negligible patterns collectively
+    overwhelm the target.
+
+  \item \textbf{Crossover at $\beta N \approx 8\,e^{2\alpha}$.}
+    Below this, the percolation picture from the $b = O(1)$
+    analysis applies qualitatively.
+    Above it, basins are isolated and the softmax mechanism
+    dominates.
+\end{enumerate}
+
+
+\end{document}

@@ -1,0 +1,14 @@
+name = "PhaseBoundaryGPU"
+uuid = "12345678-1234-1234-1234-123456789abc"
+version = "1.0.0"
+
+[deps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+
+[compat]
+CUDA = "5"
+CairoMakie = "0.10, 0.11, 0.12"
+ProgressMeter = "1"
+julia = "1.9"
