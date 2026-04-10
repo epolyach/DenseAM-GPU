@@ -46,7 +46,7 @@ out_base   = "maps_phases_LSR_v8"
 const Q_TH      = 0.15    # q̃ above this → frozen (non-ergodic)
 const PHI_R     = 0.99    # φ̃ above this → retrieval
 const PHI_P     = 0.1     # φ̃ below this → paramagnetic
-const PHIMAX_TH = 0.05    # φ_max_other above this → spurious pattern overlap detected
+const PHIMAX_TH = (b_lsr - 1) / b_lsr  # ≈ 0.707, LSR support boundary: spurious pattern in support
 
 # ──────────────── Read data ────────────────
 
