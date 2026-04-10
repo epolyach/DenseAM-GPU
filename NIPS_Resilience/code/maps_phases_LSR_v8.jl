@@ -43,9 +43,10 @@ phimax_csv = "basin_stab_LSR_v8_phimax.csv"
 out_base   = "maps_phases_LSR_v8"
 
 # Phase classification thresholds (adjustable)
-const Q_TH  = 0.15    # q̃ above this → frozen (non-ergodic)
-const PHI_R = 0.99    # φ̃ above this → retrieval
-const PHI_P = 0.1     # φ̃ below this → paramagnetic
+const Q_TH      = 0.15    # q̃ above this → frozen (non-ergodic)
+const PHI_R     = 0.99    # φ̃ above this → retrieval
+const PHI_P     = 0.1     # φ̃ below this → paramagnetic
+const PHIMAX_TH = 0.05    # φ_max_other above this → spurious pattern overlap detected
 
 # ──────────────── Read data ────────────────
 
@@ -155,18 +156,13 @@ for i in 1:n_alpha
     for j in 1:n_T
         φn = phi_norm[i, j]
         qn = q_norm[i, j]
-        if qn <= Q_TH && φn <= PHI_P
-            phase_grid[i, j] = 1       # Paramagnetic
-        elseif φn >= PHI_R && qn > Q_TH
+        pm = phimax_grid[i, j]
+        if φn >= PHI_R && qn > Q_TH
             phase_grid[i, j] = 3       # Retrieval
-        elseif φn > PHI_P && qn > Q_TH
-            phase_grid[i, j] = 2       # Mixed
-        elseif qn <= Q_TH
-            phase_grid[i, j] = 1       # Paramagnetic (low q regardless of φ)
+        elseif φn > PHI_P && qn > Q_TH && pm > PHIMAX_TH
+            phase_grid[i, j] = 2       # Mixed (reduced φ, frozen, spurious overlap)
         else
-            # Edge case: low φ but high q — would be SG in classical model
-            # In dense AM this should not occur; flag as paramagnetic
-            phase_grid[i, j] = 1
+            phase_grid[i, j] = 1       # Paramagnetic (everything else)
         end
     end
 end
@@ -176,7 +172,7 @@ n_P = count(==(1), phase_grid)
 n_M = count(==(2), phase_grid)
 n_R = count(==(3), phase_grid)
 n_total = n_alpha * n_T
-@printf("\nPhase classification (φ_R=%.2f, φ_P=%.2f, q_th=%.2f):\n", PHI_R, PHI_P, Q_TH)
+@printf("\nPhase classification (φ_R=%.2f, φ_P=%.2f, q_th=%.2f, φ_max_th=%.2f):\n", PHI_R, PHI_P, Q_TH, PHIMAX_TH)
 @printf("  Retrieval (R):     %d (%.1f%%)\n", n_R, 100*n_R/n_total)
 @printf("  Mixed (M):         %d (%.1f%%)\n", n_M, 100*n_M/n_total)
 @printf("  Paramagnetic (P):  %d (%.1f%%)\n", n_P, 100*n_P/n_total)
@@ -231,7 +227,7 @@ plot!(p2, legend=:topright, background_color_legend=RGBA(0.85, 0.85, 0.85, 0.8))
 # ── Panel 3: φ_max_other map ──
 p3 = heatmap(alpha_vec, T_vec, phimax_grid',
     xlabel="α", ylabel="T", title="φ_max_other (max spurious overlap)",
-    color=:inferno, clims=(0, maximum(phimax_grid)*1.05),
+    color=:RdYlBu, clims=(0, maximum(phimax_grid)*1.05),
     colorbar_title="φ_max_other",
     xlims=xl, ylims=yl)
 plot!(p3, α_theory, T_theory, color=:white, lw=2, ls=:solid, label="α_c(T)")
