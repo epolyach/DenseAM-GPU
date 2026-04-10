@@ -151,18 +151,27 @@ end
 # ──────────────── Phase classification (R/M/P) ────────────────
 
 # Phase codes: 1 = Paramagnetic, 2 = Mixed, 3 = Retrieval
+# First pass: assign R and P
 phase_grid = zeros(Int, n_alpha, n_T)
 for i in 1:n_alpha
     for j in 1:n_T
         φn = phi_norm[i, j]
         qn = q_norm[i, j]
-        pm = phimax_grid[i, j]
         if φn >= PHI_R && qn > Q_TH
             phase_grid[i, j] = 3       # Retrieval
-        elseif φn > PHI_P && qn > Q_TH && pm > PHIMAX_TH
-            phase_grid[i, j] = 2       # Mixed (reduced φ, frozen, spurious overlap)
         else
-            phase_grid[i, j] = 1       # Paramagnetic (everything else)
+            phase_grid[i, j] = 1       # Paramagnetic (default)
+        end
+    end
+end
+# Second pass: paint M on top wherever φ_max_other exceeds threshold
+for i in 1:n_alpha
+    for j in 1:n_T
+        pm = phimax_grid[i, j]
+        if pm > PHIMAX_TH
+            phase_grid[i, j] = 2       # Mixed (spurious overlap detected)
+            # Full classification would also require:
+            # φn > PHI_P && qn > Q_TH
         end
     end
 end
