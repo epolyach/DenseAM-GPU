@@ -42,6 +42,9 @@ q_csv      = "basin_stab_LSR_v8_q.csv"
 phimax_csv = "basin_stab_LSR_v8_phimax.csv"
 out_base   = "maps_phases_LSR_v8"
 
+# LSR sharpness (needed for thresholds and theory curves)
+const b_lsr = 2 + sqrt(2)
+
 # Phase classification thresholds (adjustable)
 const Q_TH      = 0.15    # q̃ above this → frozen (non-ergodic)
 const PHI_R     = 0.99    # φ̃ above this → retrieval
@@ -73,8 +76,6 @@ phimax_grid = Matrix{Float64}(df_phimax[:, 2:end])
 @printf("φ_max_other range: %.4f – %.4f\n", extrema(phimax_grid)...)
 
 # ──────────────── LSR theory (ICML 2026) ────────────────
-
-const b_lsr = 2 + sqrt(2)
 
 # Equilibrium overlap φ_eq(T) — solve quadratic (bT+1)y² - (2+T+Tb)y + T = 0
 function φ_eq_LSR(T)
