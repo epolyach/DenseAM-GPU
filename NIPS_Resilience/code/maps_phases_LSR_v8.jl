@@ -46,8 +46,8 @@ out_base   = "maps_phases_LSR_v8"
 const b_lsr = 2 + sqrt(2)
 
 # Phase classification thresholds
-const PHI_C     = 0.5     # raw φ above this → R, below → P (single threshold)
-const PHIMAX_TH = (b_lsr - 1) / b_lsr  # ≈ 0.707, LSR support boundary (physics-based, not arbitrary)
+const PHI_C       = 0.5   # normalized φ̃ and φ̃_max_other below this → P
+const PHI_R_RATIO = 2.0   # φ/φ_max_other above this → R (target dominates spurious)
 
 # ──────────────── Read data ────────────────
 
@@ -150,22 +150,22 @@ end
 # ──────────────── Phase classification (R/M/P) ────────────────
 
 # Phase codes: 1 = Paramagnetic, 2 = Mixed, 3 = Retrieval
-# First pass: R vs P using normalized φ̃ and a single threshold
 phase_grid = zeros(Int, n_alpha, n_T)
 for i in 1:n_alpha
     for j in 1:n_T
-        if phi_norm[i, j] > PHI_C
-            phase_grid[i, j] = 3       # Retrieval
+        φn = phi_norm[i, j]                     # φ / φ_eq(T)
+        pmn = phimax_norm[i, j]                  # φ_max_other / φ_eq(T)
+        φ_raw = phi_grid[i, j]
+        pm_raw = phimax_grid[i, j]
+        # 1. P phase: both normalized overlaps are weak
+        if φn < PHI_C && pmn < PHI_C
+            phase_grid[i, j] = 1                 # Paramagnetic
+        # 2. R phase: target clearly dominates spurious
+        elseif pm_raw > 0 && φ_raw / pm_raw > PHI_R_RATIO
+            phase_grid[i, j] = 3                 # Retrieval
+        # 3. M phase: everything else
         else
-            phase_grid[i, j] = 1       # Paramagnetic
-        end
-    end
-end
-# Second pass: paint M on top wherever spurious pattern is within LSR support
-for i in 1:n_alpha
-    for j in 1:n_T
-        if phimax_grid[i, j] > PHIMAX_TH
-            phase_grid[i, j] = 2       # Mixed
+            phase_grid[i, j] = 2                 # Mixed
         end
     end
 end
@@ -175,7 +175,7 @@ n_P = count(==(1), phase_grid)
 n_M = count(==(2), phase_grid)
 n_R = count(==(3), phase_grid)
 n_total = n_alpha * n_T
-@printf("\nPhase classification (φ_c=%.2f, φ_max_th=%.3f):\n", PHI_C, PHIMAX_TH)
+@printf("\nPhase classification (φ_c=%.2f, φ_R_ratio=%.1f):\n", PHI_C, PHI_R_RATIO)
 @printf("  Retrieval (R):     %d (%.1f%%)\n", n_R, 100*n_R/n_total)
 @printf("  Mixed (M):         %d (%.1f%%)\n", n_M, 100*n_M/n_total)
 @printf("  Paramagnetic (P):  %d (%.1f%%)\n", n_P, 100*n_P/n_total)
@@ -198,8 +198,13 @@ function threshold_contour(alpha_vec, T_vec, grid, level)
     return αc, Tc
 end
 
-α_φc, T_φc = threshold_contour(alpha_vec, T_vec, phi_norm, PHI_C)          # R/P boundary (normalized φ̃)
-α_pm, T_pm = threshold_contour(alpha_vec, T_vec, phimax_grid, PHIMAX_TH)  # M boundary (φ_max_other)
+# Contour: φ̃ = PHI_C (P boundary)
+α_φc, T_φc = threshold_contour(alpha_vec, T_vec, phi_norm, PHI_C)
+# Contour: φ̃_max_other = PHI_C (P boundary for spurious overlap)
+α_pmc, T_pmc = threshold_contour(alpha_vec, T_vec, phimax_norm, PHI_C)
+# Contour: φ/φ_max_other = PHI_R_RATIO (R/M boundary)
+ratio_grid = phi_grid ./ max.(phimax_grid, 1e-10)
+α_rat, T_rat = threshold_contour(alpha_vec, T_vec, ratio_grid, PHI_R_RATIO)
 
 # ──────────────── Plot ────────────────
 
@@ -214,7 +219,7 @@ p1 = heatmap(alpha_vec, T_vec, phi_grid',
     xlims=xl, ylims=yl)
 plot!(p1, α_theory, T_theory, color=:white, lw=2, ls=:solid, label="α_c(T)")
 plot!(p1, α_φc, T_φc, color=:black, lw=1.5, ls=:dash, label="φ̃=$(PHI_C)")
-plot!(p1, α_pm, T_pm, color=:magenta, lw=1.5, ls=:dash, label="φ_max=$(round(PHIMAX_TH, digits=3))")
+plot!(p1, α_rat, T_rat, color=:magenta, lw=1.5, ls=:dash, label="φ/φ_max=$(PHI_R_RATIO)")
 plot!(p1, legend=:topright, background_color_legend=RGBA(0.85, 0.85, 0.85, 0.8))
 
 # ── Panel 2: q map ──
@@ -224,7 +229,7 @@ p2 = heatmap(alpha_vec, T_vec, q_grid',
     xlims=xl, ylims=yl)
 plot!(p2, α_theory, T_theory, color=:white, lw=2, ls=:solid, label="α_c(T)")
 plot!(p2, α_φc, T_φc, color=:black, lw=1.5, ls=:dash, label="φ̃=$(PHI_C)")
-plot!(p2, α_pm, T_pm, color=:magenta, lw=1.5, ls=:dash, label="φ_max=$(round(PHIMAX_TH, digits=3))")
+plot!(p2, α_rat, T_rat, color=:magenta, lw=1.5, ls=:dash, label="φ/φ_max=$(PHI_R_RATIO)")
 plot!(p2, legend=:topright, background_color_legend=RGBA(0.85, 0.85, 0.85, 0.8))
 
 # ── Panel 3: φ_max_other map ──
@@ -250,7 +255,7 @@ p4 = heatmap(alpha_vec, T_vec, phase_grid',
     xlims=xl, ylims=yl)
 plot!(p4, α_theory, T_theory, color=:white, lw=2.5, ls=:solid, label="α_c(T)")
 plot!(p4, α_φc, T_φc, color=:black, lw=1.5, ls=:dash, label="φ̃=$(PHI_C)")
-plot!(p4, α_pm, T_pm, color=:magenta, lw=1.5, ls=:dash, label="φ_max=$(round(PHIMAX_TH, digits=3))")
+plot!(p4, α_rat, T_rat, color=:magenta, lw=1.5, ls=:dash, label="φ/φ_max=$(PHI_R_RATIO)")
 # Phase legend markers
 for (lab, col) in zip(["P", "M", "R"], [:royalblue, :orange, :limegreen])
     scatter!(p4, [NaN], [NaN], color=col, markershape=:square,
