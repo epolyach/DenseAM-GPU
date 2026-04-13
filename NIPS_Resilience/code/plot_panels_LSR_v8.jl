@@ -162,9 +162,9 @@ xl = (alpha_vec[1], alpha_vec[end])
 yl = (T_vec[1], T_vec[end])
 
 function save_fig(p, name)
-    savefig(p, joinpath(out_dir, "$name.eps"))
+    savefig(p, joinpath(out_dir, "$name.pdf"))
     savefig(p, joinpath(out_dir, "$name.png"))
-    println("  Saved: $name.eps, $name.png")
+    println("  Saved: $name.pdf, $name.png")
 end
 
 # ──────────────── 1. φ heatmap ────────────────
