@@ -239,6 +239,23 @@ p = heatmap(alpha_vec, T_vec, diff_pm',
 plot!(p, α_theory, T_theory, color=:black, lw=2, ls=:solid, label="")
 save_fig(p, "phi_minus_phimax")
 
+# ──────────────── 7. q_EA vs φ scatter ────────────────
+
+phase_col = [:royalblue, :orange, :limegreen]
+phase_labels = ["P", "M", "R"]
+p = plot(xlabel="φ", ylabel="q_EA",
+    title="q_EA vs φ", legend=:topleft,
+    size=FIG_SIZE_SCA, dpi=FIG_DPI, margin=3Plots.mm)
+for (code, lab, col) in zip(1:3, phase_labels, phase_col)
+    mask = vec(phase_grid) .== code
+    any(mask) && scatter!(p, vec(phi_grid)[mask], vec(q_grid)[mask],
+        markersize=3, markershape=:circle, markerstrokewidth=0,
+        alpha=0.5, color=col, label=lab)
+end
+φ_line = range(0, 1, length=100)
+plot!(p, φ_line, φ_line .^ 2, color=:black, lw=2, ls=:solid, label="q = φ²")
+save_fig(p, "q_vs_phi")
+
 # ──────────────── Done ────────────────
 
 println("\nAll panels saved to $out_dir/")
