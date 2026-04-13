@@ -37,11 +37,23 @@ const b_lsr = 2 + sqrt(2)
 const PHI_C       = 0.1
 const PHI_R_RATIO = 1.0
 
-# Figure size: 86mm ≈ 244pt ≈ 3.39in, aspect ratio 1:1 for heatmaps
-const FIG_W = 86 * 72 / 25.4  # 86mm in points
-const FIG_SIZE_MAP = (round(Int, FIG_W), round(Int, FIG_W * 0.85))
-const FIG_SIZE_SCA = (round(Int, FIG_W), round(Int, FIG_W * 0.85))
+# Figure size: 86mm = 3.39in. Plots.jl uses pixels; at 300 DPI: 86mm → 1016 px
 const FIG_DPI = 300
+const FIG_W_PX = round(Int, 86 / 25.4 * FIG_DPI)  # 1016
+const FIG_H_PX = round(Int, FIG_W_PX * 0.85)       # 864
+const FIG_SIZE_MAP = (FIG_W_PX, FIG_H_PX)
+const FIG_SIZE_SCA = (FIG_W_PX, FIG_H_PX)
+
+# Font sizes scaled for 86mm column width
+const FONT_TITLE  = 9
+const FONT_GUIDE  = 8
+const FONT_TICK   = 7
+const FONT_LEGEND = 7
+
+# Set global font defaults
+default(titlefontsize=FONT_TITLE, guidefontsize=FONT_GUIDE,
+        tickfontsize=FONT_TICK, legendfontsize=FONT_LEGEND,
+        colorbar_tickfontsize=FONT_TICK, colorbar_titlefontsize=FONT_GUIDE)
 
 # ──────────────── Read data ────────────────
 
