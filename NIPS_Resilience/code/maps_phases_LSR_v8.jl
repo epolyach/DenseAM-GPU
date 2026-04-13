@@ -46,8 +46,8 @@ out_base   = "maps_phases_LSR_v8"
 const b_lsr = 2 + sqrt(2)
 
 # Phase classification thresholds
-const PHI_C       = 0.5   # normalized φ̃ and φ̃_max_other below this → P
-const PHI_R_RATIO = 2.0   # φ/φ_max_other above this → R (target dominates spurious)
+const PHI_C       = 0.1   # normalized φ̃ below this → P (paramagnetic)
+const PHI_R_RATIO = 1.0   # φ/φ_max_other above this → R (target dominates spurious)
 
 # ──────────────── Read data ────────────────
 
@@ -157,8 +157,8 @@ for i in 1:n_alpha
         pmn = phimax_norm[i, j]                  # φ_max_other / φ_eq(T)
         φ_raw = phi_grid[i, j]
         pm_raw = phimax_grid[i, j]
-        # 1. P phase: both normalized overlaps are weak
-        if φn < PHI_C && pmn < PHI_C
+        # 1. P phase: normalized target overlap is weak
+        if φn < PHI_C
             phase_grid[i, j] = 1                 # Paramagnetic
         # 2. R phase: target clearly dominates spurious
         elseif pm_raw > 0 && φ_raw / pm_raw > PHI_R_RATIO
