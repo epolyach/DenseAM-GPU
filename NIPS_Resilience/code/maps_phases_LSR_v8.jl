@@ -45,11 +45,9 @@ out_base   = "maps_phases_LSR_v8"
 # LSR sharpness (needed for thresholds and theory curves)
 const b_lsr = 2 + sqrt(2)
 
-# Phase classification thresholds (adjustable)
-const Q_TH      = 0.15    # q̃ above this → frozen (non-ergodic)
-const PHI_R     = 0.99    # φ̃ above this → retrieval
-const PHI_P     = 0.1     # φ̃ below this → paramagnetic
-const PHIMAX_TH = (b_lsr - 1) / b_lsr  # ≈ 0.707, LSR support boundary: spurious pattern in support
+# Phase classification thresholds
+const PHI_C     = 0.5     # raw φ above this → R, below → P (single threshold)
+const PHIMAX_TH = (b_lsr - 1) / b_lsr  # ≈ 0.707, LSR support boundary (physics-based, not arbitrary)
 
 # ──────────────── Read data ────────────────
 
@@ -152,27 +150,22 @@ end
 # ──────────────── Phase classification (R/M/P) ────────────────
 
 # Phase codes: 1 = Paramagnetic, 2 = Mixed, 3 = Retrieval
-# First pass: assign R and P
+# First pass: R vs P using normalized φ̃ and a single threshold
 phase_grid = zeros(Int, n_alpha, n_T)
 for i in 1:n_alpha
     for j in 1:n_T
-        φn = phi_norm[i, j]
-        qn = q_norm[i, j]
-        if φn >= PHI_R && qn > Q_TH
+        if phi_norm[i, j] > PHI_C
             phase_grid[i, j] = 3       # Retrieval
         else
-            phase_grid[i, j] = 1       # Paramagnetic (default)
+            phase_grid[i, j] = 1       # Paramagnetic
         end
     end
 end
-# Second pass: paint M on top wherever φ_max_other exceeds threshold
+# Second pass: paint M on top wherever spurious pattern is within LSR support
 for i in 1:n_alpha
     for j in 1:n_T
-        pm = phimax_grid[i, j]
-        if pm > PHIMAX_TH
-            phase_grid[i, j] = 2       # Mixed (spurious overlap detected)
-            # Full classification would also require:
-            # φn > PHI_P && qn > Q_TH
+        if phimax_grid[i, j] > PHIMAX_TH
+            phase_grid[i, j] = 2       # Mixed
         end
     end
 end
@@ -182,7 +175,7 @@ n_P = count(==(1), phase_grid)
 n_M = count(==(2), phase_grid)
 n_R = count(==(3), phase_grid)
 n_total = n_alpha * n_T
-@printf("\nPhase classification (φ_R=%.2f, φ_P=%.2f, q_th=%.2f, φ_max_th=%.2f):\n", PHI_R, PHI_P, Q_TH, PHIMAX_TH)
+@printf("\nPhase classification (φ_c=%.2f, φ_max_th=%.3f):\n", PHI_C, PHIMAX_TH)
 @printf("  Retrieval (R):     %d (%.1f%%)\n", n_R, 100*n_R/n_total)
 @printf("  Mixed (M):         %d (%.1f%%)\n", n_M, 100*n_M/n_total)
 @printf("  Paramagnetic (P):  %d (%.1f%%)\n", n_P, 100*n_P/n_total)
@@ -205,9 +198,8 @@ function threshold_contour(alpha_vec, T_vec, grid, level)
     return αc, Tc
 end
 
-α_φR, T_φR = threshold_contour(alpha_vec, T_vec, phi_norm, PHI_R)
-α_φP, T_φP = threshold_contour(alpha_vec, T_vec, phi_norm, PHI_P)
-α_qth, T_qth = threshold_contour(alpha_vec, T_vec, q_norm, Q_TH)
+α_φc, T_φc = threshold_contour(alpha_vec, T_vec, phi_norm, PHI_C)          # R/P boundary (normalized φ̃)
+α_pm, T_pm = threshold_contour(alpha_vec, T_vec, phimax_grid, PHIMAX_TH)  # M boundary (φ_max_other)
 
 # ──────────────── Plot ────────────────
 
@@ -221,8 +213,8 @@ p1 = heatmap(alpha_vec, T_vec, phi_grid',
     color=:RdYlBu, clims=(0, 1), colorbar_title="φ",
     xlims=xl, ylims=yl)
 plot!(p1, α_theory, T_theory, color=:white, lw=2, ls=:solid, label="α_c(T)")
-plot!(p1, α_φR, T_φR, color=:black, lw=1.5, ls=:dash, label="φ̃=$(PHI_R)")
-plot!(p1, α_φP, T_φP, color=:green, lw=1.5, ls=:dash, label="φ̃=$(PHI_P)")
+plot!(p1, α_φc, T_φc, color=:black, lw=1.5, ls=:dash, label="φ̃=$(PHI_C)")
+plot!(p1, α_pm, T_pm, color=:magenta, lw=1.5, ls=:dash, label="φ_max=$(round(PHIMAX_TH, digits=3))")
 plot!(p1, legend=:topright, background_color_legend=RGBA(0.85, 0.85, 0.85, 0.8))
 
 # ── Panel 2: q map ──
@@ -231,7 +223,8 @@ p2 = heatmap(alpha_vec, T_vec, q_grid',
     color=:RdYlBu, clims=(0, 1), colorbar_title="q_EA",
     xlims=xl, ylims=yl)
 plot!(p2, α_theory, T_theory, color=:white, lw=2, ls=:solid, label="α_c(T)")
-plot!(p2, α_qth, T_qth, color=:cyan, lw=2, ls=:dash, label="q̃=$(Q_TH)")
+plot!(p2, α_φc, T_φc, color=:black, lw=1.5, ls=:dash, label="φ̃=$(PHI_C)")
+plot!(p2, α_pm, T_pm, color=:magenta, lw=1.5, ls=:dash, label="φ_max=$(round(PHIMAX_TH, digits=3))")
 plot!(p2, legend=:topright, background_color_legend=RGBA(0.85, 0.85, 0.85, 0.8))
 
 # ── Panel 3: φ_max_other map ──
@@ -256,9 +249,8 @@ p4 = heatmap(alpha_vec, T_vec, phase_grid',
     color=phase_colors, clims=(0.5, 3.5), colorbar=false,
     xlims=xl, ylims=yl)
 plot!(p4, α_theory, T_theory, color=:white, lw=2.5, ls=:solid, label="α_c(T)")
-plot!(p4, α_φR, T_φR, color=:black, lw=1.5, ls=:dash, label="φ̃=$(PHI_R)")
-plot!(p4, α_φP, T_φP, color=:green, lw=1.5, ls=:dash, label="φ̃=$(PHI_P)")
-plot!(p4, α_qth, T_qth, color=:cyan, lw=2, ls=:dash, label="q̃=$(Q_TH)")
+plot!(p4, α_φc, T_φc, color=:black, lw=1.5, ls=:dash, label="φ̃=$(PHI_C)")
+plot!(p4, α_pm, T_pm, color=:magenta, lw=1.5, ls=:dash, label="φ_max=$(round(PHIMAX_TH, digits=3))")
 # Phase legend markers
 for (lab, col) in zip(["P", "M", "R"], [:royalblue, :orange, :limegreen])
     scatter!(p4, [NaN], [NaN], color=col, markershape=:square,
@@ -269,21 +261,19 @@ plot!(p4, legend=:topright, background_color_legend=RGBA(0.85, 0.85, 0.85, 0.8))
 # ── Panel 5: Normalized scatter φ̃ vs q̃ ──
 phase_col = [:royalblue, :orange, :limegreen]
 phase_labels = ["P", "M", "R"]
-p5 = plot(xlabel="φ̃ = φ / φ_eq(T)", ylabel="q̃ = q_EA / φ_eq(T)²",
-    title="Normalized overlap vs self-overlap", legend=:topleft)
+p5 = plot(xlabel="φ", ylabel="q_EA",
+    title="Overlap vs self-overlap (raw)", legend=:topleft)
 for (code, lab, col) in zip(1:3, phase_labels, phase_col)
     mask = vec(phase_grid) .== code
-    any(mask) && scatter!(p5, vec(phi_norm)[mask], vec(q_norm)[mask],
+    any(mask) && scatter!(p5, vec(phi_grid)[mask], vec(q_grid)[mask],
         markersize=4, markershape=:circle, markerstrokewidth=0,
         alpha=0.5, color=col, label=lab)
 end
-# Parabolic law q̃ = φ̃²
-φ_line = range(0, 1.2, length=100)
-plot!(p5, φ_line, φ_line .^ 2, color=:black, lw=2, ls=:solid, label="q̃ = φ̃²")
-# Threshold lines
-vline!(p5, [PHI_R], color=:black, lw=1, ls=:dash, label="")
-vline!(p5, [PHI_P], color=:green, lw=1, ls=:dash, label="")
-hline!(p5, [Q_TH],  color=:cyan, lw=1, ls=:dash, label="")
+# Parabolic law q = φ²
+φ_line = range(0, 1.0, length=100)
+plot!(p5, φ_line, φ_line .^ 2, color=:black, lw=2, ls=:solid, label="q = φ²")
+# Threshold line
+vline!(p5, [PHI_C], color=:black, lw=1, ls=:dash, label="φ_c=$(PHI_C)")
 
 # ── Combine all panels ──
 layout = @layout [a b c; d e]
