@@ -175,18 +175,28 @@ xl = (alpha_vec[1], alpha_vec[end])
 yl = (T_vec[1], T_vec[end])
 
 function save_fig(p, name)
-    savefig(p, joinpath(out_dir, "$name.pdf"))
     savefig(p, joinpath(out_dir, "$name.png"))
-    println("  Saved: $name.pdf, $name.png")
+    savefig(p, joinpath(out_dir, "$name.pdf"))
+    savefig(p, joinpath(out_dir, "$name.ps"))
+    # Convert PS to EPS
+    ps_path = joinpath(out_dir, "$name.ps")
+    eps_path = joinpath(out_dir, "$name.eps")
+    try
+        run(`ps2eps -f $ps_path`)
+    catch
+        # ps2eps not available, keep .ps
+    end
+    println("  Saved: $name.png, $name.pdf, $name.eps")
 end
 
 # ──────────────── 1. φ heatmap ────────────────
 
 p = heatmap(alpha_vec, T_vec, phi_grid',
     xlabel="α", ylabel="T", title="φ",
-    color=:RdYlBu, clims=(0, 1), colorbar_title="φ",
+    color=:RdYlBu, clims=(0, 1),
     xlims=xl, ylims=yl, size=FIG_SIZE_MAP, dpi=FIG_DPI,
-    margin=3Plots.mm)
+    right_margin=5Plots.mm, left_margin=3Plots.mm,
+    top_margin=3Plots.mm, bottom_margin=3Plots.mm)
 plot!(p, α_theory, T_theory, color=:white, lw=2, ls=:solid, label="")
 save_fig(p, "phi_map")
 
@@ -194,9 +204,10 @@ save_fig(p, "phi_map")
 
 p = heatmap(alpha_vec, T_vec, q_grid',
     xlabel="α", ylabel="T", title="q_EA",
-    color=:RdYlBu, clims=(0, 1), colorbar_title="q_EA",
+    color=:RdYlBu, clims=(0, 1),
     xlims=xl, ylims=yl, size=FIG_SIZE_MAP, dpi=FIG_DPI,
-    margin=3Plots.mm)
+    right_margin=5Plots.mm, left_margin=3Plots.mm,
+    top_margin=3Plots.mm, bottom_margin=3Plots.mm)
 plot!(p, α_theory, T_theory, color=:white, lw=2, ls=:solid, label="")
 save_fig(p, "q_map")
 
@@ -204,9 +215,10 @@ save_fig(p, "q_map")
 
 p = heatmap(alpha_vec, T_vec, phimax_grid',
     xlabel="α", ylabel="T", title="φ_max_other",
-    color=:RdYlBu, clims=(0, 1), colorbar_title="φ_max_other",
+    color=:RdYlBu, clims=(0, 1),
     xlims=xl, ylims=yl, size=FIG_SIZE_MAP, dpi=FIG_DPI,
-    margin=3Plots.mm)
+    right_margin=5Plots.mm, left_margin=3Plots.mm,
+    top_margin=3Plots.mm, bottom_margin=3Plots.mm)
 plot!(p, α_theory, T_theory, color=:white, lw=2, ls=:solid, label="")
 save_fig(p, "phimax_map")
 
@@ -220,7 +232,8 @@ p = heatmap(alpha_vec, T_vec, phase_grid',
     xlabel="α", ylabel="T", title="Phase diagram",
     color=phase_colors, clims=(0.5, 3.5), colorbar=false,
     xlims=xl, ylims=yl, size=FIG_SIZE_MAP, dpi=FIG_DPI,
-    margin=3Plots.mm)
+    right_margin=5Plots.mm, left_margin=3Plots.mm,
+    top_margin=3Plots.mm, bottom_margin=3Plots.mm)
 plot!(p, α_theory, T_theory, color=:white, lw=2.5, ls=:solid, label="")
 # Phase legend markers
 for (lab, col) in zip(["P", "M", "R"], [:royalblue, :orange, :limegreen])
@@ -235,9 +248,10 @@ save_fig(p, "phase_diagram")
 diff_q = q_grid .- phi_grid.^2
 p = heatmap(alpha_vec, T_vec, diff_q',
     xlabel="α", ylabel="T", title="q_EA − φ²",
-    color=:RdBu, colorbar_title="q_EA − φ²",
+    color=:RdBu,
     xlims=xl, ylims=yl, size=FIG_SIZE_MAP, dpi=FIG_DPI,
-    margin=3Plots.mm)
+    right_margin=5Plots.mm, left_margin=3Plots.mm,
+    top_margin=3Plots.mm, bottom_margin=3Plots.mm)
 plot!(p, α_theory, T_theory, color=:black, lw=2, ls=:solid, label="")
 save_fig(p, "q_minus_phi2")
 
@@ -246,9 +260,10 @@ save_fig(p, "q_minus_phi2")
 diff_pm = phi_grid .- phimax_grid
 p = heatmap(alpha_vec, T_vec, diff_pm',
     xlabel="α", ylabel="T", title="φ − φ_max_other",
-    color=:RdBu, colorbar_title="φ − φ_max_other",
+    color=:RdBu,
     xlims=xl, ylims=yl, size=FIG_SIZE_MAP, dpi=FIG_DPI,
-    margin=3Plots.mm)
+    right_margin=5Plots.mm, left_margin=3Plots.mm,
+    top_margin=3Plots.mm, bottom_margin=3Plots.mm)
 plot!(p, α_theory, T_theory, color=:black, lw=2, ls=:solid, label="")
 save_fig(p, "phi_minus_phimax")
 
@@ -258,7 +273,9 @@ phase_col = [:royalblue, :orange, :limegreen]
 phase_labels = ["P", "M", "R"]
 p = plot(xlabel="φ", ylabel="q_EA",
     title="q_EA vs φ", legend=:topleft,
-    size=FIG_SIZE_SCA, dpi=FIG_DPI, margin=3Plots.mm)
+    size=FIG_SIZE_SCA, dpi=FIG_DPI,
+    right_margin=5Plots.mm, left_margin=3Plots.mm,
+    top_margin=3Plots.mm, bottom_margin=3Plots.mm)
 for (code, lab, col) in zip(1:3, phase_labels, phase_col)
     mask = vec(phase_grid) .== code
     any(mask) && scatter!(p, vec(phi_grid)[mask], vec(q_grid)[mask],
