@@ -37,14 +37,15 @@ const b_lsr = 2 + sqrt(2)
 const PHI_C       = 0.1
 const PHI_R_RATIO = 1.0
 
-# Figure size: 86mm = 3.39in. Plots.jl uses pixels; at 300 DPI: 86mm → 1016 px
+# Figure size: 86mm width. GR backend size is in "logical" pixels at ~100 DPI base.
+# dpi parameter scales the output. For 1016px PNG output: size=339, dpi=300.
 const FIG_DPI = 300
-const FIG_W_PX = round(Int, 86 / 25.4 * FIG_DPI)  # 1016
-const FIG_H_PX = round(Int, FIG_W_PX * 0.85)       # 864
-const FIG_SIZE_MAP = (FIG_W_PX, FIG_H_PX)
-const FIG_SIZE_SCA = (FIG_W_PX, FIG_H_PX)
+const FIG_W = round(Int, 86 / 25.4 * 100)   # 339 logical pixels (86mm at 100 base DPI)
+const FIG_H = round(Int, FIG_W * 0.85)       # 288
+const FIG_SIZE_MAP = (FIG_W, FIG_H)
+const FIG_SIZE_SCA = (FIG_W, FIG_H)
 
-# Font sizes scaled for 86mm column width
+# Font sizes (in points, rendered at base DPI then scaled by dpi parameter)
 const FONT_TITLE  = 9
 const FONT_GUIDE  = 8
 const FONT_TICK   = 7
