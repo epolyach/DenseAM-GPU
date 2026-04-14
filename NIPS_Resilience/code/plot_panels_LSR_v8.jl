@@ -246,9 +246,10 @@ save_fig(p, "phase_diagram")
 # ──────────────── 5. q_EA − φ² heatmap ────────────────
 
 diff_q = q_grid .- phi_grid.^2
+cmax_q = maximum(abs.(diff_q))
 p = heatmap(alpha_vec, T_vec, diff_q',
     xlabel="α", ylabel="T", title="q_EA − φ²",
-    color=:RdBu,
+    color=:RdBu, clims=(-cmax_q, cmax_q),
     xlims=xl, ylims=yl, size=FIG_SIZE_MAP, dpi=FIG_DPI,
     right_margin=5Plots.mm, left_margin=3Plots.mm,
     top_margin=3Plots.mm, bottom_margin=3Plots.mm)
@@ -258,9 +259,10 @@ save_fig(p, "q_minus_phi2")
 # ──────────────── 6. φ − φ_max_other heatmap ────────────────
 
 diff_pm = phi_grid .- phimax_grid
+cmax_pm = maximum(abs.(diff_pm))
 p = heatmap(alpha_vec, T_vec, diff_pm',
     xlabel="α", ylabel="T", title="φ − φ_max_other",
-    color=:RdBu,
+    color=:RdBu, clims=(-cmax_pm, cmax_pm),
     xlims=xl, ylims=yl, size=FIG_SIZE_MAP, dpi=FIG_DPI,
     right_margin=5Plots.mm, left_margin=3Plots.mm,
     top_margin=3Plots.mm, bottom_margin=3Plots.mm)
