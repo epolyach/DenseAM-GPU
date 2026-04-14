@@ -49,8 +49,8 @@ const PHI_MIN     = F(0.75)
 const PHI_MAX     = F(1.0)
 const MAX_N_TRIALS = 512
 const MIN_N_TRIALS = 64
-const N_EQ        = 2^14              # 16384 equilibration steps (unmeasured)
-const N_SAMP      = 2^12              # 4096 sampling steps (measured)
+const N_EQ        = 2^15              # 16384 equilibration steps (unmeasured)
+const N_SAMP      = 2^13              # 4096 sampling steps (measured)
 
 const alpha_vec = collect(F(0.20):F(0.005):F(0.35))  # 31 values, fine grid near α_th
 const T_vec     = collect(F(0.025):F(0.05):F(2.0))    # 40 values
@@ -60,7 +60,7 @@ const MIN_PAT   = 20000
 const MAX_PAT   = 500000
 const ind       = 10
 
-const TARGET_MEM_PER_CHUNK_GB = 42.5
+const TARGET_MEM_PER_CHUNK_GB = 40.0
 const INF_ENERGY = F(1e30)
 
 const n_patterns_vec = range(MIN_PAT^(1/ind), MAX_PAT^(1/ind), length=n_alpha) .^ ind
@@ -116,14 +116,14 @@ function mc_step!(x::CuArray{F,3}, xp::CuArray{F,3},
                   pat::CuArray{F,3}, ov::CuArray{F,3},
                   β::CuVector{F}, ra::CuVector{F},
                   Nf::F, ss::CuArray{F,3})
-    CUDA.randn!(xp)
+    randn!(xp)
     @. xp = x + ss * xp
     nrm = sqrt.(sum(xp .^ 2, dims=1))
     @. xp = sqrt(Nf) * xp / nrm
 
     compute_energy_lsr!(Ep, xp, pat, ov, Nf)
 
-    CUDA.rand!(ra)
+    rand!(ra)
     acc = @. (Ep < INF_ENERGY) & (ra < exp(-(β * (Ep - E))))
     n_dis = length(β) ÷ n_T
     a3 = reshape(acc, 1, n_T, n_dis)
@@ -232,7 +232,7 @@ function main()
             minimum(mem_per_alpha_vec)/1e9, max_mem_per_alpha/1e9, alpha_vec[max_mem_idx])
     @printf("Target memory per chunk: %.1f GB\n", TARGET_MEM_PER_CHUNK_GB)
 
-    available_mem = CUDA.available_memory() * 0.85
+    available_mem = CUDA.free_memory() * 0.85
     target_mem = min(available_mem, TARGET_MEM_PER_CHUNK_GB * 1e9)
     chunk_size = max(1, floor(Int, target_mem / max_mem_per_alpha))
 
@@ -481,41 +481,41 @@ function main()
     for idx in [1, n_alpha÷2, n_alpha]
         @printf("  α=%.3f (N=%d, P=%d, disorder=%d):\n",
                 alpha_vec[idx], Ns[idx], Ps[idx], n_disorder_vec[idx])
-        @printf("    φ:        T=%.3f→%.4f,  T=%.3f→%.4f,  T=%.3f→%.4f\n",
-                T_vec[1], phi_grid[idx, 1],
-                T_vec[j_mid], phi_grid[idx, j_mid],
-                T_vec[end], phi_grid[idx, end])
-        @printf("    q:        T=%.3f→%.4f,  T=%.3f→%.4f,  T=%.3f→%.4f\n",
-                T_vec[1], q_grid[idx, 1],
-                T_vec[j_mid], q_grid[idx, j_mid],
-                T_vec[end], q_grid[idx, end])
-        @printf("    φ_max_o:  T=%.3f→%.4f,  T=%.3f→%.4f,  T=%.3f→%.4f\n",
-                T_vec[1], phimax_grid[idx, 1],
-                T_vec[j_mid], phimax_grid[idx, j_mid],
-                T_vec[end], phimax_grid[idx, end])
-    end
-    println()
-    total_mc_chains = 2 * sum(n_disorder_vec) * n_T
-    total_mc_steps = total_mc_chains * (N_EQ + N_SAMP)
-    @printf("Total GPU time: %.1f s (eq: %.1f + samp: %.1f)\n",
-            t_total_eq+t_total_samp, t_total_eq, t_total_samp)
-    @printf("Total MC steps: %.2e  (2 replicas × %d disorder avg)\n",
-            Float64(total_mc_steps), sum(n_disorder_vec))
-    println("=" ^ 70)
-    println("Protocol summary:")
-    println("  Step size: σ(N,T) = 2.4·T/√N (v6)")
-    println("  Equilibration: $N_EQ steps (transient discarded)")
-    println("  Sampling: $N_SAMP steps (φ, q, φ_max_other measured)")
-    println("  q_EA = ⟨x_a·x_b/N⟩ (two-replica cross-overlap)")
-    println("  φ_max_other = ⟨max_{μ≠1} x·ξ^μ/N⟩ (max non-target overlap, replica A)")
-    println("  Patterns shared between replicas")
-    println("Phase classification (post-processing):")
-    println("  R: φ̃ > φ_R,  q̃ > q_th")
-    println("  M: φ_P < φ̃ < φ_R,  q̃ > q_th")
-    println("  P: φ̃ < φ_P,  q̃ < q_th")
-    println("  (φ̃ = φ/φ_eq,  q̃ = q/φ_eq²)")
-    println("  Default thresholds: φ_R=0.99, φ_P=0.1, q_th=0.15")
-    println("=" ^ 70)
-end
-
+#         @printf("    φ:        T=%.3f→%.4f,  T=%.3f→%.4f,  T=%.3f→%.4f\n",
+#                 T_vec[1], phi_grid[idx, 1],
+#                 T_vec[j_mid], phi_grid[idx, j_mid],
+#                 T_vec[end], phi_grid[idx, end])
+#         @printf("    q:        T=%.3f→%.4f,  T=%.3f→%.4f,  T=%.3f→%.4f\n",
+#                 T_vec[1], q_grid[idx, 1],
+#                 T_vec[j_mid], q_grid[idx, j_mid],
+#                 T_vec[end], q_grid[idx, end])
+#         @printf("    φ_max_o:  T=%.3f→%.4f,  T=%.3f→%.4f,  T=%.3f→%.4f\n",
+#                 T_vec[1], phimax_grid[idx, 1],
+#                 T_vec[j_mid], phimax_grid[idx, j_mid],
+#                 T_vec[end], phimax_grid[idx, end])
+#     end
+#     println()
+#     total_mc_chains = 2 * sum(n_disorder_vec) * n_T
+#     total_mc_steps = total_mc_chains * (N_EQ + N_SAMP)
+#     @printf("Total GPU time: %.1f s (eq: %.1f + samp: %.1f)\n",
+#             t_total_eq+t_total_samp, t_total_eq, t_total_samp)
+#     @printf("Total MC steps: %.2e  (2 replicas × %d disorder avg)\n",
+#             Float64(total_mc_steps), sum(n_disorder_vec))
+#     println("=" ^ 70)
+#     println("Protocol summary:")
+#     println("  Step size: σ(N,T) = 2.4·T/√N (v6)")
+#     println("  Equilibration: $N_EQ steps (transient discarded)")
+#     println("  Sampling: $N_SAMP steps (φ, q, φ_max_other measured)")
+#     println("  q_EA = ⟨x_a·x_b/N⟩ (two-replica cross-overlap)")
+#     println("  φ_max_other = ⟨max_{μ≠1} x·ξ^μ/N⟩ (max non-target overlap, replica A)")
+#     println("  Patterns shared between replicas")
+#     println("Phase classification (post-processing):")
+#     println("  R: φ̃ > φ_R,  q̃ > q_th")
+#     println("  M: φ_P < φ̃ < φ_R,  q̃ > q_th")
+#     println("  P: φ̃ < φ_P,  q̃ < q_th")
+#     println("  (φ̃ = φ/φ_eq,  q̃ = q/φ_eq²)")
+#     println("  Default thresholds: φ_R=0.99, φ_P=0.1, q_th=0.15")
+#     println("=" ^ 70)
+# end
+# 
 main()
