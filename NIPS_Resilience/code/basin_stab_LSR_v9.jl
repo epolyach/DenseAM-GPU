@@ -29,6 +29,7 @@ Output:
 =#
 
 using CUDA
+using CUDA: @allowscalar
 using Random
 using Statistics
 using LinearAlgebra
@@ -72,11 +73,11 @@ function compute_energy_lsr!(E::CuVector{F}, x::CuArray{F,2},
                               patterns::CuMatrix{F}, overlap::CuVector{F},
                               Nf::F)
     Nb = Nf / b_lsr
-    # overlap = patterns' * x  (P×1)
     mul!(overlap, patterns', vec(x))
     @. overlap = max(zero(F), one(F) - b_lsr + b_lsr * overlap / Nf)
     s = sum(overlap)
-    E[1] = s > zero(F) ? -Nb * log(s) : INF_ENERGY
+    s_cpu = Float32(s)
+    @allowscalar E[1] = s_cpu > zero(F) ? -Nb * log(s_cpu) : INF_ENERGY
     return nothing
 end
 
@@ -93,10 +94,12 @@ function mc_step_single!(x::CuMatrix{F}, xp::CuMatrix{F},
 
     compute_energy_lsr!(Ep, xp, pat, ov, Nf)
 
-    r = CUDA.rand(F)
-    if Ep[1] < INF_ENERGY && r < exp(-β * (Ep[1] - E[1]))
-        x .= xp
-        E .= Ep
+    r = rand(F)
+    @allowscalar begin
+        if Ep[1] < INF_ENERGY && r < exp(-β * (Ep[1] - E[1]))
+            x .= xp
+            E .= Ep
+        end
     end
     return nothing
 end
