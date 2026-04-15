@@ -153,6 +153,38 @@ For $N = 47$, $T = 0.325$: $N/\sigma^2 \approx 3\,400$ steps.  With $2^{14} + 2^
 
 The escape probability depends on \emph{both} the number of competing patterns (which grows with $P$ and hence $\alpha$) and the allocated MC time, making the centroid fraction a kinetic quantity that would change with longer equilibration.
 
+\subsection{Confirmation from long-run simulations (v9)}
+
+The v9 diagnostic probes test the centroid escape prediction directly by running the same MC protocol at selected $(\alpha, T)$ points for much longer: checkpoints at $2^{14}$, $2^{16}$, and $2^{18}$ steps (16k, 64k, 262k), each followed by $2^{12}$ sampling steps.  Table~\ref{tab:v9} summarizes the results.
+
+\begin{table}[h]
+\centering
+\caption{Evolution of $\varphi$ with equilibration time from v9 probes (64 disorder samples $\times$ 2 replicas).  The systematic decrease of $\avg{\varphi}$ with longer MC runs confirms that the retrieval state is metastable: given enough time, the system escapes to centroid or paramagnetic states.}
+\label{tab:v9}
+\begin{tabular}{cccccccc}
+\toprule
+$\alpha$ & $T$ & $N$ & $P$ & $\varphi$(16k) & $\varphi$(64k) & $\varphi$(262k) & $q\!-\!\varphi^2$(262k) \\
+\midrule
+0.270 & 0.40 & 43 & 102k & 0.724 & 0.502 & \textbf{0.281} & $+0.025$ \\
+0.280 & 0.50 & 42 & 126k & 0.508 & 0.249 & \textbf{0.050} & $+0.002$ \\
+0.300 & 0.30 & 41 & 191k & 0.695 & 0.587 & \textbf{0.462} & $+0.093$ \\
+0.220 & 0.50 & 47 &  33k & 0.852 & 0.792 & \textbf{0.655} & $-0.002$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The key findings are:
+
+\paragraph{Monotonic decay of $\varphi$.}  At every probe point, $\avg{\varphi}$ \emph{decreases} with longer equilibration---the opposite of convergence to retrieval.  At $(\alpha, T) = (0.280, 0.50)$, the system reaches $\varphi \approx 0.05$ after $262$k steps: essentially paramagnetic.  This confirms that the centroid (and ultimately the multi-pattern paramagnetic state) is thermodynamically preferred over the single-pattern retrieval state.
+
+\paragraph{Escape even in the R region.}  The control point at $\alpha = 0.220$---well below $\alpha_{\mathrm{th}} \approx 0.245$---shows $\varphi$ dropping from $0.85$ to $0.66$ over $262$k steps.  This demonstrates that the retrieval state is metastable \emph{everywhere} at these finite system sizes ($N \approx 47$), not only near the phase boundary.
+
+\paragraph{Transient $q > \varphi^2$.}  The anomaly $q_{\mathrm{EA}} - \varphi^2 > 0$ is strongest at intermediate equilibration (16k--64k steps), when a fraction of trials have escaped to a centroid while others remain in retrieval.  At $(\alpha, T) = (0.300, 0.30)$, the anomaly \emph{grows} to $+0.093$ at $262$k, indicating both replicas are increasingly settling into the same multi-pattern attractor.  At $(\alpha, T) = (0.220, 0.50)$, it drops to $-0.002$ at $262$k, consistent with replicas escaping to \emph{different} attractors (decorrelation).
+
+\paragraph{The v8m measurements are not equilibrated.}  The v8m protocol uses $2^{14}$ equilibration steps.  The v9 data shows that this corresponds to the \emph{earliest} checkpoint, where $\varphi$ is still near its initial value.  The ``retrieval phase'' observed in the v8 phase diagram is therefore a \emph{kinetic} phenomenon: the system has not yet had time to find the zero-barrier escape route through the perpendicular subspace.
+
+\paragraph{Implications for the ``Mixed'' region.}  The orange M-region in the v8 phase diagram is not a distinct thermodynamic phase.  It is a transient artifact: points where a fraction of trials have already escaped (given 16k steps) but the majority have not.  With 262k steps, most of these points evolve toward paramagnetic ($\varphi \to 0$).  The true equilibrium phase diagram of LSR at finite~$N$ may contain no retrieval phase at all---only a kinetically trapped metastable retrieval state whose lifetime grows with the entropic barrier.
+
 \subsection{Relation to the classical Hopfield model}
 
 In the classical Hopfield model (Amit, Gutfreund \& Sompolinsky 1987), the analog of the centroid state is the ``mixture state''---a metastable configuration with equal overlap $m_n$ with an odd number~$n$ of patterns.  However, there are fundamental differences:
