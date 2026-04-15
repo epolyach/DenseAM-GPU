@@ -1,18 +1,6 @@
 #=
 Geometric illustration of the centroid escape mechanism
 ────────────────────────────────────────────────────────────────────────
-Shows the 2D projection of the N-sphere in the (ξ¹, ξ^μ) plane:
-  - Unit disk = feasible region (a² + b² ≤ 1)
-  - Shaded: support regions for ξ¹ and ξ^μ
-  - Overlap region where both patterns are in support
-  - Retrieval state, centroid, and zero-barrier escape path
-
-The coordinates (a, b) are:
-  a = φ₁ = (ξ¹·x)/N   (overlap with target)
-  b = component along ξ^μ_⊥ (orthogonalized)
-  φ_μ = a·q + b·√(1-q²)
-
-Input:  none (standalone)
 Output: panels_v8m/centroid_geometry.png, .pdf
 ────────────────────────────────────────────────────────────────────────
 =#
@@ -23,110 +11,120 @@ using Printf
 # ──────────────── Parameters ────────────────
 
 const b_lsr = 2 + sqrt(2)
-const phi_c = (b_lsr - 1) / b_lsr   # ≈ 0.707
-const q = 0.38                        # inter-pattern overlap
-const sq = sqrt(1 - q^2)             # ≈ 0.925
+const phi_c = (b_lsr - 1) / b_lsr
+const q = 0.38
+const sq = sqrt(1 - q^2)
 
-# Key points
-const phi_eq = 0.90                   # retrieval equilibrium
-const phi_cen = 0.831                 # centroid overlap with each pattern
+const phi_eq = 0.90
+const phi_cen = 0.831
 
-const a_ret = phi_eq
-const b_ret = 0.0
-
-const a_cen = phi_cen
-const b_cen = (phi_cen - a_cen * q) / sq
-
+const a_ret = phi_eq;         const b_ret = 0.0
+const a_cen = phi_cen;        const b_cen = (phi_cen - a_cen * q) / sq
 const b_entry = (phi_c - a_ret * q) / sq
 
-# Figure: 86mm width, square aspect for geometry
+# Figure: 86mm width, 0.75 aspect
 const FIG_DPI = 300
 const FIG_W = round(Int, 86 / 25.4 * 100)   # 339
-const FIG_H = FIG_W                           # square
+const FIG_H = round(Int, FIG_W * 0.75)       # 254
 
-const FONT_TITLE  = 9
-const FONT_GUIDE  = 8
-const FONT_TICK   = 7
-const FONT_LEGEND = 6
-const FONT_ANNOT  = 7
+const FONT_TITLE = 9
+const FONT_GUIDE = 8
+const FONT_TICK  = 7
+const FONT_ANN   = 7
 
-default(titlefontsize=FONT_TITLE, guidefontsize=FONT_GUIDE,
-        tickfontsize=FONT_TICK, legendfontsize=FONT_LEGEND,
-        colorbar_tickfontsize=FONT_TICK, colorbar_titlefontsize=FONT_GUIDE)
+default(titlefontsize=FONT_TITLE, guidefontsize=FONT_GUIDE, tickfontsize=FONT_TICK)
 
 out_dir = "panels_v8m"
 mkpath(out_dir)
 
 # ──────────────── Plot ────────────────
 
-θ_circ = range(0, 2π, length=500)
-circ_a = cos.(θ_circ)
-circ_b = sin.(θ_circ)
+θ = range(0, 2π, length=500)
 
-p = plot(size=(FIG_W, FIG_H), dpi=FIG_DPI, aspect_ratio=:equal,
+p = plot(cos.(θ), sin.(θ), color=:black, lw=1.5, label=false,
+    size=(FIG_W, FIG_H), dpi=FIG_DPI,
     xlabel="a = φ₁", ylabel="b",
-    xlims=(0.55, 1.05), ylims=(-0.15, 0.65),
-    legend=:topleft, legendfontsize=FONT_LEGEND,
-    left_margin=1Plots.mm, right_margin=1Plots.mm,
-    top_margin=1Plots.mm, bottom_margin=1Plots.mm)
+    xlims=(0.58, 1.03), ylims=(-0.08, 0.58),
+    legend=false,
+    left_margin=0Plots.mm, right_margin=0Plots.mm,
+    top_margin=0Plots.mm, bottom_margin=0Plots.mm)
 
-# Unit circle
-plot!(p, circ_a, circ_b, color=:black, lw=1.5, label="a²+b²=1")
+# ── Filled support regions ──
 
-# ── Support ξ¹: a > φ_c ──
-a_fill1 = range(phi_c, 1.0, length=200)
-b_up1 = sqrt.(max.(0, 1.0 .- a_fill1.^2))
-b_lo1 = -b_up1
-plot!(p, vcat(a_fill1, reverse(a_fill1)), vcat(b_up1, reverse(b_lo1)),
-    fillrange=0, fillalpha=0.15, fillcolor=:blue, lw=0, label="")
-vline!(p, [phi_c], color=:blue, lw=1.5, ls=:dash, label="ξ¹ support (φ₁>φ_c)")
+# ξ¹ support: a > φ_c (blue)
+af = range(phi_c, 1.0, length=200)
+bu = sqrt.(max.(0, 1.0 .- af.^2))
+plot!(p, vcat(af, reverse(af)), vcat(bu, -reverse(bu)),
+    fillrange=0, fillalpha=0.15, fillcolor=:blue, lw=0, label=false)
 
-# ── Support ξ^μ: a·q + b·sq > φ_c ──
-a_line = range(0.5, 1.05, length=200)
-b_line = (phi_c .- a_line .* q) ./ sq
-
-a_f2 = Float64[]; b_u2 = Float64[]; b_l2 = Float64[]
-for a in range(0.5, 1.0, length=300)
+# ξ^μ support: aq + b·sq > φ_c (red)
+for a in range(0.55, 1.0, length=300)
     bs = (phi_c - a * q) / sq
     bc = sqrt(max(0, 1.0 - a^2))
     if bs < bc && a^2 <= 1.0
-        push!(a_f2, a); push!(b_u2, min(bc, 0.65)); push!(b_l2, max(bs, -bc))
+        # just build the fill inline via vertical segments
     end
 end
-plot!(p, vcat(a_f2, reverse(a_f2)), vcat(b_u2, reverse(b_l2)),
-    fillrange=0, fillalpha=0.12, fillcolor=:red, lw=0, label="")
-plot!(p, a_line, b_line, color=:red, lw=1.5, ls=:dash, label="ξ^μ support (q=0.38)")
+# simpler: fill polygon for ξ^μ support clipped to circle
+a_f = Float64[]; b_u = Float64[]; b_l = Float64[]
+for a in range(0.55, 1.0, length=400)
+    bs = (phi_c - a * q) / sq
+    bc = sqrt(max(0, 1.0 - a^2))
+    if bs < bc
+        push!(a_f, a); push!(b_u, min(bc, 0.58)); push!(b_l, max(bs, -bc))
+    end
+end
+plot!(p, vcat(a_f, reverse(a_f)), vcat(b_u, reverse(b_l)),
+    fillrange=0, fillalpha=0.12, fillcolor=:red, lw=0, label=false)
+
+# ── Support boundary lines ──
+vline!(p, [phi_c], color=:blue, lw=1.5, ls=:dash, label=false)
+al = range(0.55, 1.03, length=100)
+plot!(p, al, (phi_c .- al .* q) ./ sq, color=:red, lw=1.5, ls=:dash, label=false)
+
+# ── Boundary labels (direct, no legend) ──
+annotate!(p, phi_c - 0.015, 0.52, text("φ₁=φ_c", FONT_ANN, :right, :blue))
+annotate!(p, 0.62, 0.48, text("φ_μ=φ_c", FONT_ANN, :left, :red))
 
 # ── Key points ──
-scatter!(p, [a_ret], [b_ret], color=:green, markersize=7, markershape=:star5,
-    markerstrokewidth=1, markerstrokecolor=:black, label="retrieval")
-scatter!(p, [a_cen], [b_cen], color=:orange, markersize=7, markershape=:diamond,
-    markerstrokewidth=1, markerstrokecolor=:black, label="centroid")
-scatter!(p, [a_ret], [b_entry], color=:red, markersize=5, markershape=:circle,
-    markerstrokewidth=1, markerstrokecolor=:black, label="entry point")
+scatter!(p, [a_ret], [b_ret], color=:green, markersize=8, markershape=:star5,
+    markerstrokewidth=1, markerstrokecolor=:black, label=false)
+scatter!(p, [a_cen], [b_cen], color=:orange, markersize=8, markershape=:diamond,
+    markerstrokewidth=1, markerstrokecolor=:black, label=false)
+scatter!(p, [a_ret], [b_entry], color=:red, markersize=6,
+    markerstrokewidth=1, markerstrokecolor=:black, label=false)
 
-# ── Escape path arrows ──
-plot!(p, [a_ret, a_ret], [b_ret, b_entry],
-    color=:black, lw=2.5, arrow=true, label="")
-plot!(p, [a_ret, a_cen], [b_entry, b_cen],
-    color=:black, lw=2.5, arrow=true, label="")
+# Point labels
+annotate!(p, a_ret + 0.01, b_ret - 0.025,
+    text("retrieval", FONT_ANN, :left, :green4))
+annotate!(p, a_cen - 0.01, b_cen - 0.03,
+    text("centroid", FONT_ANN, :right, :darkorange))
+annotate!(p, a_ret + 0.01, b_entry + 0.02,
+    text("entry", FONT_ANN, :left, :red3))
 
-# ── Annotations (positioned to avoid overlap) ──
-annotate!(p, a_ret - 0.015, (b_ret + b_entry)/2,
-    text("①  ΔE=0", FONT_ANNOT, :right, :black))
-annotate!(p, (a_ret + a_cen)/2 + 0.01, (b_entry + b_cen)/2 + 0.04,
-    text("②  ΔE<0", FONT_ANNOT, :left, :black))
+# ── Escape path ──
+plot!(p, [a_ret, a_ret], [b_ret + 0.02, b_entry - 0.02],
+    color=:black, lw=2.5, arrow=true, label=false)
+plot!(p, [a_ret - 0.005, a_cen + 0.005], [b_entry, b_cen],
+    color=:black, lw=2.5, arrow=true, label=false)
 
-annotate!(p, a_ret, b_ret - 0.04,
-    text(@sprintf("E/N=%.3f", -(1/b_lsr)*log(max(0,1-b_lsr+b_lsr*phi_eq))),
-    FONT_ANNOT-1, :center, :green4))
+# Step labels
+annotate!(p, a_ret - 0.015, (b_ret + b_entry) / 2,
+    text("① ΔE=0", FONT_ANN, :right, :black))
+annotate!(p, (a_ret + a_cen) / 2 + 0.015, (b_entry + b_cen) / 2 + 0.025,
+    text("② ΔE<0", FONT_ANN, :left, :black))
 
-s_cen = 2 * max(0, 1 - b_lsr + b_lsr * phi_cen)
-annotate!(p, a_cen - 0.01, b_cen + 0.04,
-    text(@sprintf("E/N=%.3f", -(1/b_lsr)*log(s_cen)),
-    FONT_ANNOT-1, :right, :darkorange))
+# Energy values
+E_ret = -(1/b_lsr) * log(max(0, 1-b_lsr+b_lsr*phi_eq))
+E_cen = -(1/b_lsr) * log(2*max(0, 1-b_lsr+b_lsr*phi_cen))
+annotate!(p, a_ret - 0.015, b_ret + 0.025,
+    text(@sprintf("E/N=%.3f", E_ret), FONT_ANN-1, :right, :green4))
+annotate!(p, a_cen + 0.01, b_cen + 0.025,
+    text(@sprintf("E/N=%.3f", E_cen), FONT_ANN-1, :left, :darkorange))
 
-# Save
+# ── Region labels ──
+annotate!(p, 0.96, 0.15, text("overlap", FONT_ANN-1, :center, :gray40))
+
 for ext in ("png", "pdf")
     savefig(p, joinpath(out_dir, "centroid_geometry.$ext"))
 end
