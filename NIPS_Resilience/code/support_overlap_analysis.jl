@@ -23,13 +23,22 @@ const b_lsr = 2 + sqrt(2)
 const φ_c   = (b_lsr - 1) / b_lsr   # ≈ 0.7071 = 1/√2
 
 # ──────────────── Gaussian tail ────────────────
-"""Complementary normal CDF: Pr(Z > z) for Z ~ N(0,1)"""
-Φc(z) = erfc(z / sqrt(2)) / 2
+# Abramowitz & Stegun 7.1.26 rational approximation for Φᶜ (max error 1.5e-7)
+function Φc(z)
+    if z < 0
+        return 1.0 - Φc(-z)
+    end
+    t = 1.0 / (1.0 + 0.2316419 * z)
+    poly = t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 +
+           t * (-1.821255978 + t * 1.330274429))))
+    return poly * exp(-z^2 / 2) / sqrt(2π)
+end
 
 """Log of complementary normal CDF (numerically stable for large z)"""
 function logΦc(z)
     if z < 6
-        return log(Φc(z))
+        v = Φc(z)
+        return v > 0 ? log(v) : -z^2/2 - log(z) - 0.5*log(2π)
     else
         # Mill's ratio asymptotic: Φᶜ(z) ~ φ(z)/z · (1 - 1/z² + ...)
         return -z^2/2 - log(z) - 0.5*log(2π) + log(1 - 1/z^2 + 3/z^4)
