@@ -16,7 +16,7 @@ Key formula (Poisson regime):
      For α < α_c: E[n] → 0 exponentially  ⟹  Pr → 0
 =#
 
-using SpecialFunctions  # for erfc
+# No external dependencies — uses Base.Math.erfc
 
 # ──────────────── Model parameters ────────────────
 const b_lsr = 2 + sqrt(2)
