@@ -44,19 +44,20 @@ const b_cen = (phi_cen - a_cen * q) / sq   # = phi_cen(1-q)/sq
 # φ_μ = a_ret·q + b_entry·sq = phi_c
 const b_entry = (phi_c - a_ret * q) / sq
 
-# Figure settings
+# Figure size & fonts (identical to plot_retrieval_prob_v8m.jl / plot_panels_LSR_v8.jl)
 const FIG_DPI = 300
-const FIG_W = round(Int, 140 / 25.4 * 100)   # 140mm width
-const FIG_H = FIG_W
+const FIG_W = round(Int, 86 / 25.4 * 100)   # 339 logical pixels (86mm at 100 base DPI)
+const FIG_H = round(Int, FIG_W * 0.85)       # 288
 
-const FONT_TITLE  = 10
-const FONT_GUIDE  = 9
-const FONT_TICK   = 8
+const FONT_TITLE  = 9
+const FONT_GUIDE  = 8
+const FONT_TICK   = 7
 const FONT_LEGEND = 7
-const FONT_ANNOT  = 7
+const FONT_ANNOT  = 6
 
 default(titlefontsize=FONT_TITLE, guidefontsize=FONT_GUIDE,
-        tickfontsize=FONT_TICK, legendfontsize=FONT_LEGEND)
+        tickfontsize=FONT_TICK, legendfontsize=FONT_LEGEND,
+        colorbar_tickfontsize=FONT_TICK, colorbar_titlefontsize=FONT_GUIDE)
 
 out_dir = "panels_v8m"
 mkpath(out_dir)
@@ -71,12 +72,11 @@ circ_b = sin.(θ_circ)
 # ──────────────── Plot ────────────────
 
 p = plot(size=(FIG_W, FIG_H), dpi=FIG_DPI, aspect_ratio=:equal,
-    xlabel="a = φ₁  (overlap with ξ¹)",
-    ylabel="b  (component toward ξ^μ_⊥)",
+    xlabel="a = φ₁", ylabel="b",
     title="Support geometry in (ξ¹, ξ^μ) plane",
     xlims=(-0.15, 1.15), ylims=(-0.55, 0.75),
     legend=:bottomleft, legendfontsize=FONT_LEGEND,
-    right_margin=3Plots.mm, left_margin=3Plots.mm,
+    right_margin=5Plots.mm, left_margin=3Plots.mm,
     top_margin=3Plots.mm, bottom_margin=3Plots.mm)
 
 # Unit circle (sphere constraint)
