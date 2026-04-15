@@ -309,4 +309,36 @@ The centroid mechanism explains the three anomalies observed in the v8 phase dia
 \item \textbf{$\varphi - \varphi_{\max}^{\mathrm{other}} \approx 0.1$ at the boundary.}  At the centroid, the target and spurious overlaps are nearly equal ($\varphi \approx \varphi_{\max}^{\mathrm{other}} \approx 0.83$), so their difference is small.  The disorder average, mixing centroid and retrieval populations, gives $\varphi - \varphi_{\max}^{\mathrm{other}} \sim 0.1$.
 \end{enumerate}
 
+\section{Summary: finite-$N$ metastability versus thermodynamic stability}
+
+The results of this paper and the thermodynamic analysis of the ICML companion paper can be unified through two distinct thresholds that govern the role of inter-pattern overlaps in LSR:
+
+\begin{center}
+\begin{tabular}{lccl}
+\toprule
+Threshold & Symbol & Value ($b = 2\!+\!\sqrt{2}$) & Physical meaning \\
+\midrule
+Escape-enabling & $\alpha_{\mathrm{esc}}$ & $\approx 0.054$ & centroid escape path fits on sphere \\
+Noise floor & $\alpha_{\mathrm{th}}$ & $= 0.250$ & spurious pattern in support at retrieval \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+These thresholds delineate three regimes:
+
+\paragraph{$\alpha < \alpha_{\mathrm{esc}} \approx 0.054$: stable retrieval at all $N$.}
+No pattern has inter-pattern overlap $q$ large enough for the centroid escape path to fit on the sphere.  The retrieval state is the unique minimum and is stable both thermodynamically and kinetically.
+
+\paragraph{$\alpha_{\mathrm{esc}} < \alpha < \alpha_{\mathrm{th}}$ (including $\alpha = 0.20$): finite-$N$ metastability.}
+The thermodynamic noise floor is exactly zero: $\varphi_{\max} = \sqrt{2\alpha} < \varphi_c$, so no spurious pattern is in support at the retrieval state.  The ICML analysis correctly predicts perfect retrieval in the thermodynamic limit $N \to \infty$.
+
+However, exponentially many patterns have $q > q_{\min}$, and their support caps \emph{do} geometrically intersect those of the target.  The intersection region---the centroid---has lower energy than the retrieval state ($\Delta E/N \approx -0.073$) but occupies a vanishing fraction of the sphere ($\varphi^T G^{-1}\varphi = 1$ at the symmetric centroid, leaving zero perpendicular entropy per neuron).
+
+At finite~$N$, the entropic barrier is finite.  The perpendicular rotation (Stage~1) requires aligning~$\bx_\perp$ with a specific direction in $(N\!-\!1)$-dimensional space, costing $O(N)$ in entropy.  When this cost is comparable to the energy gain, the centroid becomes accessible.  The v9 data confirms that the retrieval state is metastable at $N \approx 47$: $\varphi$ systematically decays with longer MC runs, even at $\alpha = 0.22$ well below~$\alpha_{\mathrm{th}}$.
+
+The escape time should scale as $\tau \sim \exp(c\,N)$ with $c > 0$, making the retrieval state long-lived at moderate~$N$ but ultimately metastable.  In the thermodynamic limit $\tau \to \infty$ and the metastability becomes true stability, consistent with the ICML result.  The ``retrieval phase'' observed in the v8 Monte Carlo phase diagram is therefore a kinetic phenomenon: the system has not equilibrated past the entropic barrier within the allocated MC time.
+
+\paragraph{$\alpha > \alpha_{\mathrm{th}} = 0.25$: thermodynamic instability.}
+The maximum spurious alignment $\varphi_{\max} = \sqrt{2\alpha}$ exceeds $\varphi_c$, creating a non-zero noise floor.  Spurious patterns interfere with retrieval even at the retrieval state itself.  The phase boundary $\alpha_c(T)$ derived in the ICML paper governs this regime; above it, retrieval fails both thermodynamically and kinetically.
+
 \end{document}
