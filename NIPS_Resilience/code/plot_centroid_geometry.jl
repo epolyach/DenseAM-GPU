@@ -22,10 +22,10 @@ const a_ret = phi_eq;         const b_ret = 0.0
 const a_cen = phi_cen;        const b_cen = (phi_cen - a_cen * q) / sq
 const b_entry = (phi_c - a_ret * q) / sq
 
-# Figure: 86mm width, 0.75 aspect
+# Figure: 86mm width, square
 const FIG_DPI = 300
 const FIG_W = round(Int, 86 / 25.4 * 100)   # 339
-const FIG_H = round(Int, FIG_W * 0.75)       # 254
+const FIG_H = FIG_W
 
 const FONT_TITLE = 9
 const FONT_GUIDE = 8
@@ -44,7 +44,7 @@ mkpath(out_dir)
 p = plot(cos.(θ), sin.(θ), color=:black, lw=1.5, label=false,
     size=(FIG_W, FIG_H), dpi=FIG_DPI,
     xlabel="a = φ₁", ylabel="b",
-    xlims=(0.58, 1.03), ylims=(-0.08, 0.58),
+    xlims=(0.50, 1.10), ylims=(-0.05, 0.55),
     legend=false,
     left_margin=0Plots.mm, right_margin=0Plots.mm,
     top_margin=0Plots.mm, bottom_margin=0Plots.mm)
@@ -67,11 +67,11 @@ for a in range(0.55, 1.0, length=300)
 end
 # simpler: fill polygon for ξ^μ support clipped to circle
 a_f = Float64[]; b_u = Float64[]; b_l = Float64[]
-for a in range(0.55, 1.0, length=400)
+for a in range(0.50, 1.0, length=400)
     bs = (phi_c - a * q) / sq
     bc = sqrt(max(0, 1.0 - a^2))
     if bs < bc
-        push!(a_f, a); push!(b_u, min(bc, 0.58)); push!(b_l, max(bs, -bc))
+        push!(a_f, a); push!(b_u, min(bc, 0.55)); push!(b_l, max(bs, -bc))
     end
 end
 plot!(p, vcat(a_f, reverse(a_f)), vcat(b_u, reverse(b_l)),
@@ -79,12 +79,12 @@ plot!(p, vcat(a_f, reverse(a_f)), vcat(b_u, reverse(b_l)),
 
 # ── Support boundary lines ──
 vline!(p, [phi_c], color=:blue, lw=1.5, ls=:dash, label=false)
-al = range(0.55, 1.03, length=100)
+al = range(0.50, 1.10, length=100)
 plot!(p, al, (phi_c .- al .* q) ./ sq, color=:red, lw=1.5, ls=:dash, label=false)
 
 # ── Boundary labels (direct, no legend) ──
-annotate!(p, phi_c - 0.015, 0.52, text("φ₁=φ_c", FONT_ANN, :right, :blue))
-annotate!(p, 0.62, 0.48, text("φ_μ=φ_c", FONT_ANN, :left, :red))
+annotate!(p, phi_c - 0.015, 0.48, text("φ₁=φ_c", FONT_ANN, :right, :blue))
+annotate!(p, 0.58, 0.42, text("φ_μ=φ_c", FONT_ANN, :left, :red))
 
 # ── Key points ──
 scatter!(p, [a_ret], [b_ret], color=:green, markersize=8, markershape=:star5,
