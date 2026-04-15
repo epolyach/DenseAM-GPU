@@ -43,7 +43,7 @@ mkpath(out_dir)
 
 p = plot(cos.(θ), sin.(θ), color=:black, lw=1.5, label=false,
     size=(FIG_W, FIG_H), dpi=FIG_DPI,
-    xlabel="a = φ₁", ylabel="b",
+    xlabel="a = φ₁", ylabel="v",
     xlims=(0.45, 1.05), ylims=(-0.02, 0.62),
     legend=false,
     left_margin=0Plots.mm, right_margin=0Plots.mm,
