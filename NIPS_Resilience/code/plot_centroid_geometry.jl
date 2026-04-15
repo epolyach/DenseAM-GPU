@@ -44,7 +44,7 @@ mkpath(out_dir)
 p = plot(cos.(θ), sin.(θ), color=:black, lw=1.5, label=false,
     size=(FIG_W, FIG_H), dpi=FIG_DPI,
     xlabel="a = φ₁", ylabel="b",
-    xlims=(0.50, 1.10), ylims=(-0.05, 0.55),
+    xlims=(0.45, 1.05), ylims=(-0.02, 0.62),
     legend=false,
     left_margin=0Plots.mm, right_margin=0Plots.mm,
     top_margin=0Plots.mm, bottom_margin=0Plots.mm)
@@ -67,11 +67,11 @@ for a in range(0.55, 1.0, length=300)
 end
 # simpler: fill polygon for ξ^μ support clipped to circle
 a_f = Float64[]; b_u = Float64[]; b_l = Float64[]
-for a in range(0.50, 1.0, length=400)
+for a in range(0.45, 1.0, length=400)
     bs = (phi_c - a * q) / sq
     bc = sqrt(max(0, 1.0 - a^2))
     if bs < bc
-        push!(a_f, a); push!(b_u, min(bc, 0.55)); push!(b_l, max(bs, -bc))
+        push!(a_f, a); push!(b_u, min(bc, 0.62)); push!(b_l, max(bs, -bc))
     end
 end
 plot!(p, vcat(a_f, reverse(a_f)), vcat(b_u, reverse(b_l)),
@@ -79,12 +79,12 @@ plot!(p, vcat(a_f, reverse(a_f)), vcat(b_u, reverse(b_l)),
 
 # ── Support boundary lines ──
 vline!(p, [phi_c], color=:blue, lw=1.5, ls=:dash, label=false)
-al = range(0.50, 1.10, length=100)
+al = range(0.45, 1.05, length=100)
 plot!(p, al, (phi_c .- al .* q) ./ sq, color=:red, lw=1.5, ls=:dash, label=false)
 
 # ── Boundary labels (direct, no legend) ──
-annotate!(p, phi_c - 0.015, 0.48, text("φ₁=φ_c", FONT_ANN, :right, :blue))
-annotate!(p, 0.58, 0.42, text("φ_μ=φ_c", FONT_ANN, :left, :red))
+annotate!(p, phi_c - 0.015, 0.55, text("φ₁=φ_c", FONT_ANN, :right, :blue))
+annotate!(p, 0.55, 0.46, text("φ_μ=φ_c", FONT_ANN, :left, :red))
 
 # ── Key points ──
 scatter!(p, [a_ret], [b_ret], color=:green, markersize=8, markershape=:star5,
@@ -97,8 +97,8 @@ scatter!(p, [a_ret], [b_entry], color=:red, markersize=6,
 # Point labels
 annotate!(p, a_ret + 0.01, b_ret - 0.025,
     text("retrieval", FONT_ANN, :left, :green4))
-annotate!(p, a_cen - 0.01, b_cen - 0.03,
-    text("centroid", FONT_ANN, :right, :darkorange))
+annotate!(p, a_cen + 0.01, b_cen - 0.03,
+    text("centroid", FONT_ANN, :left, :darkorange))
 annotate!(p, a_ret + 0.01, b_entry + 0.02,
     text("entry", FONT_ANN, :left, :red3))
 
@@ -119,8 +119,8 @@ E_ret = -(1/b_lsr) * log(max(0, 1-b_lsr+b_lsr*phi_eq))
 E_cen = -(1/b_lsr) * log(2*max(0, 1-b_lsr+b_lsr*phi_cen))
 annotate!(p, a_ret - 0.015, b_ret + 0.025,
     text(@sprintf("E/N=%.3f", E_ret), FONT_ANN-1, :right, :green4))
-annotate!(p, a_cen + 0.01, b_cen + 0.025,
-    text(@sprintf("E/N=%.3f", E_cen), FONT_ANN-1, :left, :darkorange))
+annotate!(p, a_cen - 0.01, b_cen + 0.03,
+    text(@sprintf("E/N=%.3f", E_cen), FONT_ANN-1, :right, :darkorange))
 
 # ── Region labels ──
 annotate!(p, 0.96, 0.15, text("overlap", FONT_ANN-1, :center, :gray40))
