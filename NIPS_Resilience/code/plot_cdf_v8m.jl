@@ -1,8 +1,8 @@
 #=
 CDF of per-trial φ at selected (α,T) points from v8m data
 ────────────────────────────────────────────────────────────────────────
-Plots empirical CDF(φ) for several (α,T) cells spanning R, M, and P regions.
-Same figure style as plot_panels_LSR_v8.jl.
+Plots empirical CDF(φ) for 12 (α,T) cells spanning R, M, and P regions.
+Legend outside plot on the right, figure 2× standard width.
 
 Input:  basin_stab_LSR_v8m.csv
 Output: panels_v8m/cdf_phi.png, .pdf
@@ -20,23 +20,30 @@ using Statistics
 csv_file = "basin_stab_LSR_v8m.csv"
 out_dir  = "panels_v8m"
 
-# Selected (α, T) probe points across R, M, P regions
+# 12 probe points across R, M, P regions
 const PROBE_POINTS = [
-    # (α, T, label)
-    (0.22, 0.325, "R: α=0.22, T=0.33"),
-    (0.22, 1.025, "R: α=0.22, T=1.03"),
-    (0.25, 0.525, "M: α=0.25, T=0.53"),
-    (0.265, 0.325, "M: α=0.265, T=0.33"),
-    (0.27, 0.425, "M: α=0.27, T=0.43"),
-    (0.28, 0.475, "M: α=0.28, T=0.48"),
-    (0.295, 0.525, "P: α=0.295, T=0.53"),
-    (0.295, 1.025, "P: α=0.295, T=1.03"),
+    # R region (well inside retrieval)
+    (0.20,  0.325, "R"),
+    (0.22,  0.325, "R"),
+    (0.22,  1.025, "R"),
+    (0.24,  0.325, "R"),
+    # M region (anomalous, near boundary)
+    (0.25,  0.525, "M"),
+    (0.255, 0.425, "M"),
+    (0.265, 0.325, "M"),
+    (0.27,  0.425, "M"),
+    (0.28,  0.475, "M"),
+    # P region (beyond boundary)
+    (0.28,  1.025, "P"),
+    (0.295, 0.525, "P"),
+    (0.295, 1.025, "P"),
 ]
 
-# Figure size & fonts (same as plot_panels_LSR_v8.jl)
+# Figure: 2× standard width, legend outside on the right
 const FIG_DPI = 300
-const FIG_W = round(Int, 86 / 25.4 * 100)   # 339
-const FIG_H = round(Int, FIG_W * 0.85)       # 288
+const FIG_W_STD = round(Int, 86 / 25.4 * 100)   # 339 (standard 86mm)
+const FIG_W = 2 * FIG_W_STD                       # 678
+const FIG_H = round(Int, FIG_W_STD * 0.85)        # 288
 
 const FONT_TITLE  = 9
 const FONT_GUIDE  = 8
@@ -72,7 +79,7 @@ T_all     = sort(unique(df.T))
 
 @printf("Loaded: %d rows, %d α × %d T\n", nrow(df), length(alpha_all), length(T_all))
 
-# ──────────────── Find closest grid points ────────────────
+# ──────────────── Find closest grid point ────────────────
 
 function closest(vec, val)
     _, idx = findmin(abs.(vec .- val))
@@ -83,15 +90,18 @@ end
 
 mkpath(out_dir)
 
+# Colors: R=green, M=orange, P=blue (matching phase diagram convention)
+phase_colors = Dict("R" => :forestgreen, "M" => :darkorange, "P" => :royalblue)
+
 p = plot(xlabel="φ", ylabel="CDF",
     title="Empirical CDF of per-trial φ",
-    legend=:topleft, legendfontsize=FONT_LEGEND,
+    legend=:outertopright, legendfontsize=FONT_LEGEND,
     size=(FIG_W, FIG_H), dpi=FIG_DPI,
     xlims=(-0.05, 1.05), ylims=(0, 1),
     right_margin=3Plots.mm, left_margin=3Plots.mm,
     top_margin=3Plots.mm, bottom_margin=3Plots.mm)
 
-for (α_target, T_target, label) in PROBE_POINTS
+for (α_target, T_target, phase) in PROBE_POINTS
     α = closest(alpha_all, α_target)
     T = closest(T_all, T_target)
     sub = df[(df.alpha .== α) .& (df.T .== T), :]
@@ -100,11 +110,13 @@ for (α_target, T_target, label) in PROBE_POINTS
     cdf_y = (1:n) ./ n
 
     φeq = φ_eq_LSR(T)
-    lab = @sprintf("%s  (φ_eq=%.2f, n=%d)", label, φeq, n)
-    plot!(p, phis, cdf_y, lw=1.5, label=lab)
+    φ_mean = mean(phis)
+    lab = @sprintf("%s α=%.3f T=%.2f  ⟨φ⟩=%.2f φ_eq=%.2f n=%d",
+                   phase, α, T, φ_mean, φeq, n)
+    plot!(p, phis, cdf_y, lw=1.5, color=phase_colors[phase], label=lab)
 end
 
-# Reference: vertical line at hard wall
+# Hard wall reference
 phi_c = 1 - 1/b_lsr
 vline!(p, [phi_c], color=:gray, ls=:dash, lw=0.8, label=@sprintf("φ_c=%.3f", phi_c))
 
