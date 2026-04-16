@@ -29,9 +29,20 @@ E(\bx) = -\frac{N}{b}\log\left(\sum_{\mu=1}^{P}\max\!\Big(0,\;1 - b + b\,\phi_\m
 where $b > 1$ is the rescaled inverse variance of the Epanechnikov kernel (see ICML companion, Eq.~7 and Appendix~B).  The compact support introduces a hard wall at $\varphi_c = (b-1)/b$: pattern~$\mu$ contributes to the energy only when $\phi_\mu > \varphi_c$.  The numerical illustrations in this paper use $b = 2+\sqrt{2} \approx 3.41$ ($\varphi_c \approx 0.707$) for direct comparison with the ICML simulations; all analytical results hold for general $b > 1$ (the dependence on~$b$ is discussed in Section~\ref{sec:bdep}).
 
 \paragraph{Monte Carlo protocol.}
-The v8m simulation sweeps a grid of 31 load values $\alpha \in [0.20,\,0.35]$ (step~$0.005$) and 40 temperatures $T \in [0.025,\,2.0]$.  At each $(\alpha, T)$, $P = e^{\alpha N}$ patterns are drawn uniformly on~$S^{N-1}(\!\sqrt{N})$; $N = \lfloor\ln P/\alpha\rfloor$ ranges from~$50$ (at $\alpha = 0.20$) to~$34$ (at $\alpha = 0.35$).
+The v8m simulation sweeps a grid of $\alpha$ values and 40 temperatures $T \in [0.025,\,2.0]$ (step~$0.05$).  At each~$(\alpha, T)$, $P$ patterns are drawn uniformly on~$S^{N-1}(\!\sqrt{N})$, with $N = \lfloor\ln P/\alpha\rfloor$.  The data presented here combine two runs:
 
-For each grid point, $n_{\mathrm{dis}}$ independent disorder samples (random pattern sets $\{\bxi^\mu\}$) are generated, with $n_{\mathrm{dis}}$ ranging from~$256$ at $\alpha = 0.20$ to~$32$ at $\alpha = 0.35$ (the number decreases with $\alpha$ to keep memory manageable as $P$ grows).  Each disorder sample produces \emph{two} replicas (A,~B), independently initialized near the target $\bxi^1$ with $\varphi_{\mathrm{init}}$ drawn uniformly from $[0.75,\,1.0]$.  Each replica is equilibrated for $2^{14}$ Metropolis steps (step size $\sigma = 2.4\,T/\!\sqrt{N}$), then sampled for $2^{13}$ steps.  The per-trial observables recorded are the time-averaged target overlap $\varphi_A$, $\varphi_B$, the replica overlap $q_{\mathrm{EA}} = \bx_A\!\cdot\!\bx_B/N$, and the maximum spurious overlap $\varphi_{\max}^{\mathrm{other}} = \max_{\mu \neq 1}\phi_\mu$.
+\begin{center}
+\begin{tabular}{llcrrrl}
+\toprule
+Run & $\alpha$ range & step & $P$ range & $N$ range & $n_{\mathrm{dis}}$ & status \\
+\midrule
+1 & $0.200$--$0.350$ & 0.005 & 20k--500k & 50--37 & 256--32 & complete \\
+2 & $0.005$--$0.550$ & 0.005 & 20k--500k & 1981--24 & 256--32 & in progress \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+In both runs, $P$ grows sub-exponentially from $20\,000$ to $500\,000$ across the respective $\alpha$~grid, and $n_{\mathrm{dis}}$ (the number of independent disorder samples) decreases correspondingly to keep GPU memory manageable.  Each disorder sample produces \emph{two} replicas (A,~B), independently initialized near the target $\bxi^1$ with $\varphi_{\mathrm{init}}$ drawn uniformly from $[0.75,\,1.0]$.  Each replica is equilibrated for $2^{15}$ Metropolis steps (step size $\sigma = 2.4\,T/\!\sqrt{N}$), then sampled for $2^{13}$ steps.  The per-trial observables recorded are the time-averaged target overlap $\varphi_A$, $\varphi_B$, the replica overlap $q_{\mathrm{EA}} = \bx_A\!\cdot\!\bx_B/N$, and the maximum spurious overlap $\varphi_{\max}^{\mathrm{other}} = \max_{\mu \neq 1}\phi_\mu$.
 
 \subsection{Per-trial overlap distribution}
 
