@@ -58,38 +58,80 @@ The centroid peak at $\varphi \approx 0.831$ is remarkably narrow ($\sigma \appr
 
 \subsection{Support overlap between patterns}
 
-Consider the target pattern $\bxi^1$ and a spurious pattern~$\bxi^\mu$ with inter-pattern overlap $\varphi_{1\mu} = \bxi^1\!\cdot\bxi^\mu/N$.  For random patterns on $S^{N-1}(\!\sqrt{N})$, $\varphi_{1\mu}$ is approximately Gaussian with mean~0 and standard deviation $1/\sqrt{N}$ (the exact density is $(1-\varphi_{1\mu}^2)^{(N-3)/2}$, which converges to the Gaussian by the CLT on the sphere).
+Consider the target pattern $\bxi^1$ and a spurious pattern~$\bxi^\mu$ with inter-pattern overlap $\varphi_{1\mu} = \bxi^1\!\cdot\bxi^\mu/N$.
 
-At $N \approx 47$ and $P \in [20\,000,\,200\,000]$, the extreme-value statistics of the maximum inter-pattern overlap is
+\paragraph{Distribution of $\varphi_{1\mu}$.}
+Fix $\bxi^1$ and let $\bxi^\mu$ be drawn uniformly on $S^{N-1}(\!\sqrt{N})$.  Then $\varphi_{1\mu} = \cos\theta$, where $\theta$ is the angle between the two vectors, and the exact density on $[-1,1]$ is
 \begin{equation}
-\varphi_{1,\max} \approx \sqrt{\frac{2\ln P}{N}} \;\approx\; 0.66\text{--}0.77\,.
+f(\varphi) = C_N\,(1 - \varphi^2)^{(N-3)/2}\,,\qquad
+C_N = \frac{\Gamma(N/2)}{\Gamma\!\big((N\!-\!1)/2\big)\,\sqrt{\pi}}\,.
+\label{eq:exact_density}
 \end{equation}
-The number of patterns with $\varphi_{1\mu} > \varphi^*$ is
-$
-n(\varphi^*) = (P-1)\,\Phi^c\!\big(\varphi^*\sqrt{N}\big),
-$
-where $\Phi^c$ is the complementary normal CDF.  For $\varphi^* = 0.38$ (the value needed to produce the observed centroid at $\varphi = 0.831$; see below):
+This distribution has mean~$0$ and variance~$1/N$.  Writing $(1-\varphi^2)^{(N-3)/2} = \exp\!\big(\tfrac{N-3}{2}\ln(1-\varphi^2)\big)$ and expanding $\ln(1-\varphi^2) = -\varphi^2 - \varphi^4/2 - \cdots$ shows that the density concentrates as a Gaussian $\propto e^{-N\varphi^2/2}$ for $\varphi = O(1/\!\sqrt{N})$, with the quartic correction $e^{-N\varphi^4/4}$ becoming relevant in the tails where $\varphi = O(1)$.
+
+\paragraph{Maximum inter-pattern overlap.}
+The expected number of patterns with $\varphi_{1\mu} > \varphi^*$ is $n(\varphi^*) = (P-1)\,\Pr(\varphi_{1\mu} > \varphi^*)$.  The maximum overlap $\varphi_{1,\max}$ is defined by $n(\varphi_{1,\max}) \sim 1$, i.e.\ one pattern at the extreme.  In the Gaussian approximation,
+\[
+n(\varphi^*) \approx P\,\Phi^c\!\big(\varphi^*\!\sqrt{N}\big)
+\approx \frac{e^{N(\alpha - \varphi^{*2}/2)}}{\varphi^*\sqrt{2\pi N}}\,,
+\]
+and setting the exponent to zero gives the Gaussian estimate
+\begin{equation}
+\varphi_{1,\max}^{\mathrm{Gauss}} = \sqrt{2\alpha}\,.
+\label{eq:phimax_gauss}
+\end{equation}
+Using instead the exact tail from Eq.~\eqref{eq:exact_density}, the Laplace approximation gives $\Pr(\varphi_{1\mu} > \varphi^*) \propto (1-\varphi^{*2})^{(N-1)/2}/[(N\!-\!3)\varphi^*]$, leading to
+\begin{equation}
+\varphi_{1,\max}^{\mathrm{exact}} = \sqrt{1 - e^{-2\alpha}}\,.
+\label{eq:phimax_exact}
+\end{equation}
+To see the connection: $1 - e^{-2\alpha} = 2\alpha - 2\alpha^2 + \tfrac{4}{3}\alpha^3 - \cdots$, so $\varphi_{1,\max}^{\mathrm{exact}} = \sqrt{2\alpha}\,(1 - \alpha/2 + \cdots)$.  The exact value is always lower than the Gaussian because the compact support of $f(\varphi)$ on $[-1,1]$ makes the tails lighter:
+
 \begin{center}
-\begin{tabular}{cccr}
+\begin{tabular}{cccc}
 \toprule
-$\alpha$ & $N$ & $P$ & $n(\varphi_{1\mu}>0.38)$ \\
+$\alpha$ & $\varphi_{1,\max}^{\mathrm{Gauss}}$ & $\varphi_{1,\max}^{\mathrm{exact}}$ & ratio \\
 \midrule
-0.200 & 50 & 20\,000 & 70 \\
-0.220 & 49 & 43\,000 & 165 \\
-0.240 & 47 & 88\,000 & 396 \\
-0.265 & 46 & 201\,000 & 981 \\
+0.10 & 0.447 & 0.426 & 0.95 \\
+0.20 & 0.632 & 0.574 & 0.91 \\
+0.25 & 0.707 & 0.627 & 0.89 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Thus, even at $\alpha = 0.200$---well below $\alpha_{\mathrm{th}} \approx 0.245$---tens to hundreds of spurious patterns have substantial overlap with the target.
+\paragraph{Corrected noise-floor threshold.}
+Pattern~$\mu$ contributes to the LSR noise floor only when $\varphi_{1,\max} > \varphi_c = 1 - 1/b$.  Setting $\varphi_{1,\max}^{\mathrm{exact}} = \varphi_c$ gives the exact threshold
+\begin{equation}
+\alpha_{\mathrm{th}}^{\mathrm{exact}} = -\tfrac{1}{2}\ln(1-\varphi_c^2) = \tfrac{\ln 2}{2} \approx 0.347
+\qquad\bigl(\text{Gaussian: } \alpha_{\mathrm{th}}^{\mathrm{Gauss}} = \varphi_c^2/2 = 0.25\bigr)\,.
+\label{eq:alpha_th_exact}
+\end{equation}
+The Gaussian approximation underestimates $\alpha_{\mathrm{th}}$ by 39\%.  The sub-threshold regime where LSR retrieval is free of interference is therefore wider than previously stated: it extends to $\alpha < 0.347$, not merely $\alpha < 0.25$.
+
+\paragraph{Number of high-overlap patterns.}
+For the counting of escape-enabling patterns, the exact tail probability is reduced relative to the Gaussian by the factor $\exp(-N\varphi^{*4}/4)$.  For $\varphi^* = 0.38$ and $N \approx 47$--$50$, this factor is $\approx 0.77$--$0.78$:
+
+\begin{center}
+\begin{tabular}{cccrr}
+\toprule
+$\alpha$ & $N$ & $P$ & $n^{\mathrm{Gauss}}$ & $n^{\mathrm{exact}}$ \\
+\midrule
+0.200 & 50 & 20\,000 & 72 & 56 \\
+0.220 & 49 & 43\,000 & 168 & 130 \\
+0.240 & 47 & 88\,000 & 404 & 316 \\
+0.265 & 46 & 201\,000 & 1\,001 & 787 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The correction reduces the counts by $\sim$20\%, but even the exact values confirm that tens to hundreds of patterns have $\varphi_{1\mu} > 0.38$ at $\alpha \geq 0.200$.
 
 \subsection{Inter-pattern overlap and escape-enabling patterns}
 
 \paragraph{Relation to the thermodynamic noise floor.}
-In the thermodynamic limit ($N\to\infty$), the maximum spurious alignment at any state on the sphere is $\varphi_{\max} = \sqrt{2\alpha}$.  For the LSR kernel, a pattern contributes to the noise floor only if its alignment exceeds the support boundary $\varphi_c = 1 - 1/b$.  No noise floor forms when $\varphi_{\max} < \varphi_c$, i.e.\ when $\alpha < \alpha_{\mathrm{th}} = \varphi_c^2/2 = (1-b^{-1})^2/2 \approx 0.25$.  Below this threshold the retrieval basin is completely free of interference and retrieval is perfect at any temperature.
+In the thermodynamic limit ($N\to\infty$), the maximum spurious alignment at any state on the sphere is $\varphi_{\max} = \sqrt{2\alpha}$.  For the LSR kernel, a pattern contributes to the noise floor only if its alignment exceeds the support boundary $\varphi_c = 1 - 1/b$.  No noise floor forms when $\varphi_{1,\max} < \varphi_c$, which from the exact extreme-value formula~\eqref{eq:phimax_exact} requires $\alpha < \alpha_{\mathrm{th}} = \tfrac{1}{2}\ln 2 \approx 0.347$ (Eq.~\eqref{eq:alpha_th_exact}).  Below this threshold the retrieval basin is completely free of interference and retrieval is perfect at any temperature.
 
-The centroid escape mechanism operates in a \emph{different} regime.  No spurious pattern is in support \emph{at the retrieval state} for $\alpha < 0.25$, but the geometric support regions (spherical caps $\{\bx : \varphi_\mu > \varphi_c\}$) of two patterns \emph{do} intersect whenever their inter-pattern overlap $\varphi_{1\mu} > 0$---and this is always the case, since $\varphi_{1,\max} = \sqrt{2\alpha} > 0$.  The intersection region (the centroid) is far from the retrieval state; reaching it requires the perpendicular rotation described in Stage~1 below.  In the thermodynamic limit the entropic cost of this rotation diverges, consistent with the vanishing noise floor.  At finite~$N$, however, the barrier is finite.
+The centroid escape mechanism operates in a \emph{different} regime.  No spurious pattern is in support \emph{at the retrieval state} for $\alpha < \alpha_{\mathrm{th}}$, but the geometric support regions (spherical caps $\{\bx : \varphi_\mu > \varphi_c\}$) of two patterns \emph{do} intersect whenever their inter-pattern overlap $\varphi_{1\mu} > 0$---and this is always the case, since $\varphi_{1,\max} > 0$ for any $\alpha > 0$.  The intersection region (the centroid) is far from the retrieval state; reaching it requires the perpendicular rotation described in Stage~1 below.  In the thermodynamic limit the entropic cost of this rotation diverges, consistent with the vanishing noise floor.  At finite~$N$, however, the barrier is finite.
 
 \paragraph{Escape-path constraint.}
 For pattern~$\bxi^\mu$ to participate in the centroid escape from the retrieval state at $\varphi_{\mathrm{eq}}$, the inter-pattern overlap $\varphi_{1\mu}$ must be large enough that the escape path (Stage~1 below) fits on the sphere.  The constraint $a^2 + v^2 \leq 1$ with $a = \varphi_{\mathrm{eq}}$ and $v = v_{\mathrm{entry}}$ (see Eq.~\eqref{eq:ventry}) requires
@@ -173,7 +215,7 @@ Two distinct thresholds govern the role of inter-pattern overlaps:
 Threshold & Symbol & Value & Meaning \\
 \midrule
 Escape-enabling & $\alpha_{\mathrm{esc}}$ & $\approx 0.054$ & $\exists\,\mu$: escape path fits on sphere \\
-Noise floor & $\alpha_{\mathrm{th}}$ & $= 0.250$ & $\exists\,\mu$: in support at retrieval state \\
+Noise floor & $\alpha_{\mathrm{th}}$ & $= \tfrac{\ln 2}{2} \approx 0.347$ & $\exists\,\mu$: in support at retrieval state \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -321,7 +363,7 @@ The results of this paper and the thermodynamic analysis of the ICML companion p
 Threshold & Symbol & Value ($b = 2\!+\!\sqrt{2}$) & Physical meaning \\
 \midrule
 Escape-enabling & $\alpha_{\mathrm{esc}}$ & $\approx 0.054$ & centroid escape path fits on sphere \\
-Noise floor & $\alpha_{\mathrm{th}}$ & $= 0.250$ & spurious pattern in support at retrieval \\
+Noise floor & $\alpha_{\mathrm{th}}$ & $= \tfrac{\ln 2}{2} \approx 0.347$ & spurious pattern in support at retrieval \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -332,15 +374,15 @@ These thresholds delineate three regimes:
 No pattern has inter-pattern overlap $\varphi_{1\mu}$ large enough for the centroid escape path to fit on the sphere.  The retrieval state is the unique minimum and is stable both thermodynamically and kinetically.
 
 \paragraph{$\alpha_{\mathrm{esc}} < \alpha < \alpha_{\mathrm{th}}$ (including $\alpha = 0.20$): finite-$N$ metastability.}
-The thermodynamic noise floor is exactly zero: $\varphi_{\max} = \sqrt{2\alpha} < \varphi_c$, so no spurious pattern is in support at the retrieval state.  The ICML analysis correctly predicts perfect retrieval in the thermodynamic limit $N \to \infty$.
+The thermodynamic noise floor is exactly zero: $\varphi_{1,\max}^{\mathrm{exact}} = \sqrt{1-e^{-2\alpha}} < \varphi_c$, so no spurious pattern is in support at the retrieval state.  The thermodynamic analysis correctly predicts perfect retrieval in the limit $N \to \infty$.
 
 However, exponentially many patterns have $\varphi_{1\mu} > \varphi_{\min}$, and their support caps \emph{do} geometrically intersect those of the target.  The intersection region---the centroid---has lower energy than the retrieval state ($\Delta E/N \approx -0.073$) but occupies a vanishing fraction of the sphere ($\varphi^T G^{-1}\varphi = 1$ at the symmetric centroid, leaving zero perpendicular entropy per neuron).
 
 At finite~$N$, the entropic barrier is finite.  The perpendicular rotation (Stage~1) requires aligning~$\bx_\perp$ with a specific direction in $(N\!-\!1)$-dimensional space, costing $O(N)$ in entropy.  When this cost is comparable to the energy gain, the centroid becomes accessible.  The v9 data confirms that the retrieval state is metastable at $N \approx 47$: $\varphi$ systematically decays with longer MC runs, even at $\alpha = 0.22$ well below~$\alpha_{\mathrm{th}}$.
 
-The escape time should scale as $\tau \sim \exp(c\,N)$ with $c > 0$, making the retrieval state long-lived at moderate~$N$ but ultimately metastable.  In the thermodynamic limit $\tau \to \infty$ and the metastability becomes true stability, consistent with the ICML result.  The ``retrieval phase'' observed in the v8 Monte Carlo phase diagram is therefore a kinetic phenomenon: the system has not equilibrated past the entropic barrier within the allocated MC time.
+The escape time should scale as $\tau \sim \exp(c\,N)$ with $c > 0$, making the retrieval state long-lived at moderate~$N$ but ultimately metastable.  In the thermodynamic limit $\tau \to \infty$ and the metastability becomes true stability.  The ``retrieval phase'' observed in the v8 Monte Carlo phase diagram is therefore a kinetic phenomenon: the system has not equilibrated past the entropic barrier within the allocated MC time.
 
-\paragraph{$\alpha > \alpha_{\mathrm{th}} = 0.25$: thermodynamic instability.}
-The maximum spurious alignment $\varphi_{\max} = \sqrt{2\alpha}$ exceeds $\varphi_c$, creating a non-zero noise floor.  Spurious patterns interfere with retrieval even at the retrieval state itself.  The phase boundary $\alpha_c(T)$ derived in the ICML paper governs this regime; above it, retrieval fails both thermodynamically and kinetically.
+\paragraph{$\alpha > \alpha_{\mathrm{th}} \approx 0.347$: thermodynamic instability.}
+The maximum spurious alignment $\varphi_{1,\max}^{\mathrm{exact}} = \sqrt{1-e^{-2\alpha}}$ exceeds $\varphi_c$, creating a non-zero noise floor.  Spurious patterns interfere with retrieval even at the retrieval state itself.  The phase boundary $\alpha_c(T)$ governs this regime; above it, retrieval fails both thermodynamically and kinetically.
 
 \end{document}
