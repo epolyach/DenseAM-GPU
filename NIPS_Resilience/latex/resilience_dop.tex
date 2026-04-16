@@ -42,11 +42,11 @@ Run & $\alpha$ range & step & $P$ range & $N$ range & $n_{\mathrm{dis}}$ & statu
 \end{tabular}
 \end{center}
 
-In both runs, $P$ grows sub-exponentially from $20\,000$ to $500\,000$ across the respective $\alpha$~grid, and $n_{\mathrm{dis}}$ (the number of independent disorder samples) decreases correspondingly to keep GPU memory manageable.  Each disorder sample produces \emph{two} replicas (A,~B), independently initialized near the target $\bxi^1$ with $\varphi_{\mathrm{init}}$ drawn uniformly from $[0.75,\,1.0]$.  Each replica is equilibrated for $2^{15}$ Metropolis steps (step size $\sigma = 2.4\,T/\!\sqrt{N}$), then sampled for $2^{13}$ steps.  The per-trial observables recorded are the time-averaged target overlap $\varphi_A$, $\varphi_B$, the replica overlap $q_{\mathrm{EA}} = \bx_A\!\cdot\!\bx_B/N$, and the maximum spurious overlap $\varphi_{\max}^{\mathrm{other}} = \max_{\mu \neq 1}\phi_\mu$.
+In both runs, $P$ grows sub-exponentially from $20\,000$ to $500\,000$ across the respective $\alpha$~grid, and $n_{\mathrm{dis}}$ (the number of independent disorder samples) decreases correspondingly to keep GPU memory manageable.  Each disorder sample produces \emph{two} replicas (A,~B), independently initialized near the target $\bxi^1$ with $\varphi_{\mathrm{init}}$ drawn uniformly from $[0.75,\,1.0]$.  Each replica is equilibrated for $2^{15}$ Metropolis steps (step size $\sigma = 2.4\,T/\!\sqrt{N}$), then sampled for $2^{13}$ steps.  Each observable is \emph{time-averaged} over the $2^{13}$ sampling steps: $\varphi_A = (1/N_{\mathrm{SAMP}})\sum_{t=1}^{N_{\mathrm{SAMP}}}\phi_1(\bx_A(t))$, and likewise for $\varphi_B$, $q_{\mathrm{EA}} = (1/N_{\mathrm{SAMP}})\sum_t \bx_A(t)\!\cdot\!\bx_B(t)/N$, and $\varphi_{\max}^{\mathrm{other}} = (1/N_{\mathrm{SAMP}})\sum_t \max_{\mu\neq 1}\phi_\mu(\bx_A(t))$.
 
 \subsection{Per-trial overlap distribution}
 
-At a fixed $(\alpha, T)$, the $2\,n_{\mathrm{dis}}$ per-trial overlap values (one $\varphi_A$ and one $\varphi_B$ per disorder sample) form an empirical distribution over disorder realizations.  Figure~\ref{fig:cdf} shows the CDF of this distribution at selected grid points.  The distribution is \emph{not} unimodal: it exhibits discrete peaks corresponding to qualitatively different states of the system.
+At a fixed $(\alpha, T)$, the $2\,n_{\mathrm{dis}}$ per-trial overlap values ($\varphi_A$ and $\varphi_B$ from each disorder sample, pooled) form an empirical distribution over disorder realizations.  Figure~\ref{fig:cdf} shows the CDF of this distribution at selected grid points.  The distribution is \emph{not} unimodal: it exhibits discrete peaks corresponding to qualitatively different states of the system.
 
 Table~\ref{tab:populations} lists the populations identified in the data near the retrieval boundary.  The ``peak position'' and ``width'' columns give the mean and standard deviation of $\varphi$ within each population, estimated by Gaussian mixture fitting.  The column $\varphi_{\max}^{\mathrm{other}}$ reports the average maximum spurious overlap for trials in that population.  The physical interpretation of each population is derived in Section~2; the table is presented here as an empirical summary.
 
@@ -73,7 +73,7 @@ As $\alpha$ increases toward $\alpha_{\mathrm{th}}$, the weight of the non-retri
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{panels_v8/cdf_phi.pdf}
-\caption{Empirical CDF of the per-trial time-averaged overlap~$\varphi$ from v8m data at selected $(\alpha, T)$ grid points.  Green curves: points classified as retrieval (R); orange: mixed (M); blue: paramagnetic (P).  The dashed gray line marks $\varphi_c \approx 0.707$.  The step structure in the green and orange curves reflects the retrieval peak ($\varphi \approx 0.90$) and the centroid peak ($\varphi \approx 0.83$).}
+\caption{Empirical CDF of the per-trial time-averaged overlap~$\varphi$ from v8m data at selected $(\alpha, T)$ grid points.  Both replicas ($\varphi_A$ and $\varphi_B$) are pooled.  Green curves: points classified as retrieval (R); orange: mixed (M); blue: paramagnetic (P).  The dashed gray line marks $\varphi_c \approx 0.707$.  The step structure in the green and orange curves reflects the retrieval peak ($\varphi \approx 0.90$) and the centroid peak ($\varphi \approx 0.83$).}
 \label{fig:cdf}
 \end{figure}
 
