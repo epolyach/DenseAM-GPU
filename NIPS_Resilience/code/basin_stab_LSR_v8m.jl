@@ -239,53 +239,87 @@ function main()
     @printf("Available GPU memory: %.2f GB\n", available_mem/1e9)
     @printf("Chunk size: %d α value(s) at a time\n\n", chunk_size)
 
-    # ── Determine resume point ──
+    # ── Determine pending α values (grid-aware resume) ──
     csv_out = "basin_stab_LSR_v8m.csv"
 
-    function count_completed_alphas(csv_file::String)
-        !isfile(csv_file) && return 0
-        alphas_seen = Set{Float64}()
+    function read_completed_alphas(csv_file::String)
+        !isfile(csv_file) && return Set{String}()
+        seen = Set{String}()
         first = true
         open(csv_file, "r") do f
             for line in eachline(f)
                 if first; first = false; continue; end  # skip header
-                α = parse(Float64, split(line, ",")[1])
-                push!(alphas_seen, α)
+                isempty(line) && continue
+                push!(seen, String(split(line, ",")[1]))
             end
         end
-        return length(alphas_seen)
+        return seen
     end
 
-    n_completed = FRESH_START ? 0 : count_completed_alphas(csv_out)
-    start_idx = n_completed + 1
-
-    if start_idx > n_alpha
-        println("All $n_alpha α values already completed in CSV.")
-        println("Use --fresh to overwrite and restart.")
-        return
+    function sort_csv!(csv_file::String)
+        !isfile(csv_file) && return
+        lines = readlines(csv_file)
+        isempty(lines) && return
+        header = lines[1]
+        data = lines[2:end]
+        function sortkey(l)
+            parts = split(l, ",")
+            return (parse(Float64, parts[1]),
+                    parse(Float64, parts[2]),
+                    parse(Int,     parts[3]))
+        end
+        sort!(data, by=sortkey)
+        tmp = csv_file * ".tmp"
+        open(tmp, "w") do f
+            println(f, header)
+            for l in data
+                println(f, l)
+            end
+        end
+        mv(tmp, csv_file; force=true)
+        return nothing
     end
 
-    if FRESH_START || n_completed == 0
+    if FRESH_START || !isfile(csv_out)
         open(csv_out, "w") do f
             write(f, "alpha,T,disorder,phi_a,phi_b,q12,phi_max_other\n")
         end
-        start_idx = 1
         println(FRESH_START ? "Fresh start (--fresh)." : "No existing CSV found, starting fresh.")
-    else
-        @printf("Resuming: %d/%d α values completed, continuing from α=%.3f (index %d)\n",
-                n_completed, n_alpha, alpha_vec[start_idx], start_idx)
     end
+
+    completed = FRESH_START ? Set{String}() : read_completed_alphas(csv_out)
+    pending_indices = Int[]
+    for i in 1:n_alpha
+        key = @sprintf("%.3f", alpha_vec[i])
+        if !(key in completed)
+            push!(pending_indices, i)
+        end
+    end
+    n_pending = length(pending_indices)
+
+    if n_pending == 0
+        println("All $n_alpha α values already present in CSV. Nothing to do.")
+        println("Use --fresh to overwrite and restart.")
+        sort_csv!(csv_out)
+        return
+    end
+
+    @printf("Completed: %d/%d α values in CSV. Pending: %d.\n",
+            n_alpha - n_pending, n_alpha, n_pending)
+    print("Pending α: ")
+    for i in pending_indices; @printf("%.3f ", alpha_vec[i]); end
+    println()
     t_total_eq = 0.0
     t_total_samp = 0.0
 
-    for chunk_start in start_idx:chunk_size:n_alpha
-        chunk_end = min(chunk_start + chunk_size - 1, n_alpha)
-        chunk_indices = chunk_start:chunk_end
+    for pend_start in 1:chunk_size:n_pending
+        pend_end = min(pend_start + chunk_size - 1, n_pending)
+        chunk_indices = pending_indices[pend_start:pend_end]
         n_chunk = length(chunk_indices)
 
         println("\n" * "=" ^ 70)
-        @printf("Processing chunk: α indices %d–%d (%d/%d)\n",
-                chunk_start, chunk_end, chunk_end, n_alpha)
+        @printf("Processing chunk: pending %d–%d of %d  (α indices %s)\n",
+                pend_start, pend_end, n_pending, join(chunk_indices, ","))
         println("=" ^ 70)
 
         # ── Allocate GPU memory for this chunk ──
@@ -460,6 +494,9 @@ function main()
             end
         end
         println("Per-sample results appended to CSV.")
+        print("Sorting CSV by (α, T, disorder)... ")
+        sort_csv!(csv_out)
+        println("done.")
 
         # ── Free GPU memory ──
         pats_g = nothing; tgts_g = nothing
@@ -481,6 +518,10 @@ function main()
     for idx in [1, n_alpha÷2, n_alpha]
         @printf("  α=%.3f (N=%d, P=%d, disorder=%d):\n",
                 alpha_vec[idx], Ns[idx], Ps[idx], n_disorder_vec[idx])
+    end
+    println("=" ^ 70)
+end
+
 #         @printf("    φ:        T=%.3f→%.4f,  T=%.3f→%.4f,  T=%.3f→%.4f\n",
 #                 T_vec[1], phi_grid[idx, 1],
 #                 T_vec[j_mid], phi_grid[idx, j_mid],
