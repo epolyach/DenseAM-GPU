@@ -109,22 +109,29 @@ Pattern~$\mu$ contributes to the LSR noise floor only when $\varphi_{1,\max} > \
 The Gaussian approximation underestimates $\alpha_{\mathrm{th}}$ by 39\%.  The sub-threshold regime where LSR retrieval is free of interference is therefore wider than previously stated: it extends to $\alpha < 0.347$, not merely $\alpha < 0.25$.
 
 \paragraph{Number of high-overlap patterns.}
-For the counting of escape-enabling patterns, the exact tail probability is reduced relative to the Gaussian by the factor $\exp(-N\varphi^{*4}/4)$.  To evaluate this concretely we use $\varphi^* = 0.38$: the two-pattern centroid sits at $\varphi_{\mathrm{cen}} = \sqrt{(1+q)/2}$ (Eq.~\eqref{eq:phi_cen} below), so the observed centroid peak at $\varphi_{\mathrm{cen}} = 0.831$ requires $q = 2\varphi_{\mathrm{cen}}^2 - 1 \approx 0.38$.  For this value and $N \approx 47$--$50$, the correction factor is $\approx 0.77$--$0.78$:
+To evaluate the counting concretely we use $\varphi^* = 0.38$: the two-pattern centroid sits at $\varphi_{\mathrm{cen}} = \sqrt{(1+q)/2}$ (Eq.~\eqref{eq:phi_cen} below), so the observed centroid peak at $\varphi_{\mathrm{cen}} = 0.831$ requires $q = 2\varphi_{\mathrm{cen}}^2 - 1 \approx 0.38$.  Table~\ref{tab:n_overlap} compares the expected number of patterns with $\varphi_{1\mu} > 0.38$ under three approximations: the Gaussian tail $n^{\mathrm{G}} = P\,\Phi^c(\varphi^*\!\sqrt{N})$; the leading quartic correction $n^{\mathrm{corr}} = n^{\mathrm{G}}\,e^{-N\varphi^{*4}/4}$; and numerical integration of the exact density~\eqref{eq:exact_density}, $n^{\mathrm{exact}} = P\!\int_{\varphi^*}^{1}\!C_N(1-t^2)^{(N-3)/2}dt$.
 
-\begin{center}
-\begin{tabular}{cccrr}
+\begin{table}[h]
+\centering
+\caption{Expected number of patterns with $\varphi_{1\mu} > 0.38$ under Gaussian, corrected, and exact densities.  Here $P = 20\,000$ for $\alpha \leq 0.20$ (the minimum simulation load); for $\alpha > 0.20$, $P$ follows the v8m interpolation grid.}
+\label{tab:n_overlap}
+\begin{tabular}{ccrrrr}
 \toprule
-$\alpha$ & $N$ & $P$ & $n^{\mathrm{Gauss}}$ & $n^{\mathrm{exact}}$ \\
+$\alpha$ & $N$ & $P$ & $n^{\mathrm{G}}$ & $n^{\mathrm{corr}}$ & $n^{\mathrm{exact}}$ \\
 \midrule
-0.200 & 50 & 20\,000 & 72 & 56 \\
-0.220 & 49 & 43\,000 & 168 & 130 \\
-0.240 & 47 & 88\,000 & 404 & 316 \\
-0.265 & 46 & 201\,000 & 1\,001 & 787 \\
+0.005 & 1981 & 20\,000 & $4\times 10^{-60}$ & $1\times 10^{-64}$ & $4\times 10^{-65}$ \\
+0.010 &  990 & 20\,000 & $6\times 10^{-29}$ & $4\times 10^{-31}$ & $2\times 10^{-31}$ \\
+0.050 &  198 & 20\,000 & $9\times 10^{-4}$ & $3\times 10^{-4}$ & $3\times 10^{-4}$ \\
+0.100 &   99 & 20\,000 & 1.6 & 0.93 & 0.96 \\
+0.200 &   50 & 20\,000 & 72 & 56 & 60 \\
+0.220 &   47 & 32\,800 & 151 & 118 & 127 \\
+0.240 &   45 & 52\,500 & 283 & 224 & 241 \\
+0.260 &   44 & 82\,300 & 482 & 383 & 413 \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
-The correction reduces the counts by $\sim$20\%, but even the exact values confirm that tens to hundreds of patterns have $\varphi_{1\mu} > 0.38$ at $\alpha \geq 0.200$.
+For small $\alpha$ ($\leq 0.05$), $n^{\mathrm{exact}} \ll 1$: essentially no pattern has overlap exceeding~$0.38$, consistent with the absence of centroid escape.  For $\alpha \geq 0.10$, $n$ grows rapidly.  The quartic correction captures the bulk of the non-Gaussian effect ($n^{\mathrm{corr}}$ is within $\sim$8\% of the exact value at the simulation sizes $N \approx 45$--$50$), confirming that the compact support of the sphere is the dominant correction to the Gaussian tail.
 
 \subsection{Inter-pattern overlap and escape-enabling patterns}
 
