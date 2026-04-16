@@ -311,25 +311,18 @@ The centroid peak position does depend on $T$: at $\varphi_{1\mu} = 0.574$ ($\al
 The CDF of the per-trial overlap (Fig.~\ref{fig:cdf}) often shows a distinct population near $\varphi \approx 0.5$, well below the two-pattern centroid at $\approx 0.83$.  This population has a clear signature in the v8m data: $\varphi_{\max}^{\mathrm{other}} \approx 0.82 \gg \varphi_1 \approx 0.48$ in every such trial.  The system is sitting at a \emph{spurious} two-pattern centroid $(\bxi^\mu, \bxi^\nu)$ from which the target has been excluded.
 
 \paragraph{Why not a triple centroid?}
-One might expect the system to recruit a third pattern into support, forming a three-pattern centroid.  However, the $k$-pattern symmetric centroid ($k$ patterns with pairwise overlap~$\varphi_{1\mu}$) has geometric overlap $\varphi_k^{(0)} = \sqrt{\varphi_{1\mu} + (1-\varphi_{1\mu})/k}$ and $T = 0$ energy
+One might expect the system to recruit a third pattern into support, forming a three-pattern centroid.  The $k$-pattern symmetric centroid ($k$ patterns with common pairwise overlap~$\varphi_{1\mu}$) has geometric overlap $\varphi_k^{(0)} = \sqrt{\varphi_{1\mu} + (1-\varphi_{1\mu})/k}$ and as $k\to\infty$, $\varphi_k^{(0)} \to \sqrt{\varphi_{1\mu}}$.  Whether adding patterns helps or hurts depends on a simple criterion: at the $k\to\infty$ centroid, is each pattern still in support?  This requires $\sqrt{\varphi_{1\mu}} > \varphi_c$, i.e.
 \begin{equation}
-\frac{E_k}{N} = -\frac{1}{b}\ln\!\big(k\,(1-b+b\,\varphi_k^{(0)})\big)\,.
+\varphi_{1\mu} > \varphi_c^2 = \left(\frac{b-1}{b}\right)^{\!2}.
+\label{eq:cluster_criterion}
 \end{equation}
-Evaluating at $\varphi_{1\mu} = \varphi_{1,\max} \approx 0.57$ ($\alpha = 0.2$):
-\begin{center}
-\begin{tabular}{cccc}
-\toprule
-$k$ & $\varphi_k^{(0)}$ & sum inside $\ln$ & $E_k/N$ \\
-\midrule
-1 (retrieval) & 0.900 & 0.659 & 0.122 \\
-\textbf{2 (centroid)} & \textbf{0.887} & \textbf{1.043} & \textbf{$-0.012$} \\
-3 & 0.820 & 0.836 & 0.052 \\
-4 & 0.779 & 0.620 & 0.140 \\
-\bottomrule
-\end{tabular}
-\end{center}
+For $b = 2\!+\!\sqrt{2}$: $\varphi_c^2 = 0.50$.  When $\varphi_{1\mu} > 0.50$, each additional pattern in the centroid \emph{increases} the sum inside the logarithm, lowering the energy; the $k$-pattern centroid gets deeper with~$k$.  When $\varphi_{1\mu} < 0.50$, the individual ReLU arguments shrink faster than the count grows, and the two-pattern centroid is the minimum.
 
-The two-pattern centroid has the lowest energy.  Adding a third pattern dilutes the ReLU arguments faster than the count increases; the $k = 3$ centroid has higher energy than $k = 2$.  Triple centroids are energetically disfavored.
+In the sub-threshold regime $\alpha < \alpha_{\mathrm{th}}$, the maximum inter-pattern overlap is $\varphi_{1,\max} = \sqrt{1-e^{-2\alpha}} < \varphi_c$ (by definition of $\alpha_{\mathrm{th}}$).  Therefore $\varphi_{1,\max} < \varphi_c$, and a fortiori $\varphi_{1,\max} < \varphi_c^2$ is \emph{not} guaranteed---in fact $\varphi_{1,\max}$ may exceed $\varphi_c^2$ while remaining below $\varphi_c$.  Specifically, $\varphi_{1,\max} > \varphi_c^2$ when $\alpha > -\tfrac{1}{2}\ln(1-\varphi_c^4) = -\tfrac{1}{2}\ln(3/4) \approx 0.144$.
+
+For $\alpha < 0.144$: $\varphi_{1,\max} < \varphi_c^2 = 0.50$, the two-pattern centroid is the energy minimum.  Triple centroids are disfavored.
+
+For $0.144 < \alpha < \alpha_{\mathrm{th}} \approx 0.347$: $\varphi_c^2 < \varphi_{1,\max} < \varphi_c$, so multi-pattern centroids of a tight cluster would be deeper---\emph{if} such a cluster existed.  However, forming a $k$-pattern cluster requires all $\binom{k}{2}$ pairwise overlaps to exceed $\varphi_c^2$.  Random patterns satisfying this are exponentially rare: the expected number of tight triples is $\sim P^3\,[\Phi^c(\varphi_c^2\sqrt{N})]^3$, which is $\ll 1$ at the simulation sizes.  In practice, the system hops between \emph{pairs}, not clusters.
 
 \paragraph{Centroid hopping.}
 Instead of growing, the system \emph{hops}: from the centroid $(\bxi^1, \bxi^\mu)$, pattern~$\bxi^\mu$ has its own high-overlap neighbors.  One of them, $\bxi^\nu$ with $\varphi_{\mu\nu} > \varphi_{\min}$, gets recruited via the same zero-energy perpendicular rotation---but now it is $\bxi^1$ that is pushed out of support, not $\bxi^\nu$ that enters.  The result is a new two-pattern centroid $(\bxi^\mu, \bxi^\nu)$ at comparable energy:
@@ -348,7 +341,7 @@ After the second hop, the target is no longer in support ($\varphi_1 < \varphi_c
 \begin{equation}
 \varphi_1 \;=\; \frac{\varphi_{1\mu} + \varphi_{1\nu}}{\sqrt{2(1+\varphi_{\mu\nu})}}\,.
 \end{equation}
-For $\varphi_{1\mu} \approx \varphi_{1,\max} \approx 0.57$ and a typical $\varphi_{1\nu} \approx 0.3$--$0.4$ (the target's overlap with $\bxi^\nu$ is not necessarily large), this gives $\varphi_1 \approx 0.40$--$0.55$, consistent with the observed peak at $\avg{\varphi} \approx 0.48$ in the v8m data.  Each subsequent hop replaces the older partner with a new neighbor of the remaining one.  The target's overlap decays with each hop, eventually reaching $\varphi_1 \to 0$ (paramagnetic).
+For $\varphi_{1\mu} \approx \varphi_{1,\max} \approx 0.57$ and a typical $\varphi_{1\nu} \approx 0.3$--$0.4$ (the target's overlap with $\bxi^\nu$ is not necessarily large), this gives $\varphi_1 \approx 0.40$--$0.55$, consistent with the observed peak at $\avg{\varphi} \approx 0.48$ in the v8m data.  Each subsequent hop replaces the older partner with a new neighbor of the remaining one.  The target's overlap decays with each hop as the active centroid moves further away.  Note that in LSR, the energy diverges when no pattern is in support ($\ln 0$), so the system is \emph{always} at some centroid---there is no true paramagnetic state.  Trials with $\varphi_1 \approx 0$ are not paramagnetic but sit at a distant centroid of patterns unrelated to the target.
 
 \begin{figure}[t]
 \centering
@@ -358,6 +351,52 @@ For $\varphi_{1\mu} \approx \varphi_{1,\max} \approx 0.57$ and a typical $\varph
 \end{figure}
 
 The dynamics is thus a random walk on the pattern overlap graph, where each step swaps one partner in the active centroid for a neighbor of the other.  The two-pattern centroid energy is approximately constant along this walk; only the target's overlap decreases.
+
+\subsection{Dependence on the kernel sharpness $b$}
+
+All quantitative features of the centroid mechanism are controlled by the support threshold $\varphi_c = (b-1)/b$.  The key scales are:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Quantity & Formula & Role \\
+\midrule
+Support threshold & $\varphi_c = (b-1)/b$ & pattern in/out of support \\
+Noise-floor threshold & $\alpha_{\mathrm{th}} = -\tfrac{1}{2}\ln(1-\varphi_c^2)$ & spurious patterns enter support \\
+Cluster threshold & $\varphi_c^2$ & multi-pattern centroid deeper than pair \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{ccccc}
+\toprule
+$b$ & $\varphi_c$ & $\alpha_{\mathrm{th}}$ & $\varphi_c^2$ & Regime \\
+\midrule
+1.5 & 0.333 & 0.059 & 0.111 & broad support, easy interference \\
+2.0 & 0.500 & 0.144 & 0.250 & moderate \\
+$2\!+\!\sqrt{2}$ & 0.707 & 0.347 & 0.500 & our simulations \\
+5.0 & 0.800 & 0.511 & 0.640 & sharp kernel \\
+10 & 0.900 & 0.830 & 0.810 & very sharp \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The intuition is as follows.  Increasing $b$ raises $\varphi_c$, which:
+
+\begin{enumerate}
+\item \textbf{Shrinks the support caps} on the sphere.  Each pattern's support region $\{\bx : \varphi_\mu > \varphi_c\}$ covers a smaller solid angle, so two patterns must be closer (higher $\varphi_{1\mu}$) for their caps to overlap meaningfully.
+
+\item \textbf{Raises $\alpha_{\mathrm{th}}$}: the retrieval basin is interference-free up to a higher loading.  At $b = 10$, retrieval is stable up to $\alpha \approx 0.83$---far higher than $b = 2\!+\!\sqrt{2}$ where $\alpha_{\mathrm{th}} \approx 0.35$.  Sharp kernels provide better isolation.
+
+\item \textbf{Raises the cluster threshold $\varphi_c^2$}: multi-pattern centroids require tighter clusters.  For $b = 10$, a triple centroid is deeper than a pair only if all pairwise overlaps exceed $0.81$---extremely rare.  In the sharp-kernel limit ($b \to \infty$), only pair centroids matter.
+
+\item \textbf{Deepens the centroid well at fixed $\varphi_{1\mu}$}: when two patterns \emph{do} overlap, the ReLU margin $\varphi - \varphi_c$ is smaller, making each term more sensitive to alignment.  The energy minimum is sharper but narrower.
+
+\item \textbf{Slows centroid hopping}: the escape-path barrier $v_{\mathrm{entry}}$ increases with $\varphi_c$ (the system must rotate further in the perpendicular space), so hops take longer.  In the sharp-kernel limit, the retrieval lifetime grows and the centroid mechanism becomes kinetically irrelevant.
+\end{enumerate}
+
+In the limit $b \to 1$ (flat kernel), $\varphi_c \to 0$: all patterns are always in support, the centroid mechanism vanishes, and the model resembles LSE (no compact support).  In the limit $b \to \infty$ (infinitely sharp kernel), $\varphi_c \to 1$: support caps shrink to points, overlap is impossible, and retrieval is perfect at any $\alpha$ and $T$.  The value $b = 2\!+\!\sqrt{2}$ used in our simulations lies in an intermediate regime where the centroid mechanism is active and the hopping dynamics is observable within MC time.
 
 \subsection{Confirmation from long-run simulations (v9)}
 
