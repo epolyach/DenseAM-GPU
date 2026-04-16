@@ -18,44 +18,51 @@
 
 \section{Per-trial overlap distributions near the retrieval boundary}
 
-\subsection{Setup and observables}
+\subsection{Model and simulation protocol}
 
 We study the LSR (Log-Sum-ReLU) energy on the $N$-sphere $|\bx|^2 = N$:
 \begin{equation}
-E(\bx) = -\frac{N}{b}\log\left(\sum_{\mu=1}^{P}\max\!\Big(0,\;1 - b + b\,\frac{\bxi^\mu \cdot \bx}{N}\Big)\right),
+E(\bx) = -\frac{N}{b}\log\left(\sum_{\mu=1}^{P}\max\!\Big(0,\;1 - b + b\,\phi_\mu\Big)\right),
+\qquad \phi_\mu \equiv \frac{\bxi^\mu \cdot \bx}{N}\,,
 \label{eq:lsr}
 \end{equation}
-with $b = 2+\sqrt{2}$.  The hard wall is at $\varphi_c = (b-1)/b \approx 0.707$: pattern~$\mu$ is ``in support'' of state~$\bx$ when $\varphi_\mu \equiv \bxi^\mu\!\cdot\!\bx/N > \varphi_c$.
+where $b > 1$ is the rescaled inverse variance of the Epanechnikov kernel (see ICML companion, Eq.~7 and Appendix~B).  The compact support introduces a hard wall at $\varphi_c = (b-1)/b$: pattern~$\mu$ contributes to the energy only when $\phi_\mu > \varphi_c$.  The numerical illustrations in this paper use $b = 2+\sqrt{2} \approx 3.41$ ($\varphi_c \approx 0.707$) for direct comparison with the ICML simulations; all analytical results hold for general $b > 1$ (the dependence on~$b$ is discussed in Section~\ref{sec:bdep}).
 
-For each grid point $(\alpha, T)$, the v8m simulation generates $n_{\mathrm{dis}}$ independent disorder samples (random pattern sets $\{\bxi^\mu\}$).  Each sample produces two replicas (A, B) initialized near the target $\bxi^1$ with $\varphi_{\mathrm{init}}\in[0.75,\,1.0]$, equilibrated for $2^{14}$ Metropolis steps, then sampled for $2^{12}$ steps.  The time-averaged overlap $\varphi_A$, $\varphi_B$ and the maximum spurious overlap $\varphi_{\max}^{\mathrm{other}}$ are recorded per sample.
+\paragraph{Monte Carlo protocol.}
+The v8m simulation sweeps a grid of 31 load values $\alpha \in [0.20,\,0.35]$ (step~$0.005$) and 40 temperatures $T \in [0.025,\,2.0]$.  At each $(\alpha, T)$, $P = e^{\alpha N}$ patterns are drawn uniformly on~$S^{N-1}(\!\sqrt{N})$; $N = \lfloor\ln P/\alpha\rfloor$ ranges from~$50$ (at $\alpha = 0.20$) to~$34$ (at $\alpha = 0.35$).
 
-\subsection{Three populations in the CDF}
+For each grid point, $n_{\mathrm{dis}}$ independent disorder samples (random pattern sets $\{\bxi^\mu\}$) are generated, with $n_{\mathrm{dis}}$ ranging from~$256$ at $\alpha = 0.20$ to~$32$ at $\alpha = 0.35$ (the number decreases with $\alpha$ to keep memory manageable as $P$ grows).  Each disorder sample produces \emph{two} replicas (A,~B), independently initialized near the target $\bxi^1$ with $\varphi_{\mathrm{init}}$ drawn uniformly from $[0.75,\,1.0]$.  Each replica is equilibrated for $2^{14}$ Metropolis steps (step size $\sigma = 2.4\,T/\!\sqrt{N}$), then sampled for $2^{13}$ steps.  The per-trial observables recorded are the time-averaged target overlap $\varphi_A$, $\varphi_B$, the replica overlap $q_{\mathrm{EA}} = \bx_A\!\cdot\!\bx_B/N$, and the maximum spurious overlap $\varphi_{\max}^{\mathrm{other}} = \max_{\mu \neq 1}\phi_\mu$.
 
-Figure~\ref{fig:cdf} shows the empirical CDF of the per-trial overlap $\varphi$ at selected $(\alpha, T)$ points.  At $T = 0.325$ ($\varphi_{\mathrm{eq}} = 0.90$), the distribution is \emph{not} a single Gaussian.  Instead, three discrete populations emerge:
+\subsection{Per-trial overlap distribution}
 
-\begin{center}
-\begin{tabular}{lcccl}
+At a fixed $(\alpha, T)$, the $2 n_{\mathrm{dis}}$ per-trial values $\{\varphi_A^{(d)}, \varphi_B^{(d)}\}_{d=1}^{n_{\mathrm{dis}}}$ form an empirical distribution over disorder realizations.  Figure~\ref{fig:cdf} shows the CDF of this distribution at selected grid points.  The distribution is \emph{not} unimodal: it exhibits discrete peaks corresponding to qualitatively different states of the system.
+
+Table~\ref{tab:populations} lists the populations identified in the data near the retrieval boundary.  The ``peak position'' and ``width'' columns give the mean and standard deviation of $\varphi$ within each population, estimated by Gaussian mixture fitting.  The column $\varphi_{\max}^{\mathrm{other}}$ reports the average maximum spurious overlap for trials in that population.  The physical interpretation of each population is derived in Section~2; the table is presented here as an empirical summary.
+
+\begin{table}[h]
+\centering
+\caption{Populations in the per-trial overlap distribution, identified from the v8m data across all $(\alpha, T)$ in the retrieval region.  The interpretation of each population is developed in Section~2.}
+\label{tab:populations}
+\begin{tabular}{lccccl}
 \toprule
-Population & $\varphi$ & $\sigma(\varphi)$ & $\varphi_{\max}^{\mathrm{other}}$ & Interpretation \\
+Population & peak $\varphi$ & width & $\varphi_{\max}^{\mathrm{other}}$ & signature & see \\
 \midrule
-Retrieval        & 0.901    & 0.003 & 0.54--0.66 & single-pattern equilibrium \\
-Centroid         & 0.831    & 0.010 & 0.77--0.82 & two-pattern equilibrium ($\bxi^1,\bxi^\mu$) \\
-Spurious centroid & $\approx 0.48$ & 0.05 & $\approx 0.82$ & two-pattern equil.\ ($\bxi^\mu,\bxi^\nu$); target out \\
-Paramagnetic     & $< 0.2$  & broad & $< 0.3$ & no pattern in support \\
+Retrieval & $\approx 0.90$ & $\approx 0.003$ & 0.54--0.66 & $\varphi_{\max}^{\mathrm{other}} \ll \varphi$ & \S\ref{sec:two_pat_eq} \\
+Centroid & $\approx 0.83$ & $\approx 0.01$ & 0.77--0.82 & $\varphi_{\max}^{\mathrm{other}} \approx \varphi$ & \S\ref{sec:two_pat_eq} \\
+Spurious centroid & $\approx 0.48$ & $\approx 0.05$ & $\approx 0.82$ & $\varphi_{\max}^{\mathrm{other}} \gg \varphi$ & \S\ref{sec:hopping} \\
+Distant centroid & $< 0.2$ & broad & $\approx 0.82$ & $\varphi_1 \approx 0$, still at a centroid & \S\ref{sec:hopping} \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
-The centroid peak at $\varphi \approx 0.83$ is remarkably narrow ($\sigma \approx 0.01$) and approximately \emph{constant across all $\alpha$ values}, even deep inside the retrieval phase ($\alpha = 0.200$).  This $\alpha$-independence is explained by the two-pattern thermal equilibrium (Section~\ref{sec:two_pat_eq}): the system escapes to the pattern with $\varphi_{1\mu} \approx \varphi_{1,\max}(\alpha)$, and the equilibrium overlap $\varphi_{\mathrm{cen}}(\varphi_{1,\max}, T)$ is a slowly varying function of $\alpha$.  The defining signature of the centroid is $\varphi_{\max}^{\mathrm{other}} \approx \varphi$: the system has nearly equal overlap with the target and one spurious pattern.
+Two features are notable.  First, the centroid peak position ($\varphi \approx 0.83$) is approximately constant across all $\alpha$ values, even deep inside the retrieval phase ($\alpha = 0.20$).  This $\alpha$-independence is explained in Section~\ref{sec:two_pat_eq} by the two-pattern thermal equilibrium.  Second, $\varphi_{\max}^{\mathrm{other}} \approx 0.82$ appears in the centroid, spurious-centroid, \emph{and} distant-centroid populations: in all three, the system sits at a two-pattern centroid (Section~\ref{sec:hopping}).  The only difference is which patterns form the active pair and how far the target is from it.
 
-The spurious centroid population (Section~\ref{sec:hopping}) appears after the second hop in the centroid chain: the target has exited support, and $\varphi_{\max}^{\mathrm{other}} \approx 0.82$ confirms that a spurious pair is in the centroid configuration.
-
-As $\alpha$ increases toward $\alpha_{\mathrm{th}}$, the weight of the centroid and spurious-centroid populations grows from $\sim$7\% to $\sim$60\%, while the retrieval peak shrinks correspondingly.
+As $\alpha$ increases toward $\alpha_{\mathrm{th}}$, the weight of the non-retrieval populations grows from $\sim$7\% to $\sim$60\%, while the retrieval peak shrinks correspondingly.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{panels_v8/cdf_phi.pdf}
-\caption{Empirical CDF of the per-trial time-averaged overlap~$\varphi$ from v8m data.  Green: R-region points; orange: M-region; blue: P-region.  The dashed gray line marks $\varphi_c \approx 0.707$.  The two-step structure in the green and orange curves reflects the retrieval peak ($\varphi \approx 0.90$) and the centroid peak ($\varphi \approx 0.83$).}
+\caption{Empirical CDF of the per-trial time-averaged overlap~$\varphi$ from v8m data at selected $(\alpha, T)$ grid points.  Green curves: points classified as retrieval (R); orange: mixed (M); blue: paramagnetic (P).  The dashed gray line marks $\varphi_c \approx 0.707$.  The step structure in the green and orange curves reflects the retrieval peak ($\varphi \approx 0.90$) and the centroid peak ($\varphi \approx 0.83$).}
 \label{fig:cdf}
 \end{figure}
 
