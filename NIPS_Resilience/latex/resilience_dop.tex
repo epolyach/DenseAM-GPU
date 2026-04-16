@@ -281,6 +281,60 @@ For $N = 47$, $T = 0.325$: $N/\sigma^2 \approx 3\,400$ steps.  With $2^{14} + 2^
 
 The escape probability depends on \emph{both} the number of competing patterns (which grows with $P$ and hence $\alpha$) and the allocated MC time, making the centroid fraction a kinetic quantity that would change with longer equilibration.
 
+\subsection{Centroid hopping and the $\varphi \approx 0.5$ peak}
+
+The CDF of the per-trial overlap (Fig.~\ref{fig:cdf}) often shows a distinct population near $\varphi \approx 0.5$, well below the two-pattern centroid at $0.831$.  This population has a clear signature: $\varphi_{\max}^{\mathrm{other}} \approx 0.82 \gg \varphi_1 \approx 0.48$ in every trial.  The system is sitting at a \emph{spurious} two-pattern centroid $(\bxi^\mu, \bxi^\nu)$ from which the target has been excluded.
+
+\paragraph{Why not a triple centroid?}
+One might expect the system to recruit a third pattern into support, forming a three-pattern centroid.  However, the $k$-pattern symmetric centroid ($k$ patterns with mutual overlap~$q$) has overlap $\varphi_k = \sqrt{q + (1-q)/k}$ and energy
+\begin{equation}
+\frac{E_k}{N} = -\frac{1}{b}\ln\!\big(k\,(1-b+b\,\varphi_k)\big)\,.
+\end{equation}
+
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+$k$ & $\varphi_k$ & sum inside $\ln$ & $E_k/N$ \\
+\midrule
+1 (retrieval) & 0.900 & 0.659 & 0.122 \\
+\textbf{2 (centroid)} & \textbf{0.831} & \textbf{0.846} & \textbf{0.049} \\
+3 & 0.766 & 0.603 & 0.148 \\
+4 & 0.731 & 0.332 & 0.323 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The two-pattern centroid is the global energy minimum.  Adding a third pattern dilutes each ReLU argument from $0.42$ to $0.20$ (more than halved), while the count only increases from~2 to~3; the sum inside the logarithm \emph{decreases}.  The $k=3$ centroid has \emph{higher} energy than even the retrieval state.
+
+\paragraph{Centroid hopping.}
+Instead of growing, the system \emph{hops}: from the centroid $(\bxi^1, \bxi^\mu)$, pattern~$\bxi^\mu$ has its own high-overlap neighbors.  One of them, $\bxi^\nu$ with $\varphi_{\mu\nu} > \varphi_{\min}$, gets recruited via the same zero-energy perpendicular rotation---but now it is $\bxi^1$ that is pushed out of support, not $\bxi^\nu$ that enters.  The result is a new two-pattern centroid $(\bxi^\mu, \bxi^\nu)$ at the same energy $E/N \approx 0.049$:
+\[
+\underbrace{\bxi^1}_{\varphi_1=0.90}
+\;\xrightarrow{\text{1st hop}}\;
+\underbrace{(\bxi^1,\,\bxi^\mu)}_{\varphi_1 = 0.83}
+\;\xrightarrow{\text{2nd hop}}\;
+\underbrace{(\bxi^\mu,\,\bxi^\nu)}_{\varphi_1 \approx 0.46}
+\;\xrightarrow{\text{3rd hop}}\;
+\underbrace{(\bxi^\nu,\,\bxi^\rho)}_{\varphi_1 \to 0}
+\;\to\; \cdots
+\]
+
+After the second hop, the target is no longer in support ($\varphi_1 < \varphi_c$).  Its residual overlap is determined by its random projection onto the active pair:
+\begin{equation}
+\varphi_1 \;=\; \frac{\varphi_{1\mu} + \varphi_{1\nu}}{\sqrt{2(1+\varphi_{\mu\nu})}}
+\;\approx\; \frac{0.38 + 0.38}{\sqrt{2.76}} \;\approx\; 0.46\,,
+\end{equation}
+consistent with the observed peak at $\avg{\varphi} \approx 0.48$ in the v8m data.  Each subsequent hop replaces the older partner with a new neighbor of the remaining one.  The target's overlap decays with each hop as it moves further from the active centroid, eventually reaching $\varphi_1 \to 0$ (paramagnetic).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{panels_v8m/centroid_hopping.pdf}
+\caption{Centroid hopping mechanism.  Circles: patterns on the overlap graph, connected by edges with $\varphi_{1\mu} \approx 0.38$.  Diamonds: two-pattern centroids (the energy minimum at $E/N = 0.05$).  The system hops between centroids along the graph, always maintaining a pair---never growing to a triple.  After the second hop, the target $\bxi^1$ exits support and $\varphi_1$ drops to $\approx 0.46$.  Further hops drive $\varphi_1 \to 0$.}
+\label{fig:hopping}
+\end{figure}
+
+The dynamics is thus a random walk on the pattern overlap graph, where each step swaps one partner in the active centroid for a neighbor of the other.  The two-pattern centroid energy $E/N \approx 0.05$ is constant along this walk; only the target's overlap decreases.
+
 \subsection{Confirmation from long-run simulations (v9)}
 
 The v9 diagnostic probes test the centroid escape prediction directly by running the same MC protocol at selected $(\alpha, T)$ points for much longer: checkpoints at $2^{14}$, $2^{16}$, and $2^{18}$ steps (16k, 64k, 262k), each followed by $2^{12}$ sampling steps.  Table~\ref{tab:v9} summarizes the results.
