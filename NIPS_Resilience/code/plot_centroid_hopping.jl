@@ -33,7 +33,7 @@ const phi_1_at_spurious_asym = (q + 0.10) / sqrt(2*(1+q))
 # Figure settings
 const FIG_DPI = 300
 const FIG_W = round(Int, 170 / 25.4 * 100)  # full width
-const FIG_H = round(Int, 70 / 25.4 * 100)
+const FIG_H = round(Int, 85 / 25.4 * 100)
 
 const FONT_GUIDE = 9
 const FONT_TICK  = 7
@@ -61,10 +61,10 @@ x_ret = 0.0
 # ──────────────── Plot ────────────────
 
 p = plot(size=(FIG_W, FIG_H), dpi=FIG_DPI,
-    xlims=(-0.8, 7.5), ylims=(-1.6, 2.2),
+    xlims=(-0.8, 7.5), ylims=(-2.3, 2.2),
     legend=false, axis=false, grid=false, ticks=false,
     left_margin=2Plots.mm, right_margin=2Plots.mm,
-    top_margin=0Plots.mm, bottom_margin=0Plots.mm)
+    top_margin=0Plots.mm, bottom_margin=2Plots.mm)
 
 # ── Pattern overlap edges ──
 for i in 1:3
@@ -129,17 +129,15 @@ annotate!(p, 3.0, info_y,
 annotate!(p, 3.0, info_y - 0.4, text("E/N=0.05", FONT_SMALL, :center, :chocolate))
 
 # At centroid (ν,ρ)
-annotate!(p, 5.0, info_y, text("φ₁→0", FONT_SMALL, :center, :mediumpurple))
+annotate!(p, 5.0, info_y, text("φ₁≈0.1–0.2", FONT_SMALL, :center, :mediumpurple))
 annotate!(p, 5.0, info_y - 0.4, text("E/N=0.05", FONT_SMALL, :center, :mediumpurple))
 
 # ── Bracket: "target in support" vs "target NOT in support" ──
-plot!(p, [-0.3, 1.5], [-1.55, -1.55], color=:blue, lw=1.5, label=false)
-annotate!(p, 0.6, -1.55, text("▲", 6, :center, :blue))
-annotate!(p, 0.6, -1.85, text("target in support", FONT_SMALL-1, :center, :blue))
+plot!(p, [-0.3, 1.5], [-1.6, -1.6], color=:blue, lw=2.5, label=false)
+annotate!(p, 0.6, -1.95, text("ξ¹ in support (φ₁ > φ_c)", FONT_SMALL, :center, :blue))
 
-plot!(p, [2.0, 6.5], [-1.55, -1.55], color=:red, lw=1.5, label=false)
-annotate!(p, 4.25, -1.55, text("▲", 6, :center, :red))
-annotate!(p, 4.25, -1.85, text("target NOT in support", FONT_SMALL-1, :center, :red))
+plot!(p, [2.2, 6.5], [-1.6, -1.6], color=:red, lw=2.5, label=false)
+annotate!(p, 4.35, -1.95, text("ξ¹ NOT in support (φ₁ < φ_c)", FONT_SMALL, :center, :red))
 
 for ext in ("png", "pdf")
     savefig(p, joinpath(out_dir, "centroid_hopping.$ext"))
