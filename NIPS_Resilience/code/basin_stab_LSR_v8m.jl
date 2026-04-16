@@ -52,7 +52,7 @@ const MIN_N_TRIALS = 64
 const N_EQ        = 2^15              # 16384 equilibration steps (unmeasured)
 const N_SAMP      = 2^13              # 4096 sampling steps (measured)
 
-const alpha_vec = collect(F(0.20):F(0.005):F(0.35))  # 31 values, fine grid near α_th
+const alpha_vec = collect(F(0.005):F(0.005):F(0.55))  # 110 values
 const T_vec     = collect(F(0.025):F(0.05):F(2.0))    # 40 values
 const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
@@ -201,6 +201,24 @@ function main()
         push!(Ns, N); push!(Ps, round(Int, Pt))
     end
     @printf("N range: %d – %d,  P range: %d – %d\n", extrema(Ns)..., extrema(Ps)...)
+
+    # Cap n_disorder so each α fits in GPU memory (single-α allocation)
+    mem_budget = TARGET_MEM_PER_CHUNK_GB * 1e9
+    n_capped = 0
+    for idx in 1:n_alpha
+        N = Ns[idx]; P = Ps[idx]
+        cost_per_dis = Float64(N*P + N + 3*N*n_T + P*n_T + 9*n_T) * sizeof(F)
+        max_dis = max(1, floor(Int, mem_budget / cost_per_dis))
+        if n_disorder_vec[idx] > max_dis
+            n_disorder_vec[idx] = max_dis
+            n_trials_vec[idx] = 2 * max_dis
+            n_capped += 1
+        end
+    end
+    if n_capped > 0
+        @printf("Capped n_disorder for %d α values to fit %.0f GB budget.\n", n_capped, TARGET_MEM_PER_CHUNK_GB)
+    end
+
     @printf("Trials range: %d – %d  (disorder: %d – %d)\n",
             extrema(n_trials_vec)..., extrema(n_disorder_vec)...)
     @printf("Grid: %d α × %d T,  MC: %d eq + %d samp\n\n",
