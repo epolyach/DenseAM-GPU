@@ -187,33 +187,7 @@ f(\alpha,N) = 1 - \exp\!\big(-\avg{n}\big)\,.
 \label{eq:f_overlap}
 \end{equation}
 
-Equations~\eqref{eq:En}--\eqref{eq:f_overlap} exhibit a \emph{sharp threshold} controlled by the exponent $\alpha - \varphi_{\min}^2/2$:
-\begin{itemize}
-\item $\alpha > \alpha_{\mathrm{esc}}$: $\;\avg{n} \to \infty$ exponentially $\;\Rightarrow\;$ $f \to 1$ \quad (escape certain),
-\item $\alpha < \alpha_{\mathrm{esc}}$: $\;\avg{n} \to 0$ exponentially $\;\Rightarrow\;$ $f \to 0$ \quad (escape impossible),
-\item $\alpha = \alpha_{\mathrm{esc}}$: $\;\avg{n} \sim 1/\sqrt{N}$ $\;\Rightarrow\;$ $f \to 0$ \quad (marginal).
-\end{itemize}
-
-Table~\ref{tab:overlap_prob} evaluates $f(\alpha, N)$ numerically for $\varphi_{\mathrm{eq}} = 0.90$ ($\varphi_{\min} = 0.328$).
-
-\begin{table}[h]
-\centering
-\caption{Probability $f(\alpha, N)$ that at least one pattern enables the centroid escape ($\varphi_{\min} = 0.328$, $\varphi_{\mathrm{eq}} = 0.90$).  The asymptotic critical loading is $\alpha_{\mathrm{esc}}^{\infty} = \varphi_{\min}^2/2 = 0.054$; the finite-$N$ threshold $\alpha_{\mathrm{esc}}(N)$ is higher (e.g.\ $0.092$ at $N = 50$; see Eq.~\eqref{eq:alpha_c_N}).}
-\label{tab:overlap_prob}
-\begin{tabular}{c|ccccc}
-\toprule
-$\alpha$ & $N\!=\!30$ & $N\!=\!50$ & $N\!=\!100$ & $N\!=\!200$ & $N\!=\!500$ \\
-\midrule
-0.02 & 0.064 & 0.027 & 0.004 & $\approx 0$ & $\approx 0$ \\
-0.04 & 0.113 & 0.072 & 0.028 & 0.005 & $\approx 0$ \\
-$0.054$ & 0.167 & 0.140 & 0.108 & 0.082 & 0.056 \\
-0.08 & 0.329 & 0.426 & 0.785 & $\approx 1$ & $\approx 1$ \\
-0.10 & 0.516 & 0.778 & $\approx 1$ & $\approx 1$ & $\approx 1$ \\
-0.15 & 0.961 & $\approx 1$ & $\approx 1$ & $\approx 1$ & $\approx 1$ \\
-0.20 & $\approx 1$ & $\approx 1$ & $\approx 1$ & $\approx 1$ & $\approx 1$ \\
-\bottomrule
-\end{tabular}
-\end{table}
+Equations~\eqref{eq:En}--\eqref{eq:f_overlap} exhibit a \emph{sharp threshold} controlled by the exponent $\alpha - \varphi_{\min}^2/2$: for $\alpha > \alpha_{\mathrm{esc}}$, $\avg{n} \to \infty$ exponentially and $f \to 1$; for $\alpha < \alpha_{\mathrm{esc}}$, $\avg{n} \to 0$ and $f \to 0$.
 
 At finite~$N$, the critical loading $\alpha_{\mathrm{esc}}(N)$ (defined by $\avg{n} = 1$) receives a positive logarithmic correction from the sub-exponential prefactor in Eq.~\eqref{eq:En}:
 \begin{equation}
@@ -233,20 +207,7 @@ $\alpha_{\mathrm{esc}}(N)$ & 0.092 & 0.076 & 0.067 & 0.054 \\
 \end{center}
 This is consistent with Table~\ref{tab:n_overlap}: at $\alpha = 0.054$ and $N = 183$, $n^{\mathrm{exact}} = 0.05 \ll 1$; the threshold $n \sim 1$ is reached near $\alpha \approx 0.07$.
 
-\paragraph{Summary.}
-Two distinct thresholds govern the role of inter-pattern overlaps:
-\begin{center}
-\begin{tabular}{lccl}
-\toprule
-Threshold & Symbol & Value & Meaning \\
-\midrule
-Escape-enabling & $\alpha_{\mathrm{esc}}^{\infty}$ & $0.054$ & $\exists\,\mu$: escape path fits on sphere \\
- & $\alpha_{\mathrm{esc}}(50)$ & $0.092$ & (finite-$N$ value at $N=50$) \\
-Noise floor & $\alpha_{\mathrm{th}}$ & $\tfrac{\ln 2}{2} \approx 0.347$ & $\exists\,\mu$: in support at retrieval state \\
-\bottomrule
-\end{tabular}
-\end{center}
-For $\alpha_{\mathrm{esc}}(N) < \alpha < \alpha_{\mathrm{th}}$ (including $\alpha = 0.20$ at all relevant~$N$), exponentially many patterns have $\varphi_{1\mu} > \varphi_{\min}$ and can serve as centroid escape targets, yet the retrieval state itself is interference-free.  The escape requires a specific perpendicular rotation (Stage~1) whose entropic cost diverges as $N\to\infty$, reconciling the finite-$N$ centroid escape with the absence of a thermodynamic noise floor.
+In summary, for $\alpha_{\mathrm{esc}}(N) < \alpha < \alpha_{\mathrm{th}}$ (including $\alpha = 0.20$ at all relevant~$N$), exponentially many patterns have $\varphi_{1\mu} > \varphi_{\min}$ and can serve as centroid escape targets, yet the retrieval state itself is interference-free.  The escape requires a specific perpendicular rotation (Stage~1) whose entropic cost diverges as $N\to\infty$, reconciling the finite-$N$ centroid escape with the absence of a thermodynamic noise floor.  The full three-regime picture is presented in Section~\ref{sec:summary}.
 
 \subsection{Geometry of the zero-barrier escape}
 
@@ -381,6 +342,7 @@ The centroid mechanism explains the three anomalies observed in the v8 phase dia
 \end{enumerate}
 
 \section{Summary: finite-$N$ metastability versus thermodynamic stability}
+\label{sec:summary}
 
 The results of this paper and the thermodynamic analysis of the ICML companion paper can be unified through two distinct thresholds that govern the role of inter-pattern overlaps in LSR:
 
