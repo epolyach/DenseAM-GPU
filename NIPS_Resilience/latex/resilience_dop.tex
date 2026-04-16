@@ -211,51 +211,49 @@ In summary, for $\alpha_{\mathrm{esc}}(N) < \alpha < \alpha_{\mathrm{th}}$ (incl
 
 \subsection{Geometry of the zero-barrier escape}
 
-Throughout this subsection we abbreviate the inter-pattern overlap $\varphi_{1\mu}$ as~$q$ for readability of the two-dimensional geometry (this~$q$ should not be confused with the Edwards--Anderson self-overlap $q_{\mathrm{EA}} = \bx_a\!\cdot\!\bx_b/N$ used in the v9 analysis below).
-
 We work in the two-dimensional subspace spanned by the orthonormalized pair
 \[
 \mathbf{e}_1 = \frac{\bxi^1}{\sqrt{N}}, \qquad
-\mathbf{e}_2 = \frac{\bxi^\mu/\sqrt{N} - q\,\mathbf{e}_1}{\sqrt{1-q^2}}\,.
+\mathbf{e}_2 = \frac{\bxi^\mu/\sqrt{N} - \varphi_{1\mu}\,\mathbf{e}_1}{\sqrt{1-\varphi_{1\mu}^2}}\,.
 \]
 Projecting the state $\bx/\sqrt{N} = a\,\mathbf{e}_1 + v\,\mathbf{e}_2 + \mathbf{c}_\perp$, with $a^2 + v^2 + |\mathbf{c}_\perp|^2 = 1$, the overlaps are
 \begin{equation}
-\varphi_1 = a, \qquad \varphi_\mu = a\,q + v\sqrt{1-q^2}\,.
+\varphi_1 = a, \qquad \varphi_\mu = a\,\varphi_{1\mu} + v\sqrt{1-\varphi_{1\mu}^2}\,.
 \label{eq:overlaps}
 \end{equation}
 
-The support conditions require $\varphi_1 > \varphi_c$ and $\varphi_\mu > \varphi_c$.  These define two half-planes in the $(a,v)$ disk (Fig.~\ref{fig:geometry}).  The overlap region---where both patterns are simultaneously in support---is non-empty whenever $q > 2\varphi_c^2 - 1 = 0$ (i.e., always for positive $q$).
+The support conditions require $\varphi_1 > \varphi_c$ and $\varphi_\mu > \varphi_c$.  These define two half-planes in the $(a,v)$ disk (Fig.~\ref{fig:geometry}).  The overlap region---where both patterns are simultaneously in support---is non-empty whenever $\varphi_{1\mu} > 2\varphi_c^2 - 1 = 0$ (i.e., always for positive $\varphi_{1\mu}$).
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.6\textwidth]{panels_v8/centroid_geometry.pdf}
-\caption{Support geometry projected onto the $(\bxi^1, \bxi^\mu)$ plane (illustrated for $q = 0.38$; the escape mechanism works for any $q > \varphi_{\min}$).  The unit circle represents the sphere constraint $a^2 + b^2 \leq 1$.  Blue shading: support of $\bxi^1$ ($a > \varphi_c$).  Red shading: support of $\bxi^\mu$ ($\varphi_\mu > \varphi_c$).  The escape path has two steps: \textcircled{1}~rotate~$\bx_\perp$ at fixed~$\varphi_1$ (increasing~$v$), bringing $\bxi^\mu$ into support with zero energy cost; \textcircled{2}~slide downhill to the centroid.}
+\caption{Support geometry projected onto the $(\bxi^1, \bxi^\mu)$ plane (illustrated for $\varphi_{1\mu} = 0.38$; the escape mechanism works for any $\varphi_{1\mu} > \varphi_{\min}$).  The unit circle represents the sphere constraint $a^2 + v^2 \leq 1$.  Blue shading: support of $\bxi^1$ ($a > \varphi_c$).  Red shading: support of $\bxi^\mu$ ($\varphi_\mu > \varphi_c$).  The escape path has two steps: \textcircled{1}~rotate~$\bx_\perp$ at fixed~$\varphi_1$ (increasing~$v$), bringing $\bxi^\mu$ into support with zero energy cost; \textcircled{2}~slide downhill to the centroid.}
 \label{fig:geometry}
 \end{figure}
 
 The escape path from the retrieval state to the centroid has two stages (Fig.~\ref{fig:geometry}):
 
 \paragraph{Stage~1: perpendicular rotation ($\Delta E = 0$).}
-At the retrieval state, $a = \varphi_{\mathrm{eq}} \approx 0.90$ and $v \approx 0$.  The overlap with $\bxi^\mu$ is $\varphi_\mu \approx \varphi_{\mathrm{eq}}\,q$, far below $\varphi_c$---only $\bxi^1$ is in support.
+At the retrieval state, $a = \varphi_{\mathrm{eq}} \approx 0.90$ and $v \approx 0$.  The overlap with $\bxi^\mu$ is $\varphi_\mu \approx \varphi_{\mathrm{eq}}\,\varphi_{1\mu}$, far below $\varphi_c$---only $\bxi^1$ is in support.
 
 The system can increase~$v$ (rotating $\bx_\perp$ toward~$\bxi^\mu_\perp$) while keeping $a = \varphi_1$ fixed.  This moves the state vertically in the $(a,v)$ plane without changing $\bxi^1$'s ReLU contribution, so \emph{the energy is exactly constant}.  When $v$ reaches
 \begin{equation}
-v_{\mathrm{entry}} = \frac{\varphi_c - \varphi_{\mathrm{eq}}\,q}{\sqrt{1-q^2}}\,,
+v_{\mathrm{entry}} = \frac{\varphi_c - \varphi_{\mathrm{eq}}\,\varphi_{1\mu}}{\sqrt{1-\varphi_{1\mu}^2}}\,,
 \label{eq:ventry}
 \end{equation}
-the spurious pattern enters support ($\varphi_\mu = \varphi_c$).  For $q = q_{\max} \approx 0.57$ (at $\alpha = 0.2$): $v_{\mathrm{entry}} \approx (0.707 - 0.513)/0.822 = 0.236$, and $a^2 + v^2 = 0.81 + 0.056 = 0.87 < 1$, confirming the state remains on the sphere.
+the spurious pattern enters support ($\varphi_\mu = \varphi_c$).  For $\varphi_{1\mu} = \varphi_{1,\max} \approx 0.57$ (at $\alpha = 0.2$): $v_{\mathrm{entry}} \approx (0.707 - 0.513)/0.822 = 0.236$, and $a^2 + v^2 = 0.81 + 0.056 = 0.87 < 1$, confirming the state remains on the sphere.
 
 \paragraph{Stage~2: downhill slide to the centroid ($\Delta E < 0$).}
 Once both patterns are in support, the sum inside the logarithm of Eq.~\eqref{eq:lsr} increases, and the energy \emph{decreases}.  The $T = 0$ energy minimum is the geometric centroid at
 \begin{equation}
-\varphi_{\mathrm{cen}}^{(0)} = \sqrt{\frac{1+q}{2}}\,.
+\varphi_{\mathrm{cen}}^{(0)} = \sqrt{\frac{1+\varphi_{1\mu}}{2}}\,.
 \label{eq:phi_cen}
 \end{equation}
 At finite temperature, the system thermalizes to a lower overlap $\varphi_{\mathrm{cen}}(T) < \varphi_{\mathrm{cen}}^{(0)}$, determined by the two-pattern self-consistency equation (see Section~\ref{sec:two_pat_eq} below).
 
 \subsection{Energetics}
 
-The $T = 0$ energy per neuron at the retrieval state (one pattern in support) and at the geometric centroid (two patterns with $q = q_{\max} \approx 0.57$, equal overlap $\varphi_{\mathrm{cen}}^{(0)} = \sqrt{(1+q)/2} \approx 0.887$) is:
+The $T = 0$ energy per neuron at the retrieval state (one pattern in support) and at the geometric centroid (two patterns with $\varphi_{1\mu} = \varphi_{1,\max} \approx 0.57$, equal overlap $\varphi_{\mathrm{cen}}^{(0)} = \sqrt{(1+\varphi_{1\mu})/2} \approx 0.887$) is:
 \begin{align}
 \frac{E_{\mathrm{ret}}}{N} &= -\frac{1}{b}\ln\!\big(1 - b + b\,\varphi_{\mathrm{eq}}\big) = 0.122\,, \\
 \frac{E_{\mathrm{cen}}^{(0)}}{N} &= -\frac{1}{b}\ln\!\big(2(1 - b + b\,\varphi_{\mathrm{cen}}^{(0)})\big) = -0.012\,.
@@ -276,19 +274,19 @@ The escape probability depends on \emph{both} the number of competing patterns (
 \subsection{Two-pattern thermal equilibrium}
 \label{sec:two_pat_eq}
 
-The geometric centroid $\varphi_{\mathrm{cen}}^{(0)} = \sqrt{(1+q)/2}$ is the $T = 0$ energy minimum.  At finite temperature, the system thermalizes in the two-pattern basin, balancing the energy $u_2(\varphi) = -(1/b)\ln\!\big[2(1-b+b\varphi)\big]$ against the entropy $s_2(\varphi,q) = \tfrac{1}{2}\ln\!\big(1 - 2\varphi^2/(1+q)\big)$ of the perpendicular subspace.  Setting $\partial(u_2 - T\,s_2)/\partial\varphi = 0$ gives the self-consistency equation
+The geometric centroid $\varphi_{\mathrm{cen}}^{(0)} = \sqrt{(1+\varphi_{1\mu})/2}$ is the $T = 0$ energy minimum.  At finite temperature, the system thermalizes in the two-pattern basin, balancing the energy $u_2(\varphi) = -(1/b)\ln\!\big[2(1-b+b\varphi)\big]$ against the entropy $s_2(\varphi,\varphi_{1\mu}) = \tfrac{1}{2}\ln\!\big(1 - 2\varphi^2/(1+\varphi_{1\mu})\big)$ of the perpendicular subspace.  Setting $\partial(u_2 - T\,s_2)/\partial\varphi = 0$ gives the self-consistency equation
 \begin{equation}
-\frac{1}{1 - b + b\,\varphi} = \frac{2\,T\,\varphi}{(1+q) - 2\varphi^2}\,,
+\frac{1}{1 - b + b\,\varphi} = \frac{2\,T\,\varphi}{(1+\varphi_{1\mu}) - 2\varphi^2}\,,
 \label{eq:two_pat_sc}
 \end{equation}
 the two-pattern analog of the single-pattern equation (ICML Eq.~36).
 
-The equilibrium $\varphi_{\mathrm{cen}}(q, T)$ depends on both $q$ and $T$.  However, the system escapes to the pattern with the \emph{largest} overlap $q \approx q_{\max} = \sqrt{1-e^{-2\alpha}}$ (this pattern has the smallest entropic barrier).  Since $q_{\max}$ varies slowly with $\alpha$ ($0.51$--$0.67$ for $\alpha = 0.15$--$0.30$) and $\varphi_{\mathrm{cen}}$ is a slowly varying function of $q$, the centroid peak position is approximately $\alpha$-independent:
+The equilibrium $\varphi_{\mathrm{cen}}(\varphi_{1\mu}, T)$ depends on both $\varphi_{1\mu}$ and $T$.  However, the system escapes to the pattern with the \emph{largest} inter-pattern overlap $\varphi_{1\mu} \approx \varphi_{1,\max} = \sqrt{1-e^{-2\alpha}}$ (this pattern has the smallest entropic barrier).  Since $\varphi_{1,\max}$ varies slowly with $\alpha$ ($0.51$--$0.67$ for $\alpha = 0.15$--$0.30$) and $\varphi_{\mathrm{cen}}$ is a slowly varying function of $\varphi_{1\mu}$, the centroid peak position is approximately $\alpha$-independent:
 
 \begin{center}
 \begin{tabular}{cccc}
 \toprule
-$\alpha$ & $q_{\max}$ & $\varphi_{\mathrm{cen}}^{(0)}$ (geometric) & $\varphi_{\mathrm{cen}}(T\!=\!0.325)$ \\
+$\alpha$ & $\varphi_{1,\max}$ & $\varphi_{\mathrm{cen}}^{(0)}$ (geometric) & $\varphi_{\mathrm{cen}}(T\!=\!0.325)$ \\
 \midrule
 0.15 & 0.509 & 0.869 & 0.812 \\
 0.20 & 0.574 & 0.887 & 0.825 \\
@@ -300,20 +298,18 @@ $\alpha$ & $q_{\max}$ & $\varphi_{\mathrm{cen}}^{(0)}$ (geometric) & $\varphi_{\
 
 The thermal equilibrium $\varphi_{\mathrm{cen}} \approx 0.82$--$0.84$ is in quantitative agreement with the observed centroid peak at $\varphi \approx 0.831 \pm 0.01$.  The weak $\alpha$-dependence (less than $\pm 2\%$ across the range) explains the ``remarkably constant'' centroid position noted in Section~1.2.
 
-Note that the earlier estimate $q = 0.38$ (obtained by inverting the geometric formula $\sqrt{(1+q)/2} = 0.831$) was incorrect: it assumed the system sits at the $T = 0$ energy minimum.  The correct interpretation is $q \approx q_{\max} \approx 0.57$--$0.63$, with the observed $\varphi$ reflecting finite-temperature equilibrium.
-
-The centroid peak position does depend on $T$: at $q = 0.574$ ($\alpha = 0.2$), solving Eq.~\eqref{eq:two_pat_sc} gives $\varphi_{\mathrm{cen}} = 0.86$ at $T = 0.1$, $0.82$ at $T = 0.325$, and $0.81$ at $T = 0.5$.
+The centroid peak position does depend on $T$: at $\varphi_{1\mu} = 0.574$ ($\alpha = 0.2$), solving Eq.~\eqref{eq:two_pat_sc} gives $\varphi_{\mathrm{cen}} = 0.86$ at $T = 0.1$, $0.82$ at $T = 0.325$, and $0.81$ at $T = 0.5$.
 
 \subsection{Centroid hopping and the $\varphi \approx 0.5$ peak}
 
 The CDF of the per-trial overlap (Fig.~\ref{fig:cdf}) often shows a distinct population near $\varphi \approx 0.5$, well below the two-pattern centroid at $\approx 0.83$.  This population has a clear signature in the v8m data: $\varphi_{\max}^{\mathrm{other}} \approx 0.82 \gg \varphi_1 \approx 0.48$ in every such trial.  The system is sitting at a \emph{spurious} two-pattern centroid $(\bxi^\mu, \bxi^\nu)$ from which the target has been excluded.
 
 \paragraph{Why not a triple centroid?}
-One might expect the system to recruit a third pattern into support, forming a three-pattern centroid.  However, the $k$-pattern symmetric centroid ($k$ patterns with mutual overlap~$q$) has geometric overlap $\varphi_k^{(0)} = \sqrt{q + (1-q)/k}$ and $T = 0$ energy
+One might expect the system to recruit a third pattern into support, forming a three-pattern centroid.  However, the $k$-pattern symmetric centroid ($k$ patterns with pairwise overlap~$\varphi_{1\mu}$) has geometric overlap $\varphi_k^{(0)} = \sqrt{\varphi_{1\mu} + (1-\varphi_{1\mu})/k}$ and $T = 0$ energy
 \begin{equation}
 \frac{E_k}{N} = -\frac{1}{b}\ln\!\big(k\,(1-b+b\,\varphi_k^{(0)})\big)\,.
 \end{equation}
-Evaluating at $q = q_{\max} \approx 0.57$ ($\alpha = 0.2$):
+Evaluating at $\varphi_{1\mu} = \varphi_{1,\max} \approx 0.57$ ($\alpha = 0.2$):
 \begin{center}
 \begin{tabular}{cccc}
 \toprule
@@ -346,12 +342,12 @@ After the second hop, the target is no longer in support ($\varphi_1 < \varphi_c
 \begin{equation}
 \varphi_1 \;=\; \frac{\varphi_{1\mu} + \varphi_{1\nu}}{\sqrt{2(1+\varphi_{\mu\nu})}}\,.
 \end{equation}
-For $\varphi_{1\mu} \approx q_{\max} \approx 0.57$ and a typical $\varphi_{1\nu} \approx 0.3$--$0.4$ (the target's overlap with $\bxi^\nu$ is not necessarily large), this gives $\varphi_1 \approx 0.40$--$0.55$, consistent with the observed peak at $\avg{\varphi} \approx 0.48$ in the v8m data.  Each subsequent hop replaces the older partner with a new neighbor of the remaining one.  The target's overlap decays with each hop, eventually reaching $\varphi_1 \to 0$ (paramagnetic).
+For $\varphi_{1\mu} \approx \varphi_{1,\max} \approx 0.57$ and a typical $\varphi_{1\nu} \approx 0.3$--$0.4$ (the target's overlap with $\bxi^\nu$ is not necessarily large), this gives $\varphi_1 \approx 0.40$--$0.55$, consistent with the observed peak at $\avg{\varphi} \approx 0.48$ in the v8m data.  Each subsequent hop replaces the older partner with a new neighbor of the remaining one.  The target's overlap decays with each hop, eventually reaching $\varphi_1 \to 0$ (paramagnetic).
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{panels_v8m/centroid_hopping.pdf}
-\caption{Centroid hopping mechanism.  Circles: patterns on the overlap graph, connected by edges with $\varphi_{1\mu} \approx q_{\max}$.  Diamonds: two-pattern centroids (the energy minimum).  The system hops between centroids along the graph, always maintaining a pair---never growing to a triple.  After the second hop, the target $\bxi^1$ exits support and $\varphi_1$ drops to $\approx 0.48$.  Further hops drive $\varphi_1 \to 0$.}
+\caption{Centroid hopping mechanism.  Circles: patterns on the overlap graph, connected by edges with $\varphi_{1\mu} \approx \varphi_{1,\max}$.  Diamonds: two-pattern centroids (the energy minimum).  The system hops between centroids along the graph, always maintaining a pair---never growing to a triple.  After the second hop, the target $\bxi^1$ exits support and $\varphi_1$ drops to $\approx 0.48$.  Further hops drive $\varphi_1 \to 0$.}
 \label{fig:hopping}
 \end{figure}
 
