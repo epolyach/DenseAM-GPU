@@ -58,21 +58,21 @@ The centroid peak at $\varphi \approx 0.831$ is remarkably narrow ($\sigma \appr
 
 \subsection{Support overlap between patterns}
 
-Consider the target pattern $\bxi^1$ and a spurious pattern~$\bxi^\mu$ with inter-pattern overlap $q_{\!1\mu} = \bxi^1\!\cdot\bxi^\mu/N$.  For random patterns on $S^{N-1}(\!\sqrt{N})$, $q_{\!1\mu}$ is approximately Gaussian with mean~0 and standard deviation $1/\sqrt{N}$.
+Consider the target pattern $\bxi^1$ and a spurious pattern~$\bxi^\mu$ with inter-pattern overlap $\varphi_{1\mu} = \bxi^1\!\cdot\bxi^\mu/N$.  For random patterns on $S^{N-1}(\!\sqrt{N})$, $\varphi_{1\mu}$ is approximately Gaussian with mean~0 and standard deviation $1/\sqrt{N}$ (the exact density is $(1-\varphi_{1\mu}^2)^{(N-3)/2}$, which converges to the Gaussian by the CLT on the sphere).
 
-At $N \approx 47$ and $P \in [20\,000,\,200\,000]$, the extreme-value statistics of the maximum overlap is
+At $N \approx 47$ and $P \in [20\,000,\,200\,000]$, the extreme-value statistics of the maximum inter-pattern overlap is
 \begin{equation}
-q_{\max} \approx \sqrt{\frac{2\ln P}{N}} \;\approx\; 0.66\text{--}0.77\,.
+\varphi_{1,\max} \approx \sqrt{\frac{2\ln P}{N}} \;\approx\; 0.66\text{--}0.77\,.
 \end{equation}
-The number of patterns with $q_{1\mu} > q^*$ is
+The number of patterns with $\varphi_{1\mu} > \varphi^*$ is
 $
-n(q^*) = (P-1)\,\Phi^c\!\big(q^*\sqrt{N}\big),
+n(\varphi^*) = (P-1)\,\Phi^c\!\big(\varphi^*\sqrt{N}\big),
 $
-where $\Phi^c$ is the complementary normal CDF.  For $q^* = 0.38$ (the value needed to produce the observed centroid at $\varphi = 0.831$; see below):
+where $\Phi^c$ is the complementary normal CDF.  For $\varphi^* = 0.38$ (the value needed to produce the observed centroid at $\varphi = 0.831$; see below):
 \begin{center}
 \begin{tabular}{cccr}
 \toprule
-$\alpha$ & $N$ & $P$ & $n(q>0.38)$ \\
+$\alpha$ & $N$ & $P$ & $n(\varphi_{1\mu}>0.38)$ \\
 \midrule
 0.200 & 50 & 20\,000 & 70 \\
 0.220 & 49 & 43\,000 & 165 \\
@@ -89,24 +89,24 @@ Thus, even at $\alpha = 0.200$---well below $\alpha_{\mathrm{th}} \approx 0.245$
 \paragraph{Relation to the thermodynamic noise floor.}
 In the thermodynamic limit ($N\to\infty$), the maximum spurious alignment at any state on the sphere is $\varphi_{\max} = \sqrt{2\alpha}$.  For the LSR kernel, a pattern contributes to the noise floor only if its alignment exceeds the support boundary $\varphi_c = 1 - 1/b$.  No noise floor forms when $\varphi_{\max} < \varphi_c$, i.e.\ when $\alpha < \alpha_{\mathrm{th}} = \varphi_c^2/2 = (1-b^{-1})^2/2 \approx 0.25$.  Below this threshold the retrieval basin is completely free of interference and retrieval is perfect at any temperature.
 
-The centroid escape mechanism operates in a \emph{different} regime.  No spurious pattern is in support \emph{at the retrieval state} for $\alpha < 0.25$, but the geometric support regions (spherical caps $\{\bx : \varphi_\mu > \varphi_c\}$) of two patterns \emph{do} intersect whenever their inter-pattern overlap $q_{1\mu} > 0$---and this is always the case, since $q_{\max} = \sqrt{2\alpha} > 0$.  The intersection region (the centroid) is far from the retrieval state; reaching it requires the perpendicular rotation described in Stage~1 below.  In the thermodynamic limit the entropic cost of this rotation diverges, consistent with the vanishing noise floor.  At finite~$N$, however, the barrier is finite.
+The centroid escape mechanism operates in a \emph{different} regime.  No spurious pattern is in support \emph{at the retrieval state} for $\alpha < 0.25$, but the geometric support regions (spherical caps $\{\bx : \varphi_\mu > \varphi_c\}$) of two patterns \emph{do} intersect whenever their inter-pattern overlap $\varphi_{1\mu} > 0$---and this is always the case, since $\varphi_{1,\max} = \sqrt{2\alpha} > 0$.  The intersection region (the centroid) is far from the retrieval state; reaching it requires the perpendicular rotation described in Stage~1 below.  In the thermodynamic limit the entropic cost of this rotation diverges, consistent with the vanishing noise floor.  At finite~$N$, however, the barrier is finite.
 
 \paragraph{Escape-path constraint.}
-For pattern~$\bxi^\mu$ to participate in the centroid escape from the retrieval state at $\varphi_{\mathrm{eq}}$, the inter-pattern overlap $q_{1\mu}$ must be large enough that the escape path (Stage~1 below) fits on the sphere.  The constraint $a^2 + v^2 \leq 1$ with $a = \varphi_{\mathrm{eq}}$ and $v = v_{\mathrm{entry}}$ (see Eq.~\eqref{eq:ventry}) requires
+For pattern~$\bxi^\mu$ to participate in the centroid escape from the retrieval state at $\varphi_{\mathrm{eq}}$, the inter-pattern overlap $\varphi_{1\mu}$ must be large enough that the escape path (Stage~1 below) fits on the sphere.  The constraint $a^2 + v^2 \leq 1$ with $a = \varphi_{\mathrm{eq}}$ and $v = v_{\mathrm{entry}}$ (see Eq.~\eqref{eq:ventry}) requires
 \begin{equation}
-\varphi_{\mathrm{eq}}^2 + \frac{(\varphi_c - \varphi_{\mathrm{eq}}\,q)^2}{1-q^2} \;\leq\; 1\,.
+\varphi_{\mathrm{eq}}^2 + \frac{(\varphi_c - \varphi_{\mathrm{eq}}\,\varphi_{1\mu})^2}{1-\varphi_{1\mu}^2} \;\leq\; 1\,.
 \label{eq:sphere_constraint}
 \end{equation}
-Expanding gives the quadratic $q^2 - 2\varphi_c\varphi_{\mathrm{eq}}\,q + (\varphi_c^2 + \varphi_{\mathrm{eq}}^2 - 1) \leq 0$, whose smaller root defines the minimum overlap:
+Expanding gives the quadratic $\varphi_{1\mu}^2 - 2\varphi_c\varphi_{\mathrm{eq}}\,\varphi_{1\mu} + (\varphi_c^2 + \varphi_{\mathrm{eq}}^2 - 1) \leq 0$, whose smaller root defines the minimum inter-pattern overlap:
 \begin{equation}
-q_{\min}(\varphi_{\mathrm{eq}}) = \varphi_c\,\varphi_{\mathrm{eq}} - \sqrt{(1-\varphi_c^2)(1-\varphi_{\mathrm{eq}}^2)}\,.
+\varphi_{\min}(\varphi_{\mathrm{eq}}) = \varphi_c\,\varphi_{\mathrm{eq}} - \sqrt{(1-\varphi_c^2)(1-\varphi_{\mathrm{eq}}^2)}\,.
 \label{eq:qmin}
 \end{equation}
 
 \begin{center}
 \begin{tabular}{ccc}
 \toprule
-$\varphi_{\mathrm{eq}}$ & $q_{\min}$ & $\alpha_{\mathrm{esc}} = q_{\min}^2/2$ \\
+$\varphi_{\mathrm{eq}}$ & $\varphi_{\min}$ & $\alpha_{\mathrm{esc}} = \varphi_{\min}^2/2$ \\
 \midrule
 0.85 & 0.229 & 0.026 \\
 0.90 & 0.328 & 0.054 \\
@@ -115,13 +115,13 @@ $\varphi_{\mathrm{eq}}$ & $q_{\min}$ & $\alpha_{\mathrm{esc}} = q_{\min}^2/2$ \\
 \end{tabular}
 \end{center}
 
-Note that $q_{\min} < \varphi_c$ for all $\varphi_{\mathrm{eq}} < 1$, so $\alpha_{\mathrm{esc}} = q_{\min}^2/2 < \alpha_{\mathrm{th}} = \varphi_c^2/2$.  This defines an intermediate regime $\alpha_{\mathrm{esc}} < \alpha < \alpha_{\mathrm{th}}$ where the thermodynamic noise floor is zero (no pattern is in support at the retrieval state) yet the centroid escape is geometrically possible (the escape path fits on the sphere).  This is the regime in which the finite-$N$ centroid escape operates.
+Note that $\varphi_{\min} < \varphi_c$ for all $\varphi_{\mathrm{eq}} < 1$, so $\alpha_{\mathrm{esc}} = \varphi_{\min}^2/2 < \alpha_{\mathrm{th}} = \varphi_c^2/2$.  This defines an intermediate regime $\alpha_{\mathrm{esc}} < \alpha < \alpha_{\mathrm{th}}$ where the thermodynamic noise floor is zero (no pattern is in support at the retrieval state) yet the centroid escape is geometrically possible (the escape path fits on the sphere).  This is the regime in which the finite-$N$ centroid escape operates.
 
 \paragraph{Expected number of escape-enabling patterns.}
-Since $q_{1\mu} \sim \mathcal{N}(0,\,1/N)$ and $P = e^{\alpha N}$, the expected number of patterns with $q_{1\mu} > q_{\min}$ is
+Since $\varphi_{1\mu} \sim \mathcal{N}(0,\,1/N)$ and $P = e^{\alpha N}$, the expected number of patterns with $\varphi_{1\mu} > \varphi_{\min}$ is
 \begin{equation}
-\avg{n(q > q_{\min})} = P\,\Phi^c\!\big(q_{\min}\sqrt{N}\big)
-\;\approx\; \frac{\exp\!\big(N(\alpha - q_{\min}^2/2)\big)}{q_{\min}\sqrt{2\pi N}}\,,
+\avg{n(\varphi_{1\mu} > \varphi_{\min})} = P\,\Phi^c\!\big(\varphi_{\min}\sqrt{N}\big)
+\;\approx\; \frac{\exp\!\big(N(\alpha - \varphi_{\min}^2/2)\big)}{\varphi_{\min}\sqrt{2\pi N}}\,,
 \label{eq:En}
 \end{equation}
 where $\Phi^c$ is the complementary normal CDF and the last step uses the Gaussian tail approximation.  The probability that \emph{at least one} pattern enables the escape is, in the Poisson regime,
@@ -130,18 +130,18 @@ f(\alpha,N) = 1 - \exp\!\big(-\avg{n}\big)\,.
 \label{eq:f_overlap}
 \end{equation}
 
-Equations~\eqref{eq:En}--\eqref{eq:f_overlap} exhibit a \emph{sharp threshold} controlled by the exponent $\alpha - q_{\min}^2/2$:
+Equations~\eqref{eq:En}--\eqref{eq:f_overlap} exhibit a \emph{sharp threshold} controlled by the exponent $\alpha - \varphi_{\min}^2/2$:
 \begin{itemize}
 \item $\alpha > \alpha_{\mathrm{esc}}$: $\;\avg{n} \to \infty$ exponentially $\;\Rightarrow\;$ $f \to 1$ \quad (escape certain),
 \item $\alpha < \alpha_{\mathrm{esc}}$: $\;\avg{n} \to 0$ exponentially $\;\Rightarrow\;$ $f \to 0$ \quad (escape impossible),
 \item $\alpha = \alpha_{\mathrm{esc}}$: $\;\avg{n} \sim 1/\sqrt{N}$ $\;\Rightarrow\;$ $f \to 0$ \quad (marginal).
 \end{itemize}
 
-Table~\ref{tab:overlap_prob} evaluates $f(\alpha, N)$ numerically for $\varphi_{\mathrm{eq}} = 0.90$ ($q_{\min} = 0.328$).
+Table~\ref{tab:overlap_prob} evaluates $f(\alpha, N)$ numerically for $\varphi_{\mathrm{eq}} = 0.90$ ($\varphi_{\min} = 0.328$).
 
 \begin{table}[h]
 \centering
-\caption{Probability $f(\alpha, N)$ that at least one pattern enables the centroid escape ($q_{\min} = 0.328$, $\varphi_{\mathrm{eq}} = 0.90$).  The critical loading is $\alpha_{\mathrm{esc}} = q_{\min}^2/2 = 0.054$, well below the noise-floor threshold $\alpha_{\mathrm{th}} = 0.25$.}
+\caption{Probability $f(\alpha, N)$ that at least one pattern enables the centroid escape ($\varphi_{\min} = 0.328$, $\varphi_{\mathrm{eq}} = 0.90$).  The critical loading is $\alpha_{\mathrm{esc}} = \varphi_{\min}^2/2 = 0.054$, well below the noise-floor threshold $\alpha_{\mathrm{th}} = 0.25$.}
 \label{tab:overlap_prob}
 \begin{tabular}{c|ccccc}
 \toprule
@@ -160,7 +160,7 @@ $0.054$ & 0.167 & 0.140 & 0.108 & 0.082 & 0.056 \\
 
 At finite~$N$, the critical loading $\alpha_{\mathrm{esc}}(N)$ (defined by $\avg{n} = 1$) receives a logarithmic correction:
 \begin{equation}
-\alpha_{\mathrm{esc}}(N) = \frac{q_{\min}^2}{2} + \frac{\ln(q_{\min}\sqrt{2\pi N})}{N}\,.
+\alpha_{\mathrm{esc}}(N) = \frac{\varphi_{\min}^2}{2} + \frac{\ln(\varphi_{\min}\sqrt{2\pi N})}{N}\,.
 \label{eq:alpha_c_N}
 \end{equation}
 For $N = 50$: $\alpha_{\mathrm{esc}} = 0.092$; for $N = 100$: $\alpha_{\mathrm{esc}} = 0.076$.  Both are far below $\alpha = 0.200$.
@@ -177,9 +177,11 @@ Noise floor & $\alpha_{\mathrm{th}}$ & $= 0.250$ & $\exists\,\mu$: in support at
 \bottomrule
 \end{tabular}
 \end{center}
-For $\alpha_{\mathrm{esc}} < \alpha < \alpha_{\mathrm{th}}$ (including $\alpha = 0.20$), exponentially many patterns have $q > q_{\min}$ and can serve as centroid escape targets, yet the retrieval state itself is interference-free.  The escape requires a specific perpendicular rotation (Stage~1) whose entropic cost diverges as $N\to\infty$, reconciling the finite-$N$ centroid escape with the absence of a thermodynamic noise floor.
+For $\alpha_{\mathrm{esc}} < \alpha < \alpha_{\mathrm{th}}$ (including $\alpha = 0.20$), exponentially many patterns have $\varphi_{1\mu} > \varphi_{\min}$ and can serve as centroid escape targets, yet the retrieval state itself is interference-free.  The escape requires a specific perpendicular rotation (Stage~1) whose entropic cost diverges as $N\to\infty$, reconciling the finite-$N$ centroid escape with the absence of a thermodynamic noise floor.
 
 \subsection{Geometry of the zero-barrier escape}
+
+Throughout this subsection we abbreviate the inter-pattern overlap $\varphi_{1\mu}$ as~$q$ for readability of the two-dimensional geometry (this~$q$ should not be confused with the Edwards--Anderson self-overlap $q_{\mathrm{EA}} = \bx_a\!\cdot\!\bx_b/N$ used in the v9 analysis below).
 
 We work in the two-dimensional subspace spanned by the orthonormalized pair
 \[
@@ -245,7 +247,7 @@ The energy barrier along the escape path is exactly zero: Stage~1 has $\Delta E 
 
 What prevents instantaneous escape is an \emph{entropic barrier}: the rotation in Stage~1 must align the $(N\!-\!1)$-dimensional perpendicular component $\bx_\perp$ with a \emph{specific} direction ($\bxi^\mu_\perp$) in a high-dimensional space.  The Metropolis random walk explores $O(1)$ new directions per step with step size $\sigma = 2.4\,T/\!\sqrt{N}$, so the typical time to discover the escape direction scales as $O(N/\sigma^2)$.
 
-For $N = 47$, $T = 0.325$: $N/\sigma^2 \approx 3\,400$ steps.  With $2^{14} + 2^{12} \approx 20\,000$ Metropolis steps per trial, the system has $\sim$6 independent attempts to find each escape direction.  With $n(q > 0.38) \sim 70$--$1\,000$ competing patterns, the total escape probability is substantial, explaining the observed centroid fractions of 7--60\%.
+For $N = 47$, $T = 0.325$: $N/\sigma^2 \approx 3\,400$ steps.  With $2^{14} + 2^{12} \approx 20\,000$ Metropolis steps per trial, the system has $\sim$6 independent attempts to find each escape direction.  With $n(\varphi_{1\mu} > 0.38) \sim 70$--$1\,000$ competing patterns, the total escape probability is substantial, explaining the observed centroid fractions of 7--60\%.
 
 The escape probability depends on \emph{both} the number of competing patterns (which grows with $P$ and hence $\alpha$) and the allocated MC time, making the centroid fraction a kinetic quantity that would change with longer equilibration.
 
@@ -259,7 +261,7 @@ The v9 diagnostic probes test the centroid escape prediction directly by running
 \label{tab:v9}
 \begin{tabular}{cccccccc}
 \toprule
-$\alpha$ & $T$ & $N$ & $P$ & $\varphi$(16k) & $\varphi$(64k) & $\varphi$(262k) & $q\!-\!\varphi^2$(262k) \\
+$\alpha$ & $T$ & $N$ & $P$ & $\varphi$(16k) & $\varphi$(64k) & $\varphi$(262k) & $q_{\mathrm{EA}}\!-\!\varphi^2$(262k) \\
 \midrule
 0.270 & 0.40 & 43 & 102k & 0.724 & 0.502 & \textbf{0.281} & $+0.025$ \\
 0.280 & 0.50 & 42 & 126k & 0.508 & 0.249 & \textbf{0.050} & $+0.002$ \\
@@ -275,7 +277,7 @@ The key findings are:
 
 \paragraph{Escape even in the R region.}  The control point at $\alpha = 0.220$---well below $\alpha_{\mathrm{th}} \approx 0.245$---shows $\varphi$ dropping from $0.85$ to $0.66$ over $262$k steps.  This demonstrates that the retrieval state is metastable \emph{everywhere} at these finite system sizes ($N \approx 47$), not only near the phase boundary.
 
-\paragraph{Transient $q > \varphi^2$.}  The anomaly $q_{\mathrm{EA}} - \varphi^2 > 0$ is strongest at intermediate equilibration (16k--64k steps), when a fraction of trials have escaped to a centroid while others remain in retrieval.  At $(\alpha, T) = (0.300, 0.30)$, the anomaly \emph{grows} to $+0.093$ at $262$k, indicating both replicas are increasingly settling into the same multi-pattern attractor.  At $(\alpha, T) = (0.220, 0.50)$, it drops to $-0.002$ at $262$k, consistent with replicas escaping to \emph{different} attractors (decorrelation).
+\paragraph{Transient $q_{\mathrm{EA}} > \varphi^2$.}  The anomaly $q_{\mathrm{EA}} - \varphi^2 > 0$ is strongest at intermediate equilibration (16k--64k steps), when a fraction of trials have escaped to a centroid while others remain in retrieval.  At $(\alpha, T) = (0.300, 0.30)$, the anomaly \emph{grows} to $+0.093$ at $262$k, indicating both replicas are increasingly settling into the same multi-pattern attractor.  At $(\alpha, T) = (0.220, 0.50)$, it drops to $-0.002$ at $262$k, consistent with replicas escaping to \emph{different} attractors (decorrelation).
 
 \paragraph{The v8m measurements are not equilibrated.}  The v8m protocol uses $2^{14}$ equilibration steps.  The v9 data shows that this corresponds to the \emph{earliest} checkpoint, where $\varphi$ is still near its initial value.  The ``retrieval phase'' observed in the v8 phase diagram is therefore a \emph{kinetic} phenomenon: the system has not yet had time to find the zero-barrier escape route through the perpendicular subspace.
 
@@ -304,7 +306,7 @@ The centroid mechanism explains the three anomalies observed in the v8 phase dia
 \begin{enumerate}
 \item \textbf{Retrieval phase extends beyond theory.}  The theoretical boundary $\alpha_c(T)$ assumes the \emph{only} minimum is the single-pattern retrieval state.  In practice, the average $\avg{\varphi}$ is pulled up by the centroid population (with $\varphi \approx 0.83$), creating apparent retrieval beyond the boundary.
 
-\item \textbf{$q_{\mathrm{EA}} > \varphi^2$.}  At the centroid, both replicas are attracted to the same two-pattern minimum: $\bx_a \cdot \bx_b / N$ gains a contribution from the correlated perpendicular components (both aligned with $\bxi^\mu$), giving $q > \varphi_1^2$.
+\item \textbf{$q_{\mathrm{EA}} > \varphi^2$.}  At the centroid, both replicas are attracted to the same two-pattern minimum: $q_{\mathrm{EA}} = \bx_a \cdot \bx_b / N$ gains a contribution from the correlated perpendicular components (both aligned with $\bxi^\mu$), giving $q_{\mathrm{EA}} > \varphi_1^2$.
 
 \item \textbf{$\varphi - \varphi_{\max}^{\mathrm{other}} \approx 0.1$ at the boundary.}  At the centroid, the target and spurious overlaps are nearly equal ($\varphi \approx \varphi_{\max}^{\mathrm{other}} \approx 0.83$), so their difference is small.  The disorder average, mixing centroid and retrieval populations, gives $\varphi - \varphi_{\max}^{\mathrm{other}} \sim 0.1$.
 \end{enumerate}
@@ -327,12 +329,12 @@ Noise floor & $\alpha_{\mathrm{th}}$ & $= 0.250$ & spurious pattern in support a
 These thresholds delineate three regimes:
 
 \paragraph{$\alpha < \alpha_{\mathrm{esc}} \approx 0.054$: stable retrieval at all $N$.}
-No pattern has inter-pattern overlap $q$ large enough for the centroid escape path to fit on the sphere.  The retrieval state is the unique minimum and is stable both thermodynamically and kinetically.
+No pattern has inter-pattern overlap $\varphi_{1\mu}$ large enough for the centroid escape path to fit on the sphere.  The retrieval state is the unique minimum and is stable both thermodynamically and kinetically.
 
 \paragraph{$\alpha_{\mathrm{esc}} < \alpha < \alpha_{\mathrm{th}}$ (including $\alpha = 0.20$): finite-$N$ metastability.}
 The thermodynamic noise floor is exactly zero: $\varphi_{\max} = \sqrt{2\alpha} < \varphi_c$, so no spurious pattern is in support at the retrieval state.  The ICML analysis correctly predicts perfect retrieval in the thermodynamic limit $N \to \infty$.
 
-However, exponentially many patterns have $q > q_{\min}$, and their support caps \emph{do} geometrically intersect those of the target.  The intersection region---the centroid---has lower energy than the retrieval state ($\Delta E/N \approx -0.073$) but occupies a vanishing fraction of the sphere ($\varphi^T G^{-1}\varphi = 1$ at the symmetric centroid, leaving zero perpendicular entropy per neuron).
+However, exponentially many patterns have $\varphi_{1\mu} > \varphi_{\min}$, and their support caps \emph{do} geometrically intersect those of the target.  The intersection region---the centroid---has lower energy than the retrieval state ($\Delta E/N \approx -0.073$) but occupies a vanishing fraction of the sphere ($\varphi^T G^{-1}\varphi = 1$ at the symmetric centroid, leaving zero perpendicular entropy per neuron).
 
 At finite~$N$, the entropic barrier is finite.  The perpendicular rotation (Stage~1) requires aligning~$\bx_\perp$ with a specific direction in $(N\!-\!1)$-dimensional space, costing $O(N)$ in entropy.  When this cost is comparable to the energy gain, the centroid becomes accessible.  The v9 data confirms that the retrieval state is metastable at $N \approx 47$: $\varphi$ systematically decays with longer MC runs, even at $\alpha = 0.22$ well below~$\alpha_{\mathrm{th}}$.
 
