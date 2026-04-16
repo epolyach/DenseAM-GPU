@@ -109,13 +109,13 @@ Pattern~$\mu$ contributes to the LSR noise floor only when $\varphi_{1,\max} > \
 The Gaussian approximation underestimates $\alpha_{\mathrm{th}}$ by 39\%.  The sub-threshold regime where LSR retrieval is free of interference is therefore wider than previously stated: it extends to $\alpha < 0.347$, not merely $\alpha < 0.25$.
 
 \paragraph{Number of high-overlap patterns.}
-To evaluate the counting concretely we use $\varphi^* = 0.38$: the two-pattern centroid sits at $\varphi_{\mathrm{cen}} = \sqrt{(1+q)/2}$ (Eq.~\eqref{eq:phi_cen} below), so the observed centroid peak at $\varphi_{\mathrm{cen}} = 0.831$ requires $q = 2\varphi_{\mathrm{cen}}^2 - 1 \approx 0.38$.  Note that $\varphi^* = 0.38$ is the overlap producing the \emph{observed} centroid; the \emph{minimum} overlap for the escape path to fit on the sphere is lower: $\varphi_{\min} = 0.328$ (derived in Eq.~\eqref{eq:qmin} below).  The corresponding asymptotic ($N\!\to\!\infty$) critical loadings are $0.072$ for the centroid and $0.054$ for the escape; at finite~$N$ both thresholds are higher due to the logarithmic correction in Eq.~\eqref{eq:alpha_c_N}.
+Table~\ref{tab:n_overlap} counts escape-enabling patterns at two thresholds: $\varphi_{\min} = 0.328$ (the minimum for the escape path to fit on the sphere; see Eq.~\eqref{eq:qmin} below) and $\varphi^* = 0.38$ (a representative higher value).  The asymptotic ($N\!\to\!\infty$) critical loadings are $0.054$ and $0.072$, respectively; at finite~$N$ both are higher due to the logarithmic correction in Eq.~\eqref{eq:alpha_c_N}.
 
 Table~\ref{tab:n_overlap} compares the expected number of patterns with $\varphi_{1\mu} > \varphi^*$ under three computations: the Gaussian tail $n^{\mathrm{G}} = P\,\Phi^c(\varphi^*\!\sqrt{N})$; the leading quartic correction $n^{\mathrm{corr}} = n^{\mathrm{G}}\,e^{-N\varphi^{*4}/4}$; and numerical integration of the exact density~\eqref{eq:exact_density}, $n^{\mathrm{exact}} = P\!\int_{\varphi^*}^{1}\!C_N(1-t^2)^{(N-3)/2}dt$.
 
 \begin{table}[h]
 \centering
-\caption{Expected number of patterns with $\varphi_{1\mu}$ exceeding a threshold, under Gaussian ($n^{\mathrm{G}}$), quartic-corrected ($n^{\mathrm{corr}}$), and exact ($n^{\mathrm{exact}}$) densities.  Upper block: $\varphi^* = 0.38$ (centroid at $\varphi = 0.831$).  Lower block: $\varphi^* = \varphi_{\min} = 0.328$ (escape-path threshold).  Here $P = 20\,000$ for $\alpha \leq 0.20$; for $\alpha > 0.20$, $P$ follows the simulation grid.}
+\caption{Expected number of patterns with $\varphi_{1\mu}$ exceeding a threshold.  Upper block: $\varphi^* = 0.38$.  Lower block: $\varphi^* = \varphi_{\min} = 0.328$ (escape-path threshold from Eq.~\eqref{eq:qmin}).  Columns: Gaussian ($n^{\mathrm{G}}$), quartic-corrected ($n^{\mathrm{corr}}$), and exact numerical integration ($n^{\mathrm{exact}}$).  $P = 20\,000$ for $\alpha \leq 0.20$; $P$ follows the simulation grid for $\alpha > 0.20$.}
 \label{tab:n_overlap}
 \begin{tabular}{ccccrrrr}
 \toprule
@@ -139,7 +139,7 @@ Table~\ref{tab:n_overlap} compares the expected number of patterns with $\varphi
 \end{tabular}
 \end{table}
 
-The two blocks illustrate the two thresholds.  The lower block ($\varphi^* = \varphi_{\min} = 0.328$) shows $n \sim 1$ at $\alpha \approx 0.054$--$0.07$: the escape becomes geometrically possible.  The upper block ($\varphi^* = 0.38$) shows $n \sim 1$ at $\alpha \approx 0.10$: the specific centroid observed in simulations ($\varphi_{\mathrm{cen}} = 0.831$) requires somewhat higher loading.  For $\alpha \geq 0.20$, both thresholds are far exceeded, with hundreds of escape-enabling patterns.  The quartic correction captures the bulk of the non-Gaussian effect ($n^{\mathrm{corr}}$ is within $\sim$8\% of $n^{\mathrm{exact}}$ at simulation sizes $N \approx 45$--$50$).
+The lower block ($\varphi^* = \varphi_{\min} = 0.328$) shows $n \sim 1$ at $\alpha \approx 0.054$--$0.07$: the escape becomes geometrically possible.  For $\alpha \geq 0.20$, hundreds of patterns exceed $\varphi_{\min}$.  The quartic correction captures the bulk of the non-Gaussian effect ($n^{\mathrm{corr}}$ is within $\sim$8\% of $n^{\mathrm{exact}}$ at simulation sizes $N \approx 45$--$50$).
 
 \subsection{Inter-pattern overlap and escape-enabling patterns}
 
@@ -229,47 +229,39 @@ The support conditions require $\varphi_1 > \varphi_c$ and $\varphi_\mu > \varph
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.6\textwidth]{panels_v8/centroid_geometry.pdf}
-\caption{Support geometry projected onto the $(\bxi^1, \bxi^\mu)$ plane for $q = 0.38$.  The unit circle represents the sphere constraint $a^2 + b^2 \leq 1$.  Blue shading: support of $\bxi^1$ ($a > \varphi_c$).  Red shading: support of $\bxi^\mu$ ($\varphi_\mu > \varphi_c$).  The escape path has two steps: \textcircled{1}~rotate~$\bx_\perp$ at fixed~$\varphi_1$ (increasing~$v$), bringing $\bxi^\mu$ into support with zero energy cost; \textcircled{2}~slide downhill to the centroid.}
+\caption{Support geometry projected onto the $(\bxi^1, \bxi^\mu)$ plane (illustrated for $q = 0.38$; the escape mechanism works for any $q > \varphi_{\min}$).  The unit circle represents the sphere constraint $a^2 + b^2 \leq 1$.  Blue shading: support of $\bxi^1$ ($a > \varphi_c$).  Red shading: support of $\bxi^\mu$ ($\varphi_\mu > \varphi_c$).  The escape path has two steps: \textcircled{1}~rotate~$\bx_\perp$ at fixed~$\varphi_1$ (increasing~$v$), bringing $\bxi^\mu$ into support with zero energy cost; \textcircled{2}~slide downhill to the centroid.}
 \label{fig:geometry}
 \end{figure}
 
 The escape path from the retrieval state to the centroid has two stages (Fig.~\ref{fig:geometry}):
 
 \paragraph{Stage~1: perpendicular rotation ($\Delta E = 0$).}
-At the retrieval state, $a = \varphi_{\mathrm{eq}} \approx 0.90$ and $v \approx 0$.  The overlap with $\bxi^\mu$ is $\varphi_\mu \approx \varphi_{\mathrm{eq}}\,q \approx 0.34$, far below $\varphi_c$---only $\bxi^1$ is in support.
+At the retrieval state, $a = \varphi_{\mathrm{eq}} \approx 0.90$ and $v \approx 0$.  The overlap with $\bxi^\mu$ is $\varphi_\mu \approx \varphi_{\mathrm{eq}}\,q$, far below $\varphi_c$---only $\bxi^1$ is in support.
 
 The system can increase~$v$ (rotating $\bx_\perp$ toward~$\bxi^\mu_\perp$) while keeping $a = \varphi_1$ fixed.  This moves the state vertically in the $(a,v)$ plane without changing $\bxi^1$'s ReLU contribution, so \emph{the energy is exactly constant}.  When $v$ reaches
 \begin{equation}
-v_{\mathrm{entry}} = \frac{\varphi_c - \varphi_{\mathrm{eq}}\,q}{\sqrt{1-q^2}}
-\;\approx\; \frac{0.707 - 0.90 \times 0.38}{0.925} \;=\; 0.394,
+v_{\mathrm{entry}} = \frac{\varphi_c - \varphi_{\mathrm{eq}}\,q}{\sqrt{1-q^2}}\,,
 \label{eq:ventry}
 \end{equation}
-the spurious pattern enters support ($\varphi_\mu = \varphi_c$).  At this point, $a^2 + v^2 = 0.81 + 0.16 = 0.97 < 1$, confirming that the state remains on the sphere.
+the spurious pattern enters support ($\varphi_\mu = \varphi_c$).  For $q = q_{\max} \approx 0.57$ (at $\alpha = 0.2$): $v_{\mathrm{entry}} \approx (0.707 - 0.513)/0.822 = 0.236$, and $a^2 + v^2 = 0.81 + 0.056 = 0.87 < 1$, confirming the state remains on the sphere.
 
 \paragraph{Stage~2: downhill slide to the centroid ($\Delta E < 0$).}
-Once both patterns are in support, the sum inside the logarithm of Eq.~\eqref{eq:lsr} increases, and the energy \emph{decreases}.  The system slides to the two-pattern centroid at
+Once both patterns are in support, the sum inside the logarithm of Eq.~\eqref{eq:lsr} increases, and the energy \emph{decreases}.  The $T = 0$ energy minimum is the geometric centroid at
 \begin{equation}
-\varphi_{\mathrm{cen}} = \sqrt{\frac{1+q}{2}} \;\approx\; \sqrt{\frac{1.38}{2}} \;=\; 0.831\,,
+\varphi_{\mathrm{cen}}^{(0)} = \sqrt{\frac{1+q}{2}}\,.
 \label{eq:phi_cen}
 \end{equation}
-in quantitative agreement with the observed mid-peak (Table above).
+At finite temperature, the system thermalizes to a lower overlap $\varphi_{\mathrm{cen}}(T) < \varphi_{\mathrm{cen}}^{(0)}$, determined by the two-pattern self-consistency equation (see Section~\ref{sec:two_pat_eq} below).
 
 \subsection{Energetics}
 
-The energy per neuron at the retrieval state (one pattern in support) and at the centroid (two patterns, equal overlap) is:
+The $T = 0$ energy per neuron at the retrieval state (one pattern in support) and at the geometric centroid (two patterns with $q = q_{\max} \approx 0.57$, equal overlap $\varphi_{\mathrm{cen}}^{(0)} = \sqrt{(1+q)/2} \approx 0.887$) is:
 \begin{align}
-\frac{E_{\mathrm{ret}}}{N} &= -\frac{1}{b}\ln\!\big(1 - b + b\,\varphi_{\mathrm{eq}}\big)
-= -\frac{1}{b}\ln(0.659) = 0.122\,, \\
-\frac{E_{\mathrm{cen}}}{N} &= -\frac{1}{b}\ln\!\big(2(1 - b + b\,\varphi_{\mathrm{cen}})\big)
-= -\frac{1}{b}\ln(0.846) = 0.049\,.
+\frac{E_{\mathrm{ret}}}{N} &= -\frac{1}{b}\ln\!\big(1 - b + b\,\varphi_{\mathrm{eq}}\big) = 0.122\,, \\
+\frac{E_{\mathrm{cen}}^{(0)}}{N} &= -\frac{1}{b}\ln\!\big(2(1 - b + b\,\varphi_{\mathrm{cen}}^{(0)})\big) = -0.012\,.
 \end{align}
 
-The centroid has \emph{lower} energy by $\Delta E/N = -0.073$.  Including the entropy on the sphere, $S/N \approx \tfrac{1}{2}\ln(1-\varphi^2)$, the free energy difference is
-\begin{equation}
-\frac{\Delta F}{N} = \frac{F_{\mathrm{cen}} - F_{\mathrm{ret}}}{N} \approx -0.15
-\qquad (T = 0.325)\,,
-\end{equation}
-confirming that the centroid is \emph{thermodynamically preferred}.
+The geometric centroid has \emph{lower} energy by $\Delta E/N \approx -0.13$.  At finite temperature, the system thermalizes to $\varphi_{\mathrm{cen}}(T) \approx 0.83$ (Section~\ref{sec:two_pat_eq}), which has a higher energy than the geometric centroid but remains below the retrieval energy.  The centroid basin is thermodynamically preferred over retrieval at these finite system sizes.
 
 \subsection{The barrier is entropic, not energetic}
 
@@ -277,63 +269,93 @@ The energy barrier along the escape path is exactly zero: Stage~1 has $\Delta E 
 
 What prevents instantaneous escape is an \emph{entropic barrier}: the rotation in Stage~1 must align the $(N\!-\!1)$-dimensional perpendicular component $\bx_\perp$ with a \emph{specific} direction ($\bxi^\mu_\perp$) in a high-dimensional space.  The Metropolis random walk explores $O(1)$ new directions per step with step size $\sigma = 2.4\,T/\!\sqrt{N}$, so the typical time to discover the escape direction scales as $O(N/\sigma^2)$.
 
-For $N = 47$, $T = 0.325$: $N/\sigma^2 \approx 3\,400$ steps.  With $2^{14} + 2^{12} \approx 20\,000$ Metropolis steps per trial, the system has $\sim$6 independent attempts to find each escape direction.  With $n(\varphi_{1\mu} > 0.38) \sim 70$--$1\,000$ competing patterns, the total escape probability is substantial, explaining the observed centroid fractions of 7--60\%.
+For $N = 47$, $T = 0.325$: $N/\sigma^2 \approx 3\,400$ steps.  With $2^{14} + 2^{12} \approx 20\,000$ Metropolis steps per trial, the system has $\sim$6 independent attempts to find each escape direction.  With $n(\varphi_{1\mu} > \varphi_{\min}) \sim 60$--$800$ competing patterns (Table~\ref{tab:n_overlap}), the total escape probability is substantial, explaining the observed centroid fractions of 7--60\%.
 
 The escape probability depends on \emph{both} the number of competing patterns (which grows with $P$ and hence $\alpha$) and the allocated MC time, making the centroid fraction a kinetic quantity that would change with longer equilibration.
 
-\subsection{Centroid hopping and the $\varphi \approx 0.5$ peak}
+\subsection{Two-pattern thermal equilibrium}
+\label{sec:two_pat_eq}
 
-The CDF of the per-trial overlap (Fig.~\ref{fig:cdf}) often shows a distinct population near $\varphi \approx 0.5$, well below the two-pattern centroid at $0.831$.  This population has a clear signature: $\varphi_{\max}^{\mathrm{other}} \approx 0.82 \gg \varphi_1 \approx 0.48$ in every trial.  The system is sitting at a \emph{spurious} two-pattern centroid $(\bxi^\mu, \bxi^\nu)$ from which the target has been excluded.
-
-\paragraph{Why not a triple centroid?}
-One might expect the system to recruit a third pattern into support, forming a three-pattern centroid.  However, the $k$-pattern symmetric centroid ($k$ patterns with mutual overlap~$q$) has overlap $\varphi_k = \sqrt{q + (1-q)/k}$ and energy
+The geometric centroid $\varphi_{\mathrm{cen}}^{(0)} = \sqrt{(1+q)/2}$ is the $T = 0$ energy minimum.  At finite temperature, the system thermalizes in the two-pattern basin, balancing the energy $u_2(\varphi) = -(1/b)\ln\!\big[2(1-b+b\varphi)\big]$ against the entropy $s_2(\varphi,q) = \tfrac{1}{2}\ln\!\big(1 - 2\varphi^2/(1+q)\big)$ of the perpendicular subspace.  Setting $\partial(u_2 - T\,s_2)/\partial\varphi = 0$ gives the self-consistency equation
 \begin{equation}
-\frac{E_k}{N} = -\frac{1}{b}\ln\!\big(k\,(1-b+b\,\varphi_k)\big)\,.
+\frac{1}{1 - b + b\,\varphi} = \frac{2\,T\,\varphi}{(1+q) - 2\varphi^2}\,,
+\label{eq:two_pat_sc}
 \end{equation}
+the two-pattern analog of the single-pattern equation (ICML Eq.~36).
+
+The equilibrium $\varphi_{\mathrm{cen}}(q, T)$ depends on both $q$ and $T$.  However, the system escapes to the pattern with the \emph{largest} overlap $q \approx q_{\max} = \sqrt{1-e^{-2\alpha}}$ (this pattern has the smallest entropic barrier).  Since $q_{\max}$ varies slowly with $\alpha$ ($0.51$--$0.67$ for $\alpha = 0.15$--$0.30$) and $\varphi_{\mathrm{cen}}$ is a slowly varying function of $q$, the centroid peak position is approximately $\alpha$-independent:
 
 \begin{center}
 \begin{tabular}{cccc}
 \toprule
-$k$ & $\varphi_k$ & sum inside $\ln$ & $E_k/N$ \\
+$\alpha$ & $q_{\max}$ & $\varphi_{\mathrm{cen}}^{(0)}$ (geometric) & $\varphi_{\mathrm{cen}}(T\!=\!0.325)$ \\
 \midrule
-1 (retrieval) & 0.900 & 0.659 & 0.122 \\
-\textbf{2 (centroid)} & \textbf{0.831} & \textbf{0.846} & \textbf{0.049} \\
-3 & 0.766 & 0.603 & 0.148 \\
-4 & 0.731 & 0.332 & 0.323 \\
+0.15 & 0.509 & 0.869 & 0.812 \\
+0.20 & 0.574 & 0.887 & 0.825 \\
+0.25 & 0.627 & 0.902 & 0.834 \\
+0.30 & 0.672 & 0.914 & 0.842 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The two-pattern centroid is the global energy minimum.  Adding a third pattern dilutes each ReLU argument from $0.42$ to $0.20$ (more than halved), while the count only increases from~2 to~3; the sum inside the logarithm \emph{decreases}.  The $k=3$ centroid has \emph{higher} energy than even the retrieval state.
+The thermal equilibrium $\varphi_{\mathrm{cen}} \approx 0.82$--$0.84$ is in quantitative agreement with the observed centroid peak at $\varphi \approx 0.831 \pm 0.01$.  The weak $\alpha$-dependence (less than $\pm 2\%$ across the range) explains the ``remarkably constant'' centroid position noted in Section~1.2.
+
+Note that the earlier estimate $q = 0.38$ (obtained by inverting the geometric formula $\sqrt{(1+q)/2} = 0.831$) was incorrect: it assumed the system sits at the $T = 0$ energy minimum.  The correct interpretation is $q \approx q_{\max} \approx 0.57$--$0.63$, with the observed $\varphi$ reflecting finite-temperature equilibrium.
+
+The centroid peak position does depend on $T$: at $q = 0.574$ ($\alpha = 0.2$), solving Eq.~\eqref{eq:two_pat_sc} gives $\varphi_{\mathrm{cen}} = 0.86$ at $T = 0.1$, $0.82$ at $T = 0.325$, and $0.81$ at $T = 0.5$.
+
+\subsection{Centroid hopping and the $\varphi \approx 0.5$ peak}
+
+The CDF of the per-trial overlap (Fig.~\ref{fig:cdf}) often shows a distinct population near $\varphi \approx 0.5$, well below the two-pattern centroid at $\approx 0.83$.  This population has a clear signature in the v8m data: $\varphi_{\max}^{\mathrm{other}} \approx 0.82 \gg \varphi_1 \approx 0.48$ in every such trial.  The system is sitting at a \emph{spurious} two-pattern centroid $(\bxi^\mu, \bxi^\nu)$ from which the target has been excluded.
+
+\paragraph{Why not a triple centroid?}
+One might expect the system to recruit a third pattern into support, forming a three-pattern centroid.  However, the $k$-pattern symmetric centroid ($k$ patterns with mutual overlap~$q$) has geometric overlap $\varphi_k^{(0)} = \sqrt{q + (1-q)/k}$ and $T = 0$ energy
+\begin{equation}
+\frac{E_k}{N} = -\frac{1}{b}\ln\!\big(k\,(1-b+b\,\varphi_k^{(0)})\big)\,.
+\end{equation}
+Evaluating at $q = q_{\max} \approx 0.57$ ($\alpha = 0.2$):
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+$k$ & $\varphi_k^{(0)}$ & sum inside $\ln$ & $E_k/N$ \\
+\midrule
+1 (retrieval) & 0.900 & 0.659 & 0.122 \\
+\textbf{2 (centroid)} & \textbf{0.887} & \textbf{1.043} & \textbf{$-0.012$} \\
+3 & 0.820 & 0.836 & 0.052 \\
+4 & 0.779 & 0.620 & 0.140 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The two-pattern centroid has the lowest energy.  Adding a third pattern dilutes the ReLU arguments faster than the count increases; the $k = 3$ centroid has higher energy than $k = 2$.  Triple centroids are energetically disfavored.
 
 \paragraph{Centroid hopping.}
-Instead of growing, the system \emph{hops}: from the centroid $(\bxi^1, \bxi^\mu)$, pattern~$\bxi^\mu$ has its own high-overlap neighbors.  One of them, $\bxi^\nu$ with $\varphi_{\mu\nu} > \varphi_{\min}$, gets recruited via the same zero-energy perpendicular rotation---but now it is $\bxi^1$ that is pushed out of support, not $\bxi^\nu$ that enters.  The result is a new two-pattern centroid $(\bxi^\mu, \bxi^\nu)$ at the same energy $E/N \approx 0.049$:
+Instead of growing, the system \emph{hops}: from the centroid $(\bxi^1, \bxi^\mu)$, pattern~$\bxi^\mu$ has its own high-overlap neighbors.  One of them, $\bxi^\nu$ with $\varphi_{\mu\nu} > \varphi_{\min}$, gets recruited via the same zero-energy perpendicular rotation---but now it is $\bxi^1$ that is pushed out of support, not $\bxi^\nu$ that enters.  The result is a new two-pattern centroid $(\bxi^\mu, \bxi^\nu)$ at comparable energy:
 \[
 \underbrace{\bxi^1}_{\varphi_1=0.90}
 \;\xrightarrow{\text{1st hop}}\;
-\underbrace{(\bxi^1,\,\bxi^\mu)}_{\varphi_1 = 0.83}
+\underbrace{(\bxi^1,\,\bxi^\mu)}_{\varphi_1 \approx 0.83}
 \;\xrightarrow{\text{2nd hop}}\;
-\underbrace{(\bxi^\mu,\,\bxi^\nu)}_{\varphi_1 \approx 0.46}
+\underbrace{(\bxi^\mu,\,\bxi^\nu)}_{\varphi_1 \approx 0.48}
 \;\xrightarrow{\text{3rd hop}}\;
 \underbrace{(\bxi^\nu,\,\bxi^\rho)}_{\varphi_1 \approx 0.1\text{--}0.2}
 \;\to\; \cdots
 \]
 
-After the second hop, the target is no longer in support ($\varphi_1 < \varphi_c$).  Its residual overlap is determined by its random projection onto the active pair:
+After the second hop, the target is no longer in support ($\varphi_1 < \varphi_c$).  Its residual overlap is set by its projection onto the active spurious pair:
 \begin{equation}
-\varphi_1 \;=\; \frac{\varphi_{1\mu} + \varphi_{1\nu}}{\sqrt{2(1+\varphi_{\mu\nu})}}
-\;\approx\; \frac{0.38 + 0.38}{\sqrt{2.76}} \;\approx\; 0.46\,,
+\varphi_1 \;=\; \frac{\varphi_{1\mu} + \varphi_{1\nu}}{\sqrt{2(1+\varphi_{\mu\nu})}}\,.
 \end{equation}
-consistent with the observed peak at $\avg{\varphi} \approx 0.48$ in the v8m data.  Each subsequent hop replaces the older partner with a new neighbor of the remaining one.  The target's overlap decays with each hop as it moves further from the active centroid, eventually reaching $\varphi_1 \to 0$ (paramagnetic).
+For $\varphi_{1\mu} \approx q_{\max} \approx 0.57$ and a typical $\varphi_{1\nu} \approx 0.3$--$0.4$ (the target's overlap with $\bxi^\nu$ is not necessarily large), this gives $\varphi_1 \approx 0.40$--$0.55$, consistent with the observed peak at $\avg{\varphi} \approx 0.48$ in the v8m data.  Each subsequent hop replaces the older partner with a new neighbor of the remaining one.  The target's overlap decays with each hop, eventually reaching $\varphi_1 \to 0$ (paramagnetic).
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{panels_v8m/centroid_hopping.pdf}
-\caption{Centroid hopping mechanism.  Circles: patterns on the overlap graph, connected by edges with $\varphi_{1\mu} \approx 0.38$.  Diamonds: two-pattern centroids (the energy minimum at $E/N = 0.05$).  The system hops between centroids along the graph, always maintaining a pair---never growing to a triple.  After the second hop, the target $\bxi^1$ exits support and $\varphi_1$ drops to $\approx 0.46$.  Further hops drive $\varphi_1 \to 0$.}
+\caption{Centroid hopping mechanism.  Circles: patterns on the overlap graph, connected by edges with $\varphi_{1\mu} \approx q_{\max}$.  Diamonds: two-pattern centroids (the energy minimum).  The system hops between centroids along the graph, always maintaining a pair---never growing to a triple.  After the second hop, the target $\bxi^1$ exits support and $\varphi_1$ drops to $\approx 0.48$.  Further hops drive $\varphi_1 \to 0$.}
 \label{fig:hopping}
 \end{figure}
 
-The dynamics is thus a random walk on the pattern overlap graph, where each step swaps one partner in the active centroid for a neighbor of the other.  The two-pattern centroid energy $E/N \approx 0.05$ is constant along this walk; only the target's overlap decreases.
+The dynamics is thus a random walk on the pattern overlap graph, where each step swaps one partner in the active centroid for a neighbor of the other.  The two-pattern centroid energy is approximately constant along this walk; only the target's overlap decreases.
 
 \subsection{Confirmation from long-run simulations (v9)}
 
