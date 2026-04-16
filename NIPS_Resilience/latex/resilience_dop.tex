@@ -38,14 +38,19 @@ Figure~\ref{fig:cdf} shows the empirical CDF of the per-trial overlap $\varphi$ 
 \toprule
 Population & $\varphi$ & $\sigma(\varphi)$ & $\varphi_{\max}^{\mathrm{other}}$ & Interpretation \\
 \midrule
-Retrieval & 0.901 & 0.003 & 0.54--0.66 & single-pattern equilibrium \\
-Centroid  & 0.831 & 0.010 & 0.77--0.82 & two-pattern equilibrium \\
-Escaped   & $< 0.75$ & broad & varies & multi-pattern or paramagnetic \\
+Retrieval        & 0.901    & 0.003 & 0.54--0.66 & single-pattern equilibrium \\
+Centroid         & 0.831    & 0.010 & 0.77--0.82 & two-pattern equilibrium ($\bxi^1,\bxi^\mu$) \\
+Spurious centroid & $\approx 0.48$ & 0.05 & $\approx 0.82$ & two-pattern equil.\ ($\bxi^\mu,\bxi^\nu$); target out \\
+Paramagnetic     & $< 0.2$  & broad & $< 0.3$ & no pattern in support \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The centroid peak at $\varphi \approx 0.831$ is remarkably narrow ($\sigma \approx 0.01$) and \emph{constant across all $\alpha$ values}, even deep inside the retrieval phase ($\alpha = 0.200$).  Its defining signature is $\varphi_{\max}^{\mathrm{other}} \approx \varphi$: the system has nearly equal overlap with the target and one spurious pattern.  As $\alpha$ increases toward $\alpha_{\mathrm{th}}$, the weight of the centroid population grows from $\sim$7\% to $\sim$60\%, while the retrieval peak shrinks correspondingly.
+The centroid peak at $\varphi \approx 0.83$ is remarkably narrow ($\sigma \approx 0.01$) and approximately \emph{constant across all $\alpha$ values}, even deep inside the retrieval phase ($\alpha = 0.200$).  This $\alpha$-independence is explained by the two-pattern thermal equilibrium (Section~\ref{sec:two_pat_eq}): the system escapes to the pattern with $\varphi_{1\mu} \approx \varphi_{1,\max}(\alpha)$, and the equilibrium overlap $\varphi_{\mathrm{cen}}(\varphi_{1,\max}, T)$ is a slowly varying function of $\alpha$.  The defining signature of the centroid is $\varphi_{\max}^{\mathrm{other}} \approx \varphi$: the system has nearly equal overlap with the target and one spurious pattern.
+
+The spurious centroid population (Section~\ref{sec:hopping}) appears after the second hop in the centroid chain: the target has exited support, and $\varphi_{\max}^{\mathrm{other}} \approx 0.82$ confirms that a spurious pair is in the centroid configuration.
+
+As $\alpha$ increases toward $\alpha_{\mathrm{th}}$, the weight of the centroid and spurious-centroid populations grows from $\sim$7\% to $\sim$60\%, while the retrieval peak shrinks correspondingly.
 
 \begin{figure}[t]
 \centering
@@ -301,6 +306,7 @@ The thermal equilibrium $\varphi_{\mathrm{cen}} \approx 0.82$--$0.84$ is in quan
 The centroid peak position does depend on $T$: at $\varphi_{1\mu} = 0.574$ ($\alpha = 0.2$), solving Eq.~\eqref{eq:two_pat_sc} gives $\varphi_{\mathrm{cen}} = 0.86$ at $T = 0.1$, $0.82$ at $T = 0.325$, and $0.81$ at $T = 0.5$.
 
 \subsection{Centroid hopping and the $\varphi \approx 0.5$ peak}
+\label{sec:hopping}
 
 The CDF of the per-trial overlap (Fig.~\ref{fig:cdf}) often shows a distinct population near $\varphi \approx 0.5$, well below the two-pattern centroid at $\approx 0.83$.  This population has a clear signature in the v8m data: $\varphi_{\max}^{\mathrm{other}} \approx 0.82 \gg \varphi_1 \approx 0.48$ in every such trial.  The system is sitting at a \emph{spurious} two-pattern centroid $(\bxi^\mu, \bxi^\nu)$ from which the target has been excluded.
 
