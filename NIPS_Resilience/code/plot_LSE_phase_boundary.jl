@@ -29,35 +29,45 @@ end
 
 # ──────────────── Plot ────────────────
 
+# 86mm figure, same style as centroid_geometry etc.
+const FIG_DPI = 300
+const FIG_W = round(Int, 86 / 25.4 * 100)   # 339 px
+const FIG_H = FIG_W
+const FONT_TITLE = 9
+const FONT_GUIDE = 8
+const FONT_TICK  = 7
+const FONT_ANN   = 7
+
+default(titlefontsize=FONT_TITLE, guidefontsize=FONT_GUIDE, tickfontsize=FONT_TICK)
+
 out_dir = "panels_LSE"
 mkpath(out_dir)
 
-T_range = range(0.01, 2.5, length=500)
+T_range = range(0.005, 2.0, length=500)
 αg = [α_c_gauss(T) for T in T_range]
-αe = [min(α_c_exact(T), 1.0) for T in T_range]  # cap for plotting
+αe = [min(α_c_exact(T), 1.05) for T in T_range]  # cap just above xlim
 
-p = plot(αg, T_range,
-    color=:black, lw=2.5, label="Gaussian: α_c = ½(1−f_ret)²",
-    xlabel="α = ln(M)/N", ylabel="T",
-    xlims=(0, 0.65), ylims=(0, 2.5),
-    legend=:topright, legendfontsize=8,
-    size=(500, 400), dpi=300,
-    left_margin=3Plots.mm, bottom_margin=3Plots.mm)
+# Gaussian curve: clip to α ≤ 0.5 (it ends there by definition)
+T_gauss = [T for T in T_range if α_c_gauss(T) ≤ 0.5]
+α_gauss = [α_c_gauss(T) for T in T_gauss]
+
+p = plot(α_gauss, T_gauss,
+    color=:blue, lw=2, label="Gaussian",
+    xlabel="α", ylabel="T",
+    xlims=(0, 1.0), ylims=(0, 2.0),
+    legend=:topright, legendfontsize=FONT_ANN,
+    background_color_legend=RGBA(0.95,0.95,0.95,0.8),
+    foreground_color_legend=RGBA(0.7,0.7,0.7,0.5),
+    size=(FIG_W, FIG_H), dpi=FIG_DPI,
+    left_margin=0Plots.mm, right_margin=0Plots.mm,
+    top_margin=0Plots.mm, bottom_margin=0Plots.mm)
 
 plot!(p, αe, T_range,
-    color=:red, lw=2.5, ls=:dash,
-    label="Exact: α_c = −½ln(1−(1−f_ret)²)")
+    color=:red, lw=2, ls=:dash, label="Exact")
 
-# Mark α = 0.5
-vline!(p, [0.5], color=:gray, lw=1, ls=:dot, label=false)
-annotate!(p, 0.51, 0.15, text("α=0.5", 7, :left, :gray))
-
-# Region labels
-annotate!(p, 0.15, 1.5, text("Retrieval", 11, :center, :blue))
-annotate!(p, 0.50, 1.5, text("Non-retrieval", 11, :center, :red))
-
-# Title
-title!(p, "LSE phase boundary: Gaussian vs Exact density")
+# Region labels — Retrieval below curves
+annotate!(p, 0.12, 0.20, text("Retrieval", FONT_ANN+1, :center, :black))
+annotate!(p, 0.70, 1.0, text("Non-retrieval", FONT_ANN+1, :center, :black))
 
 for ext in ("png", "pdf")
     savefig(p, joinpath(out_dir, "phase_boundary_comparison.$ext"))
