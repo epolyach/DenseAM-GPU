@@ -4,6 +4,8 @@
 \geometry{margin=1in}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{natbib}
+\bibliographystyle{plainnat}
 
 \newcommand{\bxi}{\boldsymbol{\xi}}
 \newcommand{\bx}{\mathbf{x}}
@@ -18,37 +20,64 @@
 
 \section{Introduction}
 
-Dense Associative Memory (DAM) networks on the $N$-sphere can store an exponential number $P = e^{\alpha N}$ of patterns, where $\alpha = \ln P / N$ is the logarithmic load per neuron.  Two kernel-based energy functions have been studied in this setting: the log-sum-exp (LSE) energy, based on a Gaussian similarity kernel, and the log-sum-ReLU (LSR) energy, based on the compactly supported Epanechnikov kernel~\cite{Hoover2025,Ramsauer2021}.  The thermodynamic phase boundaries $\alpha_c(T)$ separating retrieval from non-retrieval were derived analytically in~\cite{ICML2026} using the replica method.
+Dense Associative Memory (DAM) networks on the $N$-sphere can store an exponential number $M = e^{\alpha N}$ of patterns, where $\alpha = \ln M / N$ is the logarithmic load per neuron.  Two kernel-based energy functions have been studied in this setting: the log-sum-exp (LSE) energy, based on a Gaussian similarity kernel~\citep{ramsauer2021hopfield}, and the log-sum-ReLU (LSR) energy, based on the compactly supported Epanechnikov kernel~\citep{hoover2025dense}.  The thermodynamic phase boundaries $\alpha_c(T)$ separating retrieval from non-retrieval were derived analytically in~\citet{icml2026theory} using the replica method.
 
-A key ingredient in the analysis of~\cite{ICML2026} is the \emph{alignment distribution}: the probability density of the overlap $\phi_\mu = \bxi^\mu \cdot \bx / N$ between a random state~$\bx$ and a random pattern~$\bxi^\mu$ on $S^{N-1}(\!\sqrt{N})$.  The exact density is
+In this paper we review some of the theoretical and numerical results of~\citet{icml2026theory} and extend them in two directions: (i)~we replace the Gaussian approximation for the alignment distribution with the exact spherical density and assess the impact on each kernel, and (ii)~we characterize the finite-$N$ metastability of the LSR retrieval phase through a detailed analysis of the centroid escape mechanism.
+
+A key ingredient in the analysis of~\citet{icml2026theory} is the \emph{alignment distribution}: the probability density of the overlap $\phi_\mu = \bxi^\mu \cdot \bx / N$ between a random state~$\bx$ and a random pattern~$\bxi^\mu$ on $S^{N-1}(\!\sqrt{N})$.  The exact density is
 \begin{equation}
 f(\phi) = C_N\,(1 - \phi^2)^{(N-3)/2}\,,\qquad
 C_N = \frac{\Gamma(N/2)}{\Gamma\!\big((N\!-\!1)/2\big)\,\sqrt{\pi}}\,,
 \label{eq:exact_density}
 \end{equation}
-with mean~$0$ and variance~$1/N$.  In~\cite{ICML2026}, this density is approximated by a Gaussian $f(\phi) \approx \sqrt{N/(2\pi)}\,e^{-N\phi^2/2}$, which matches~\eqref{eq:exact_density} near $\phi = 0$ but has heavier tails: the Gaussian extends to $|\phi| > 1$, whereas the exact density vanishes at $|\phi| = 1$.  In this paper we examine the consequences of this approximation for both kernels.
+with mean~$0$ and variance~$1/N$.  In~\citep{icml2026theory}, this density is approximated by a Gaussian $f(\phi) \approx \sqrt{N/(2\pi)}\,e^{-N\phi^2/2}$, which matches~\eqref{eq:exact_density} near $\phi = 0$ but has heavier tails: the Gaussian extends to $|\phi| > 1$, whereas the exact density vanishes at $|\phi| = 1$.
 
 \paragraph{LSE: Gaussian approximation is adequate.}
-For the LSE kernel, the noise floor is a softmax-weighted sum over all~$P$ patterns (no compact-support cutoff).  The phase boundary $\alpha_c^{\mathrm{LSE}}(T)$ derived in~\cite{ICML2026} (Eq.~35) is confirmed by Monte Carlo simulations at moderate temperatures.  At $T = 0$, the result $\alpha_c(0) = 0.5$ coincides with the value obtained independently by Ramsauer et al.~\cite{Ramsauer2021} via gradient-descent analysis.
+For the LSE kernel, the noise floor is a softmax-weighted sum over all~$M$ patterns (no compact-support cutoff).  The phase boundary $\alpha_c^{\mathrm{LSE}}(T)$ derived in~\citep{icml2026theory} (Eq.~35) is validated by Monte Carlo simulations (ibid., Fig.~2).  At $T = 0$, the result $\alpha_c(0) = 0.5$ coincides with the value obtained independently by \citet{ramsauer2021hopfield} via gradient-descent analysis.
 
-If instead the exact density~\eqref{eq:exact_density} is used in the noise floor integral, the saddle-point evaluation changes.  In the kernel-limited regime (Eq.~27 of~\cite{ICML2026}), the noise floor energy $u_{\mathrm{noise}} = 1 - \alpha/\beta_{\mathrm{net}} - \beta_{\mathrm{net}}/2$ is replaced by
-\[
-u_{\mathrm{noise}}^{\mathrm{exact}} = (1-\phi^*) - \frac{1-\phi^{*2}}{\phi^*}\left[\alpha + \tfrac{1}{2}\ln(1-\phi^{*2})\right],
-\]
-where $\phi^*$ satisfies the modified saddle-point equation $\beta_{\mathrm{net}} = \phi^*/(1-\phi^{*2})$.  Setting $u_{\mathrm{noise}}^{\mathrm{exact}} = 0$ (the $T = 0$ transition) gives
+If instead the exact density~\eqref{eq:exact_density} is used in the noise floor integral, two quantities change: the maximum spurious alignment (Eq.~23 of~\citep{icml2026theory}) becomes
+\begin{equation}
+\varphi_{1,\max}^{\mathrm{exact}} = \sqrt{1 - e^{-2\alpha}}
+\qquad\bigl(\text{Gaussian: } \varphi_{1,\max}^{\mathrm{Gauss}} = \sqrt{2\alpha}\bigr)\,,
+\label{eq:phimax_exact}
+\end{equation}
+and the saddle-point equation $\phi^* = \beta_{\mathrm{net}}$ is replaced by $\beta_{\mathrm{net}} = \phi^*/(1-\phi^{*2})$.  We now give the corrected noise floor in both regimes.
+
+\emph{Load-limited regime} ($\phi^* > \varphi_{1,\max}$): the integral is dominated by $\varphi_{1,\max}^{\mathrm{exact}}$, giving
+\begin{equation}
+u_{\mathrm{noise}}^{\mathrm{exact,\,load}} = 1 - \sqrt{1 - e^{-2\alpha}}
+\qquad\bigl(\text{Gaussian: } u_{\mathrm{noise}} = 1 - \sqrt{2\alpha}\bigr)\,.
+\label{eq:u_noise_load_exact}
+\end{equation}
+Setting $f_{\mathrm{ret}}(T) = u_{\mathrm{noise}}^{\mathrm{exact,\,load}}$ for the phase boundary:
+\begin{equation}
+\alpha_c^{\mathrm{exact,\,load}}(T) = -\frac{1}{2}\ln\!\Big(1 - \big(1-f_{\mathrm{ret}}(T)\big)^2\Big)
+\qquad\bigl(\text{Gaussian: } \alpha_c = \tfrac{1}{2}(1-f_{\mathrm{ret}})^2\bigr)\,.
+\label{eq:alpha_c_load_exact}
+\end{equation}
+
+\emph{Kernel-limited regime} ($\phi^* < \varphi_{1,\max}$): the integral is dominated by the saddle $\phi^*$, giving
+\begin{equation}
+u_{\mathrm{noise}}^{\mathrm{exact,\,kern}} = (1-\phi^*) - \frac{1-\phi^{*2}}{\phi^*}\left[\alpha + \tfrac{1}{2}\ln(1-\phi^{*2})\right]
+\qquad\bigl(\text{Gaussian: } 1 - \tfrac{\alpha}{\beta_{\mathrm{net}}} - \tfrac{\beta_{\mathrm{net}}}{2}\bigr)\,.
+\label{eq:u_noise_kern_exact}
+\end{equation}
+Setting $u_{\mathrm{noise}}^{\mathrm{exact,\,kern}} = 0$ (the $T = 0$ transition):
 \begin{equation}
 \alpha = \frac{\phi^*}{1+\phi^*} - \frac{1}{2}\ln(1 - \phi^{*2})\,.
-\label{eq:alpha_exact_LSE}
+\label{eq:alpha_c_kern_exact}
 \end{equation}
-This is a monotonically increasing function of $\phi^*$ on $(0,1)$ with $\alpha \to \infty$ as $\phi^* \to 1$: no finite $\alpha$ produces a noise floor that reaches the retrieval energy.  In other words, the exact density predicts $\alpha_c^{\mathrm{LSE}}(0) = \infty$---an infinite zero-temperature capacity.
 
-By contrast, the Gaussian saddle ($\phi^* = \beta_{\mathrm{net}}$, unconstrained) gives $\alpha = \beta_{\mathrm{net}} - \beta_{\mathrm{net}}^2/2$, maximized at $\beta_{\mathrm{net}} = 1$ with $\alpha_c(0) = 1/2$.  The Gaussian result agrees with~\cite{Ramsauer2021} and with Monte Carlo; the exact-density result does not.  At moderate temperatures ($T > 0.5$), the two formulas agree to within $\sim$7\%, and both are consistent with the MC data.  We therefore adopt the phase boundary of~\cite{ICML2026} for LSE without modification.
+Both regimes yield the same conclusion.  At $T \to 0$: the load-limited formula~\eqref{eq:alpha_c_load_exact} gives $\alpha_c \to -\tfrac{1}{2}\ln(0) = \infty$ (since $f_{\mathrm{ret}} \to 0$); the kernel-limited formula~\eqref{eq:alpha_c_kern_exact} is a monotonically increasing function of $\phi^*$ on $(0,1)$ with $\alpha \to \infty$ as $\phi^* \to 1$.  Both predict $\alpha_c^{\mathrm{LSE}}(0) = \infty$---an infinite zero-temperature capacity.
+
+By contrast, the Gaussian gives finite results: the load-limited formula yields $\alpha_c = (1-f_{\mathrm{ret}})^2/2 \to 1/2$; the kernel-limited formula yields $\alpha = \beta_{\mathrm{net}} - \beta_{\mathrm{net}}^2/2$, maximized at $\beta_{\mathrm{net}} = 1$ with $\alpha_c(0) = 1/2$.  Both Gaussian regimes agree at $\alpha_c(0) = 1/2$, consistent with~\citet{ramsauer2021hopfield} and with Monte Carlo.  At moderate temperatures ($T > 0.5$), the Gaussian and exact formulas agree to within $\sim$7\%.  We therefore adopt the phase boundary of~\citep{icml2026theory} for LSE without modification.
 
 \paragraph{LSR: exact density corrects the noise-floor threshold.}
 For the LSR kernel with sharpness parameter $b > 1$, the energy has compact support: pattern~$\mu$ contributes only when $\phi_\mu > \varphi_c \equiv (b-1)/b$.  The noise floor forms only when the maximum inter-pattern overlap $\varphi_{1,\max}$ exceeds $\varphi_c$.  The Gaussian estimate $\varphi_{1,\max}^{\mathrm{Gauss}} = \sqrt{2\alpha}$ gives the threshold
-\[
+\begin{equation}
 \alpha_{\mathrm{th}}^{\mathrm{Gauss}} = \frac{\varphi_c^2}{2} = \frac{1}{2}\!\left(\frac{b-1}{b}\right)^{\!2}.
-\]
+\label{eq:alpha_th_gauss}
+\end{equation}
 Using the exact density, the maximum overlap is $\varphi_{1,\max}^{\mathrm{exact}} = \sqrt{1-e^{-2\alpha}}$ (derived in Section~\ref{sec:interpattern}), giving
 \begin{equation}
 \alpha_{\mathrm{th}}^{\mathrm{exact}} = -\frac{1}{2}\ln(1-\varphi_c^2)\,.
@@ -57,7 +86,7 @@ Using the exact density, the maximum overlap is $\varphi_{1,\max}^{\mathrm{exact
 For $b = 2 + \sqrt{2}$ ($\varphi_c = 1/\!\sqrt{2}$): $\alpha_{\mathrm{th}}^{\mathrm{exact}} = \tfrac{\ln 2}{2} \approx 0.347$, compared with $\alpha_{\mathrm{th}}^{\mathrm{Gauss}} = 0.25$.  The correction is 39\%, but the qualitative phase diagram is unchanged: a vertical asymptote at $\alpha = \alpha_{\mathrm{th}}$ below which retrieval is perfect at any temperature, with a curved boundary $\alpha_c(T)$ above it.
 
 \paragraph{Finite-$N$ metastability in the retrieval region.}
-The main finding of this paper concerns the regime $\alpha < \alpha_{\mathrm{th}}$, where the thermodynamic analysis predicts perfect retrieval.  Careful Monte Carlo simulations at finite system sizes ($N \approx 24$--$50$) reveal that the retrieval state is not truly stable: the system escapes to \emph{two-pattern centroids}---states where two patterns are simultaneously in support---via a zero-energy path whose barrier is purely entropic.
+The main finding of this paper concerns the regime $\alpha < \alpha_{\mathrm{th}}$, where the thermodynamic analysis predicts perfect retrieval.  Careful Monte Carlo simulations at finite system sizes ($N \approx 24$--$50$, $M = 20\,000$--$500\,000$) reveal that the retrieval state is not truly stable: the system escapes to \emph{two-pattern centroids}---states where two patterns are simultaneously in support---via a zero-energy path whose barrier is purely entropic.
 
 We characterize this escape mechanism in detail:
 \begin{itemize}
@@ -71,5 +100,7 @@ We characterize this escape mechanism in detail:
 For practical memory retrieval, the metastability may be irrelevant: the escape time $\tau \sim e^{cN}$ is astronomically large for moderate~$N$, and the retrieval state is effectively stable on any realistic query timescale.  The metastability is observable only at the small system sizes ($N \sim 50$) accessible to Monte Carlo simulation, where it produces a rich phenomenology of centroid peaks, spurious centroids, and overlap decay.
 
 The dependence on the kernel sharpness~$b$ is discussed in Section~\ref{sec:bdep}.  All quantitative features are controlled by the support threshold $\varphi_c = (b-1)/b$; the numerical illustrations use $b = 2+\sqrt{2}$ ($\varphi_c \approx 0.707$) throughout.
+
+\bibliography{references}
 
 \end{document}
