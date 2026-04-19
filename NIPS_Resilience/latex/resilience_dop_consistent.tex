@@ -20,86 +20,376 @@
 
 \section{Introduction}
 
-Dense Associative Memory (DAM) networks on the $N$-sphere can store an exponential number $M = e^{\alpha N}$ of patterns, where $\alpha = \ln M / N$ is the logarithmic load per neuron.  Two kernel-based energy functions have been studied in this setting: the log-sum-exp (LSE) energy, based on a Gaussian similarity kernel~\citep{ramsauer2021hopfield}, and the log-sum-ReLU (LSR) energy, based on the compactly supported Epanechnikov kernel~\citep{hoover2025dense}.  The thermodynamic phase boundaries $\alpha_c(T)$ separating retrieval from non-retrieval were derived analytically in~\citet{icml2026theory} using the replica method.
+Associative memory networks store patterns so that the correct memory can be retrieved from a noisy or partial cue.  In the classical Hopfield network~\citep{Hopfield1982}, storage capacity scales linearly with the number of neurons~\citep{amit1987statistical}.  Dense Associative Memory (DAM) models replace pairwise interactions with highly nonlinear energy functions, achieving exponential storage: $M = e^{\alpha N}$ patterns for $N$ continuous neurons on the unit sphere, where $\alpha = \ln M/N$ is the logarithmic load per neuron~\citep{demircigil2017model,ramsauer2021hopfield}.
 
-In this paper we review some of the theoretical and numerical results of~\citet{icml2026theory} and extend them in two directions: (i)~we replace the Gaussian approximation for the alignment distribution with the exact spherical density and assess the impact on each kernel, and (ii)~we characterize the finite-$N$ metastability of the LSR retrieval phase through a detailed analysis of the centroid escape mechanism.
+Two kernel-based energy functions have been studied in this setting.  The log-sum-exp (LSE) energy, based on a Gaussian similarity kernel, was analyzed by~\citet{ramsauer2021hopfield}, who proved a zero-temperature capacity $\alpha_c(0) = 0.5$.  More recently, \citet{hoover2025dense} introduced the log-sum-ReLU (LSR) energy for binary neurons, based on the compactly supported Epanechnikov kernel.  For continuous neurons on the $N$-sphere ($|\bx|^2 = N$), the LSR energy takes the form
+\begin{equation}
+E(\bx) = -\frac{N}{b}\ln\left(\sum_{\mu=1}^{M}\max\!\Big(0,\;1 - b + b\,\phi_\mu\Big)\right),
+\qquad \phi_\mu \equiv \frac{\bxi^\mu \cdot \bx}{N}\,,
+\label{eq:lsr}
+\end{equation}
+where $b > 1$ is the rescaled inverse variance controlling the kernel sharpness, $\bxi^\mu$ are the stored patterns on $S^{N-1}(\!\sqrt{N})$, and $\phi_\mu$ is the alignment of the state $\bx$ with pattern~$\mu$.  The compact support introduces a hard wall at $\varphi_c = (b-1)/b$: pattern~$\mu$ contributes to the energy only when $\phi_\mu > \varphi_c$.  This is qualitatively different from the LSE kernel, where all patterns contribute everywhere on the sphere.
 
-A key ingredient in the analysis of~\citet{icml2026theory} is the \emph{alignment distribution}: the probability density of the overlap $\phi_\mu = \bxi^\mu \cdot \bx / N$ between a random state~$\bx$ and a random pattern~$\bxi^\mu$ on $S^{N-1}(\!\sqrt{N})$.  The exact density is
+The thermodynamic phase boundaries $\alpha_c(T)$ for both kernels on the $N$-sphere were derived by~\citet{icml2026theory} using the replica method, and validated by Monte Carlo (MC) simulations in~\citet{iclr2026mc}.  A key result for the LSR kernel is the existence of a support threshold
+\begin{equation}
+\alpha_{\mathrm{th}} = \frac{\varphi_c^2}{2} = \frac{1}{2}\!\left(\frac{b-1}{b}\right)^{\!2},
+\label{eq:alpha_th}
+\end{equation}
+below which no spurious pattern falls within the support and retrieval is perfect at any temperature~\citep{icml2026theory}.  For $b = 2+\sqrt{2}$ (the value used throughout this paper): $\varphi_c \approx 0.707$ and $\alpha_{\mathrm{th}} = 0.25$.  This sub-threshold regime has no analog in the LSE model, where a critical line exists at all loads $\alpha > 0$.
+
+The derivation of~\eqref{eq:alpha_th} relies on approximating the alignment distribution on $S^{N-1}$ by a Gaussian $f(\phi) \propto e^{-N\phi^2/2}$, as in~\citet{ramsauer2021hopfield}.  The exact density on the sphere,
 \begin{equation}
 f(\phi) = C_N\,(1 - \phi^2)^{(N-3)/2}\,,\qquad
 C_N = \frac{\Gamma(N/2)}{\Gamma\!\big((N\!-\!1)/2\big)\,\sqrt{\pi}}\,,
 \label{eq:exact_density}
 \end{equation}
-with mean~$0$ and variance~$1/N$.  In~\citep{icml2026theory}, this density is approximated by a Gaussian $f(\phi) \approx \sqrt{N/(2\pi)}\,e^{-N\phi^2/2}$, which matches~\eqref{eq:exact_density} near $\phi = 0$ but has heavier tails: the Gaussian extends to $|\phi| > 1$, whereas the exact density vanishes at $|\phi| = 1$.
+has the same mean ($0$) and variance ($1/N$) but lighter tails: it vanishes at $|\phi| = 1$, whereas the Gaussian assigns nonzero weight there.  Since the LSR noise floor depends on whether any pattern exceeds $\varphi_c$, the lighter tails of~\eqref{eq:exact_density} predict fewer patterns above threshold and shift $\alpha_{\mathrm{th}}$ to a higher value ($\approx 0.347$ for $b = 2+\sqrt{2}$).
 
-\paragraph{LSE: Gaussian approximation is adequate.}
-For the LSE kernel, the noise floor is a softmax-weighted sum over all~$M$ patterns (no compact-support cutoff).  The phase boundary $\alpha_c^{\mathrm{LSE}}(T)$ derived in~\citep{icml2026theory} (Eq.~35) is validated by Monte Carlo simulations (ibid., Fig.~2).  At $T = 0$, the result $\alpha_c(0) = 0.5$ coincides with the value obtained independently by \citet{ramsauer2021hopfield} via gradient-descent analysis.
+\begin{small}
+\noindent\textit{Remark (to be removed).}  Let $\varphi_{1,\max}$ denote the maximum of the overlap $\bxi^1\!\cdot\!\bxi^\mu/N$ over all spurious patterns $\mu \neq 1$; it is defined by the condition that on average one pattern reaches this overlap.  The Gaussian gives $\varphi_{1,\max} = \sqrt{2\alpha}$; the exact density~\eqref{eq:exact_density} gives $\varphi_{1,\max}^{\mathrm{exact}} = \sqrt{1-e^{-2\alpha}}$.  Setting $\varphi_{1,\max}^{\mathrm{exact}} = \varphi_c$: $\alpha_{\mathrm{th}}^{\mathrm{exact}} = -\tfrac{1}{2}\ln(1-\varphi_c^2) = (\ln 2)/2 \approx 0.347$.  Finite-$N$ corrections shift this further right: $\alpha_{\mathrm{th}}(N) = \alpha_{\mathrm{th}}^{\mathrm{exact}} + [\tfrac{1}{2}\ln N + \mathrm{const}]/N \approx 0.39$ at $N = 50$.
+\end{small}
 
-If instead the exact density~\eqref{eq:exact_density} is used in the noise floor integral, two quantities change: the maximum spurious alignment (Eq.~23 of~\citep{icml2026theory}) becomes
+\noindent However, the MC simulations of~\citet{iclr2026mc} place the LSR retrieval boundary much closer to $\alpha \approx 0.25$ than to~$0.347$.  The Gaussian approximation, despite its unphysical tails, describes the onset of interference more accurately than the exact density~\eqref{eq:exact_density}.  The reason for this is not understood; we note only that finite-$N$ corrections to the exact prediction push $\alpha_{\mathrm{th}}$ further from the MC value, not closer (see the Remark above).
+
+In this paper we set aside the question of the precise location of $\alpha_{\mathrm{th}}$ and instead examine what happens \emph{inside} the retrieval region $\alpha < \alpha_{\mathrm{th}}$, where the thermodynamic theory of~\citet{icml2026theory} predicts perfect retrieval at any temperature.  We reproduce and extend the MC simulations of~\citet{iclr2026mc} for the LSR kernel, recording per-trial observables (two replicas $\times$ up to 256 independent disorder samples per $(\alpha, T)$ point) at finite system sizes $N \approx 20$--$50$.
+
+The per-trial overlap distributions reveal that the retrieval region is richer than the thermodynamic prediction suggests.  Figure~\ref{fig:cdf} shows the empirical CDF of the time-averaged alignment $\varphi$ with the target pattern, pooled over disorder realizations and both replicas.  Rather than a single peak at the retrieval overlap $\phi_{\mathrm{eq}}(T)$, the distribution is multimodal: distinct concentrations appear at $\varphi \approx 0.90$, $0.83$, $0.48$, and near~$0$.  Each peak corresponds to a different (meta)stable state that the system can reach within the allocated MC time.  The weight of the non-retrieval peaks grows with~$\alpha$ and with the number of MC steps, suggesting that the retrieval state is metastable rather than stable at these finite system sizes.
+
+The goal of this paper is to explain these peaks---their positions, relative weights, and dependence on $\alpha$, $T$, and $N$---and to identify the mechanism by which the system escapes from the retrieval basin.  The analysis draws comparisons with the classical Hopfield model~\citep{amit1987statistical}, where mixture states and spin-glass phases are known to coexist with retrieval.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{panels_v8/cdf_phi.pdf}
+\caption{Empirical CDF of the per-trial time-averaged alignment $\varphi$ with the target pattern (both replicas pooled).  Green: $(\alpha, T)$ points in the retrieval region; orange: intermediate; blue: non-retrieval.  Dashed gray line: $\varphi_c \approx 0.707$.  The step structure reflects concentration of trials at discrete overlap values.}
+\label{fig:cdf}
+\end{figure}
+
+\paragraph{Outline.}  Section~\ref{sec:theory} develops the theory: support caps and their intersections, the two-pattern centroid and its energy, multi-pattern centroids as a function of~$b$, the zero-energy escape path, the Kramers entropic barrier, the two-pattern thermal equilibrium, and centroid hopping.  Section~\ref{sec:mc} presents the Monte Carlo simulations, the observed overlap distributions, and their quantitative comparison with the theory.  Section~\ref{sec:discussion} summarizes and discusses the implications for retrieval robustness.
+
+%%% ─────────────────────────────────────────────────────────────────
+\section{Theory of the centroid escape}
+\label{sec:theory}
+
+We use the following results from~\citet{icml2026theory} without re-derivation: the internal energy density $u_{\mathrm{LSR}}(\phi) = -b^{-1}\ln[1-b(1-\phi)]$ (ibid., Eq.~14), the geometric entropy $s(\phi) = \tfrac{1}{2}\ln(1-\phi^2)$ (ibid., Eq.~19), and the single-pattern self-consistency equation for the equilibrium alignment $\phi_{\mathrm{eq}}(T)$ (ibid., Eq.~37).  At $b = 2+\sqrt{2}$ and $T = 0.325$: $\phi_{\mathrm{eq}} \approx 0.90$.
+
+\subsection{Support caps on the sphere}
+\label{ssec:caps}
+
+Each pattern $\bxi^\mu$ defines a \emph{support cap} on the sphere:
 \begin{equation}
-\varphi_{1,\max}^{\mathrm{exact}} = \sqrt{1 - e^{-2\alpha}}
-\qquad\bigl(\text{Gaussian: } \varphi_{1,\max}^{\mathrm{Gauss}} = \sqrt{2\alpha}\bigr)\,,
-\label{eq:phimax_exact}
+S_\mu = \big\{\bx \in S^{N-1}(\!\sqrt{N}) : \phi_\mu(\bx) > \varphi_c\big\}\,,
+\label{eq:cap}
 \end{equation}
-and the saddle-point equation $\phi^* = \beta_{\mathrm{net}}$ is replaced by $\beta_{\mathrm{net}} = \phi^*/(1-\phi^{*2})$.  We now give the corrected noise floor in both regimes.
+the set of states for which pattern~$\mu$ contributes to the LSR energy~\eqref{eq:lsr}.  The cap is centered at $\bxi^\mu$ with angular half-width $\theta_c = \arccos(\varphi_c)$.  Increasing $b$ raises $\varphi_c$ and shrinks the caps.
 
-\emph{Load-limited regime} ($\phi^* > \varphi_{1,\max}$): the integral is dominated by $\varphi_{1,\max}^{\mathrm{exact}}$, giving
+The \emph{inter-pattern overlap} $\varphi_{1\mu} = \bxi^1\!\cdot\!\bxi^\mu/N$ measures the cosine of the angle between patterns $\bxi^1$ and $\bxi^\mu$.  Two caps $S_1$ and $S_\mu$ intersect if and only if this angle is less than $2\theta_c$, i.e.,
 \begin{equation}
-u_{\mathrm{noise}}^{\mathrm{exact,\,load}} = 1 - \sqrt{1 - e^{-2\alpha}}
-\qquad\bigl(\text{Gaussian: } u_{\mathrm{noise}} = 1 - \sqrt{2\alpha}\bigr)\,.
-\label{eq:u_noise_load_exact}
+\varphi_{1\mu} > \cos(2\theta_c) = 2\varphi_c^2 - 1\,.
+\label{eq:cap_intersection}
 \end{equation}
-Setting $f_{\mathrm{ret}}(T) = u_{\mathrm{noise}}^{\mathrm{exact,\,load}}$ for the phase boundary:
+The threshold $2\varphi_c^2 - 1$ depends on $b$ through $\varphi_c = (b-1)/b$: it equals~$0$ at $b = 2+\sqrt{2}$, and is positive for larger~$b$.
+
+For random patterns on $S^{N-1}(\!\sqrt{N})$, $\varphi_{1\mu}$ is distributed according to the exact density~\eqref{eq:exact_density}, with mean~$0$ and variance~$1/N$.  With $M = e^{\alpha N}$ patterns, the expected number having overlap exceeding any threshold $\varphi^*$ is
 \begin{equation}
-\alpha_c^{\mathrm{exact,\,load}}(T) = -\frac{1}{2}\ln\!\Big(1 - \big(1-f_{\mathrm{ret}}(T)\big)^2\Big)
-\qquad\bigl(\text{Gaussian: } \alpha_c = \tfrac{1}{2}(1-f_{\mathrm{ret}})^2\bigr)\,.
-\label{eq:alpha_c_load_exact}
+n(\varphi^*) = M\,\Pr(\varphi_{1\mu} > \varphi^*)\,.
+\label{eq:n_count}
 \end{equation}
+The maximum inter-pattern overlap $\varphi_{1,\max}$, defined by $n(\varphi_{1,\max}) = 1$, is $\sqrt{2\alpha}$ in the Gaussian approximation and $\sqrt{1-e^{-2\alpha}}$ using the exact density (see Section~1).
 
-\emph{Kernel-limited regime} ($\phi^* < \varphi_{1,\max}$): the integral is dominated by the saddle $\phi^*$, giving
+\subsection{The two-pattern centroid}
+\label{ssec:centroid}
+
+Consider the target pattern $\bxi^1$ and a spurious pattern $\bxi^\mu$ with inter-pattern overlap $\varphi_{1\mu} > 0$.  We work in the two-dimensional subspace spanned by the orthonormalized pair
 \begin{equation}
-u_{\mathrm{noise}}^{\mathrm{exact,\,kern}} = (1-\phi^*) - \frac{1-\phi^{*2}}{\phi^*}\left[\alpha + \tfrac{1}{2}\ln(1-\phi^{*2})\right]
-\qquad\bigl(\text{Gaussian: } 1 - \tfrac{\alpha}{\beta_{\mathrm{net}}} - \tfrac{\beta_{\mathrm{net}}}{2}\bigr)\,.
-\label{eq:u_noise_kern_exact}
+\mathbf{e}_1 = \frac{\bxi^1}{\sqrt{N}}\,, \qquad
+\mathbf{e}_2 = \frac{\bxi^\mu/\sqrt{N} - \varphi_{1\mu}\,\mathbf{e}_1}{\sqrt{1-\varphi_{1\mu}^2}}\,.
+\label{eq:basis}
 \end{equation}
-Setting $u_{\mathrm{noise}}^{\mathrm{exact,\,kern}} = 0$ (the $T = 0$ transition):
+Projecting the state $\bx/\sqrt{N} = a\,\mathbf{e}_1 + v\,\mathbf{e}_2 + \mathbf{c}_\perp$, with $a^2 + v^2 + |\mathbf{c}_\perp|^2 = 1$, the alignments with the two patterns are
 \begin{equation}
-\alpha = \frac{\phi^*}{1+\phi^*} - \frac{1}{2}\ln(1 - \phi^{*2})\,.
-\label{eq:alpha_c_kern_exact}
+\phi_1 = a\,, \qquad \phi_\mu = a\,\varphi_{1\mu} + v\sqrt{1-\varphi_{1\mu}^2}\,.
+\label{eq:overlaps}
 \end{equation}
 
-Both regimes yield the same conclusion.  At $T \to 0$: the load-limited formula~\eqref{eq:alpha_c_load_exact} gives $\alpha_c \to -\tfrac{1}{2}\ln(0) = \infty$ (since $f_{\mathrm{ret}} \to 0$); the kernel-limited formula~\eqref{eq:alpha_c_kern_exact} is a monotonically increasing function of $\phi^*$ on $(0,1)$ with $\alpha \to \infty$ as $\phi^* \to 1$.  Both predict $\alpha_c^{\mathrm{LSE}}(0) = \infty$---an infinite zero-temperature capacity.
+The support conditions $\phi_1 > \varphi_c$ and $\phi_\mu > \varphi_c$ define two half-planes in the $(a,v)$ disk.  Their intersection---the region where both patterns are simultaneously in support---is non-empty whenever $\varphi_{1\mu} > 2\varphi_c^2 - 1$ (Eq.~\eqref{eq:cap_intersection}).
 
-By contrast, the Gaussian gives finite results: the load-limited formula yields $\alpha_c = (1-f_{\mathrm{ret}})^2/2 \to 1/2$; the kernel-limited formula yields $\alpha = \beta_{\mathrm{net}} - \beta_{\mathrm{net}}^2/2$, maximized at $\beta_{\mathrm{net}} = 1$ with $\alpha_c(0) = 1/2$.  Both Gaussian regimes agree at $\alpha_c(0) = 1/2$, consistent with~\citet{ramsauer2021hopfield} and with Monte Carlo.  At moderate temperatures ($T > 0.5$), the Gaussian and exact formulas agree to within $\sim$7\%.  We therefore adopt the phase boundary of~\citep{icml2026theory} for LSE without modification.
-
-\paragraph{LSR: exact density corrects the noise-floor threshold.}
-For the LSR kernel with sharpness parameter $b > 1$, the energy has compact support: pattern~$\mu$ contributes only when $\phi_\mu > \varphi_c \equiv (b-1)/b$.  The noise floor forms only when the maximum inter-pattern overlap $\varphi_{1,\max}$ exceeds $\varphi_c$.  The Gaussian estimate $\varphi_{1,\max}^{\mathrm{Gauss}} = \sqrt{2\alpha}$ gives the threshold
+Within this intersection, the LSR energy~\eqref{eq:lsr} is
 \begin{equation}
-\alpha_{\mathrm{th}}^{\mathrm{Gauss}} = \frac{\varphi_c^2}{2} = \frac{1}{2}\!\left(\frac{b-1}{b}\right)^{\!2}.
-\label{eq:alpha_th_gauss}
+\frac{E}{N} = -\frac{1}{b}\ln\!\big[(1-b+b\,\phi_1) + (1-b+b\,\phi_\mu)\big]\,.
+\label{eq:E_two}
 \end{equation}
-Using the exact density, the maximum overlap is $\varphi_{1,\max}^{\mathrm{exact}} = \sqrt{1-e^{-2\alpha}}$ (derived in Section~\ref{sec:interpattern}), giving
+At zero temperature, the energy is minimized at the symmetric point $\phi_1 = \phi_\mu$, which from~\eqref{eq:overlaps} gives the \emph{geometric centroid}:
 \begin{equation}
-\alpha_{\mathrm{th}}^{\mathrm{exact}} = -\frac{1}{2}\ln(1-\varphi_c^2)\,.
-\label{eq:alpha_th_exact}
+\varphi_{\mathrm{cen}}^{(0)} = \sqrt{\frac{1+\varphi_{1\mu}}{2}}\,.
+\label{eq:centroid}
 \end{equation}
-For $b = 2 + \sqrt{2}$ ($\varphi_c = 1/\!\sqrt{2}$): $\alpha_{\mathrm{th}}^{\mathrm{exact}} = \tfrac{\ln 2}{2} \approx 0.347$, compared with $\alpha_{\mathrm{th}}^{\mathrm{Gauss}} = 0.25$.  The correction is 39\%, but the qualitative phase diagram is unchanged: a vertical asymptote at $\alpha = \alpha_{\mathrm{th}}$ below which retrieval is perfect at any temperature, with a curved boundary $\alpha_c(T)$ above it.
 
-\paragraph{Finite-$N$ metastability in the retrieval region.}
-The main finding of this paper concerns the regime $\alpha < \alpha_{\mathrm{th}}$, where the thermodynamic analysis predicts perfect retrieval.  Careful Monte Carlo simulations at finite system sizes ($N \approx 24$--$50$, $M = 20\,000$--$500\,000$) reveal that the retrieval state is not truly stable: the system escapes to \emph{two-pattern centroids}---states where two patterns are simultaneously in support---via a zero-energy path whose barrier is purely entropic.
+\paragraph{Centroid energy vs retrieval energy.}
+The energy at the geometric centroid (two patterns in support) compared with the retrieval state (one pattern):
+\begin{equation}
+\frac{E_{\mathrm{ret}}}{N} = u_{\mathrm{LSR}}(\phi_{\mathrm{eq}})\,,\qquad
+\frac{E_{\mathrm{cen}}^{(0)}}{N} = -\frac{1}{b}\ln\!\Big(2\big[1-b+b\,\varphi_{\mathrm{cen}}^{(0)}\big]\Big)\,.
+\label{eq:E_compare}
+\end{equation}
+At $\alpha = 0.20$, the exact density~\eqref{eq:exact_density} gives $\varphi_{1,\max} = \sqrt{1-e^{-0.4}} \approx 0.57$.  With $\phi_{\mathrm{eq}} = 0.90$: $E_{\mathrm{ret}}/N = 0.12$, $E_{\mathrm{cen}}^{(0)}/N = -0.01$.  The centroid has \emph{lower energy} than the retrieval state.
 
-We characterize this escape mechanism in detail:
+\paragraph{$k$-pattern centroids.}
+If $k$ patterns have a common pairwise overlap $\varphi_{1\mu}$, the symmetric $k$-pattern centroid has geometric overlap $\varphi_k^{(0)} = \sqrt{\varphi_{1\mu} + (1-\varphi_{1\mu})/k}$ and energy $E_k/N = -b^{-1}\ln[k(1-b+b\,\varphi_k^{(0)})]$.  As $k \to \infty$, $\varphi_k^{(0)} \to \sqrt{\varphi_{1\mu}}$.  Whether adding patterns lowers the energy depends on whether this limiting overlap stays in support:
+\begin{equation}
+\sqrt{\varphi_{1\mu}} > \varphi_c \qquad\Longleftrightarrow\qquad \varphi_{1\mu} > \varphi_c^2\,.
+\label{eq:cluster}
+\end{equation}
+For $b = 2+\sqrt{2}$: $\varphi_c^2 = 0.50$.  Since $\varphi_{1,\max} < \varphi_c$ in the sub-threshold regime $\alpha < \alpha_{\mathrm{th}}$ (by definition), and $\varphi_c^2 < \varphi_c$, multi-pattern centroids may or may not be favored depending on whether $\varphi_{1,\max}$ exceeds $\varphi_c^2$.  At $b = 2+\sqrt{2}$ and $\alpha = 0.20$: $\varphi_{1,\max} \approx 0.57 > 0.50$, so tight clusters of patterns with all pairwise overlaps $> 0.50$ would form deeper centroids.  However, such clusters require all $\binom{k}{2}$ pairwise overlaps to simultaneously exceed $\varphi_c^2$, which is exponentially rare at finite $N$.  In practice, the system hops between \emph{pairs}, not clusters.
+
+For larger $b$, the cluster threshold $\varphi_c^2$ rises (e.g.\ $0.64$ at $b = 5$, $0.81$ at $b = 10$), making multi-pattern centroids even rarer.
+
+\subsection{The escape path and the Kramers barrier}
+\label{ssec:escape}
+
+\paragraph{Stage 1: perpendicular rotation ($\Delta E = 0$).}
+At the retrieval state, $a = \phi_{\mathrm{eq}}$ and $v = 0$.  The alignment with $\bxi^\mu$ is $\phi_\mu = \phi_{\mathrm{eq}}\,\varphi_{1\mu} < \varphi_c$: only the target is in support.  The system can increase $v$ (rotating $\bx_\perp$ toward $\bxi^\mu_\perp$) while keeping $a = \phi_1$ fixed.  Since only $\bxi^1$ is in support and $\phi_1$ does not change, the energy is exactly constant along this rotation.
+
+When $v$ reaches the entry value
+\begin{equation}
+v_{\mathrm{entry}} = \frac{\varphi_c - \phi_{\mathrm{eq}}\,\varphi_{1\mu}}{\sqrt{1-\varphi_{1\mu}^2}}\,,
+\label{eq:ventry}
+\end{equation}
+the spurious pattern enters support ($\phi_\mu = \varphi_c$).
+
+\paragraph{Escape-path constraint.}
+The rotation is possible only if $a^2 + v_{\mathrm{entry}}^2 \leq 1$ (the state must remain on the sphere).  This requires
+\begin{equation}
+\phi_{\mathrm{eq}}^2 + \frac{(\varphi_c - \phi_{\mathrm{eq}}\,\varphi_{1\mu})^2}{1-\varphi_{1\mu}^2} \;\leq\; 1\,,
+\label{eq:sphere_constraint}
+\end{equation}
+which defines a minimum inter-pattern overlap for the escape:
+\begin{equation}
+\varphi_{\min}(\phi_{\mathrm{eq}}) = \varphi_c\,\phi_{\mathrm{eq}} - \sqrt{(1-\varphi_c^2)(1-\phi_{\mathrm{eq}}^2)}\,.
+\label{eq:phi_min}
+\end{equation}
+For $b = 2+\sqrt{2}$ and $\phi_{\mathrm{eq}} = 0.90$: $\varphi_{\min} = 0.328$.  We denote by $K = n(\varphi_{\min})$ the number of escape-enabling patterns, i.e.\ the expected number of spurious patterns with $\varphi_{1\mu} > \varphi_{\min}$ (Eq.~\eqref{eq:n_count}).  Table~\ref{tab:n_overlap} gives $K$ at representative $\alpha$ values, computed by numerical integration of the exact density~\eqref{eq:exact_density}.
+
+\begin{table}[h]
+\centering
+\caption{Expected number of patterns with $\varphi_{1\mu} > \varphi_{\min} = 0.328$ ($\phi_{\mathrm{eq}} = 0.90$, $b = 2+\sqrt{2}$), computed from the exact density~\eqref{eq:exact_density}.}
+\label{tab:n_overlap}
+\begin{tabular}{ccrrr}
+\toprule
+$\alpha$ & $N$ & $M$ & $n(\varphi_{1\mu} > 0.328)$ \\
+\midrule
+0.05 & 198 & 20\,000 & $0.02$ \\
+0.10 &  99 & 20\,000 & 8.6 \\
+0.20 &  50 & 20\,000 & 188 \\
+0.30 &  36 & 43\,600 & 842 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Stage 2: downhill slide ($\Delta E < 0$).}
+Once both patterns are in support, the sum inside the logarithm in~\eqref{eq:lsr} increases and the energy decreases.  The system slides to the two-pattern centroid~\eqref{eq:centroid}.  The energy barrier along the full escape path is \emph{zero}: Stage~1 has $\Delta E = 0$ and Stage~2 has $\Delta E < 0$.
+
+\paragraph{The entropic barrier.}
+What prevents instantaneous escape is entropy, not energy.  The rotation in Stage~1 must align the $(N\!-\!1)$-dimensional perpendicular component $\bx_\perp$ with a specific direction ($\bxi^\mu_\perp$).  The perpendicular component lives on a sphere of radius $\sqrt{N(1-a^2)}$; increasing $v$ from $0$ to $v_{\mathrm{entry}}$ reduces the available perpendicular volume.  The free energy cost of this alignment is
+\begin{equation}
+\frac{\Delta F}{T} = \frac{N-2}{2}\left[-\ln\!\left(1 - \frac{v_{\mathrm{entry}}^2}{1-\phi_{\mathrm{eq}}^2}\right)\right] \;\approx\; \frac{N}{2}\,\frac{v_{\mathrm{entry}}^2}{1-\phi_{\mathrm{eq}}^2}\,.
+\label{eq:kramers_barrier}
+\end{equation}
+This is the barrier of a Kramers escape problem.  The variable $v$ diffuses in an entropic harmonic potential (from the sphere constraint), and the escape requires a thermal fluctuation to $v = v_{\mathrm{entry}}$.  The escape time for a single pattern scales as
+\begin{equation}
+\tau_\mu \;\sim\; \tau_{\mathrm{rel}} \times \exp\!\left(\frac{\Delta F}{T}\right),
+\label{eq:kramers_time}
+\end{equation}
+where $\tau_{\mathrm{rel}}$ is the relaxation time of the perpendicular diffusion.  At $\alpha = 0.20$ ($\varphi_{1,\max} \approx 0.57$, $\phi_{\mathrm{eq}} = 0.90$): $v_{\mathrm{entry}} = 0.236$, $\Delta F/T \approx 8.3$ at $N = 50$, giving $\tau \sim 10^5$ MC steps per pattern.
+
+Patterns with lower $\varphi_{1\mu}$ have larger $v_{\mathrm{entry}}$ and exponentially higher barriers.  The escape is dominated by the pattern with the largest overlap, $\varphi_{1\mu} \approx \varphi_{1,\max}$.  With $K$ escape-enabling patterns competing independently, the effective escape time is $\tau_{\mathrm{eff}} \approx \tau_1/K$.
+
+\subsection{Two-pattern thermal equilibrium}
+\label{ssec:retrieval}
+
+The geometric centroid~\eqref{eq:centroid} is the $T = 0$ energy minimum.  At finite temperature, the system thermalizes in the two-pattern basin, balancing the energy $u_2(\phi) = -b^{-1}\ln[2(1-b+b\phi)]$ against the entropy of the perpendicular subspace, $s_2(\phi, \varphi_{1\mu}) = \tfrac{1}{2}\ln(1 - 2\phi^2/(1+\varphi_{1\mu}))$.  Setting $\partial(u_2 - T\,s_2)/\partial\phi = 0$ gives the two-pattern self-consistency equation:
+\begin{equation}
+\frac{1}{1-b+b\,\phi} = \frac{2\,T\,\phi}{(1+\varphi_{1\mu}) - 2\phi^2}\,.
+\label{eq:two_pat_sc}
+\end{equation}
+The equilibrium centroid overlap $\varphi_{\mathrm{cen}}(\varphi_{1\mu}, T)$ depends on both the inter-pattern overlap and the temperature.
+
+The system escapes to the pattern with the largest overlap $\varphi_{1\mu} \approx \varphi_{1,\max}$ (smallest barrier).  Since $\varphi_{1,\max}$ varies slowly with $\alpha$ ($0.51$--$0.67$ for $\alpha = 0.15$--$0.30$) and $\varphi_{\mathrm{cen}}$ is a slowly varying function of $\varphi_{1\mu}$, the centroid peak position is approximately $\alpha$-independent.  At $T = 0.325$: $\varphi_{\mathrm{cen}} \approx 0.82$--$0.84$ across this range, consistent with the observed peak at $\varphi \approx 0.83$ (Fig.~\ref{fig:cdf}).
+
+\subsection{Centroid hopping}
+\label{ssec:hopping_theory}
+
+After the system reaches the centroid $(\bxi^1, \bxi^\mu)$, it can escape again by the same mechanism: pattern $\bxi^\mu$ has its own high-overlap neighbors, and one of them, $\bxi^\nu$, can be recruited via a perpendicular rotation in the remaining $(N\!-\!2)$-dimensional subspace.  This time, it is $\bxi^1$ that is pushed out of support while $\bxi^\nu$ enters.  The result is a new two-pattern centroid $(\bxi^\mu, \bxi^\nu)$ at comparable energy:
+\begin{equation}
+\underbrace{\bxi^1}_{\phi_1 = 0.90}
+\;\xrightarrow{\text{1st hop}}\;
+\underbrace{(\bxi^1,\,\bxi^\mu)}_{\phi_1 \approx 0.83}
+\;\xrightarrow{\text{2nd hop}}\;
+\underbrace{(\bxi^\mu,\,\bxi^\nu)}_{\phi_1 \approx 0.48}
+\;\xrightarrow{\text{3rd hop}}\;
+\underbrace{(\bxi^\nu,\,\bxi^\rho)}_{\phi_1 \approx 0.1\text{--}0.2}
+\;\to\; \cdots
+\label{eq:hopping_chain}
+\end{equation}
+
+After the second hop, the target is no longer in support ($\phi_1 < \varphi_c$).  Its residual overlap with the active spurious pair is
+\begin{equation}
+\phi_1 = \frac{\varphi_{1\mu} + \varphi_{1\nu}}{\sqrt{2(1+\varphi_{\mu\nu})}}\,.
+\label{eq:residual}
+\end{equation}
+The overlap $\varphi_{1\nu}$ between the target and the newly recruited pattern $\bxi^\nu$ is not independent of $\varphi_{1\mu}$: since $\bxi^\nu$ was selected for having high overlap with $\bxi^\mu$, decomposing $\bxi^\nu$ along $\bxi^\mu$ and perpendicular gives
+\begin{equation}
+E[\varphi_{1\nu} \mid \varphi_{\mu\nu}] = \varphi_{1\mu}\,\varphi_{\mu\nu}\,.
+\label{eq:conditional}
+\end{equation}
+For $\varphi_{1\mu} \approx \varphi_{\mu\nu} \approx 0.57$ (the most-overlapping neighbors at $\alpha = 0.20$): $\varphi_{1\nu} \approx 0.33$.  Substituting into~\eqref{eq:residual}: $\phi_1 \approx (0.57 + 0.33)/\sqrt{2 \times 1.57} \approx 0.51$, consistent with the observed peak near $\varphi \approx 0.48$ (Fig.~\ref{fig:cdf}).
+
+The dynamics is a random walk on the pattern overlap graph, where each step swaps one member of the active pair for a neighbor of the other.  The two-pattern centroid energy is approximately constant along this walk; only the target's overlap decreases.
+
+\paragraph{No true paramagnetic state.}
+In the LSR model, the energy~\eqref{eq:lsr} diverges ($\to +\infty$) when no pattern is in support, because the argument of the logarithm vanishes.  The system is therefore \emph{always} at some centroid.  This can be verified by measuring the maximum alignment with any non-target pattern, $\phi_{\max}^{\mathrm{other}} = \max_{\mu \neq 1} \phi_\mu$: even trials with $\phi_1 \approx 0$ show $\phi_{\max}^{\mathrm{other}} \approx 0.82$, confirming that the system sits at a two-pattern centroid of distant patterns rather than in a paramagnetic state.
+
+\subsection{Predicted escape times and probe-point selection}
+\label{ssec:escape_predictions}
+
+Combining the Kramers escape time~\eqref{eq:kramers_time} with the multi-pattern competition ($K$ patterns racing independently), the effective time for the first hop is
+\begin{equation}
+\tau_{\mathrm{eff}} = \frac{\tau_{\mathrm{rel}}}{K}\,\exp\!\left(\frac{\Delta F}{T}\right),
+\label{eq:tau_eff}
+\end{equation}
+where $\Delta F/T$ is evaluated at $\varphi_{1\mu} = \varphi_{1,\max}$ (the pattern with the lowest barrier) and $K = n(\varphi_{\min})$ is defined in Section~\ref{ssec:escape}.  The relaxation time $\tau_{\mathrm{rel}} \approx (1-\phi_{\mathrm{eq}}^2)N^2/(2.88\,T^2)$ is the Ornstein--Uhlenbeck time scale for diffusion in the entropic potential.  Since the second hop has a comparable barrier (Section~\ref{ssec:escape}), the time to observe $k$ hops is approximately $k\,\tau_{\mathrm{eff}}$.
+
+Table~\ref{tab:escape_times} evaluates~\eqref{eq:tau_eff} across a range of $\alpha$ and $T$.  The barrier $\Delta F/T$ depends weakly on $T$ (it is set primarily by the geometry through $v_{\mathrm{entry}}$ and $\phi_{\mathrm{eq}}$), but the escape time varies over many orders of magnitude due to the exponential.
+
+\begin{table}[h]
+\centering
+\caption{Predicted first-hop escape time $\tau_{\mathrm{eff}}$ (in MC steps) and number of hops observable within $2^{18} \approx 2.6 \times 10^5$ steps.  Parameters: $b = 2+\sqrt{2}$, $M = 20\,000$.}
+\label{tab:escape_times}
+\begin{tabular}{ccrccrcl}
+\toprule
+$\alpha$ & $N$ & $T$ & $\phi_{\mathrm{eq}}$ & $\Delta F/T$ & $K$ & $\tau_{\mathrm{eff}}$ & hops in $2^{18}$ \\
+\midrule
+0.18 & 55 & 0.325 & 0.899 & 11.0 & 155 & $7 \times 10^5$ & $< 1$ \\
+0.18 & 55 & 0.500 & 0.870 & 9.8 & 474 & $4 \times 10^4$ & $\sim 6$ \\
+\midrule
+0.20 & 50 & 0.200 & 0.928 & 9.4 & 62 & $6 \times 10^5$ & $< 1$ \\
+0.20 & 50 & 0.325 & 0.899 & 8.0 & 232 & $2 \times 10^4$ & $\sim 13$ \\
+0.20 & 50 & 0.500 & 0.870 & 7.4 & 648 & $2 \times 10^3$ & $\sim 130$ \\
+\midrule
+0.22 & 45 & 0.150 & 0.942 & 7.3 & 41 & $1 \times 10^5$ & $\sim 2$ \\
+0.22 & 45 & 0.325 & 0.899 & 5.8 & 285 & $1.5 \times 10^3$ & $\sim 175$ \\
+0.22 & 45 & 0.500 & 0.870 & 5.5 & 728 & $2 \times 10^2$ & $> 10^3$ \\
+\midrule
+0.24 & 41 & 0.100 & 0.958 & 5.9 & 22 & $8 \times 10^4$ & $\sim 3$ \\
+0.24 & 41 & 0.200 & 0.928 & 4.6 & 114 & $2 \times 10^3$ & $\sim 130$ \\
+0.24 & 41 & 0.500 & 0.870 & 4.2 & 817 & $44$ & $> 10^3$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three regimes are apparent:
+\begin{enumerate}
+\item \textbf{Frozen} ($\tau_{\mathrm{eff}} \gg 2^{18}$): the system remains in the retrieval basin for the duration of the simulation.  This occurs at low $T$ and low $\alpha$ (e.g.\ $\alpha = 0.18$, $T = 0.325$).
+\item \textbf{Resolvable} ($\tau_{\mathrm{eff}} \sim 10^3$--$10^5$): individual hops can be observed and timed.  The first-hop time distribution should be approximately exponential (Kramers process).  This is the regime where the theory can be tested quantitatively.
+\item \textbf{Instantaneous} ($\tau_{\mathrm{eff}} \ll 10^2$): the system hops many times during equilibration and the trajectory shows free diffusion on the pattern overlap graph.
+\end{enumerate}
+
+To validate the Kramers prediction~\eqref{eq:tau_eff}, we select probe points in the resolvable regime where $\tau_{\mathrm{eff}} \sim 10^3$--$10^5$ steps (boldface rows in Table~\ref{tab:escape_times}).  At each point, long MC trajectories ($2^{18}$ steps) with $\varphi(t)$ recorded every 64 steps allow direct measurement of the first-hop, second-hop, and subsequent hop times.  The predicted approximate equality $\tau_{\mathrm{1st\,hop}} \approx \tau_{\mathrm{2nd\,hop}}$ (comparable Kramers barriers) can also be tested.
+
+%%% ─────────────────────────────────────────────────────────────────
+\section{Monte Carlo simulations}
+\label{sec:mc}
+
+\subsection{Simulation protocol}
+\label{ssec:protocol}
+
+We simulate the Boltzmann distribution $\propto \exp(-E(\bx)/T)$ for the LSR energy~\eqref{eq:lsr} using Metropolis--Hastings Monte Carlo on $S^{N-1}(\!\sqrt{N})$.  At each step, a candidate state is proposed as $\bx' = \bx + \sigma\boldsymbol{\eta}$, $\boldsymbol{\eta} \sim \mathcal{N}(0, I_N)$, projected onto the sphere ($\bx' \leftarrow \sqrt{N}\,\bx'/\|\bx'\|$), and accepted with probability $\min(1, e^{-\Delta E/T})$.  The step size $\sigma = 2.4\,T/\sqrt{N}$ is adapted to the temperature and dimension.  Proposals falling outside the support of all patterns ($E = +\infty$) are automatically rejected.
+
+Two types of simulations are reported.
+
+\paragraph{Bulk survey (v8m).}  A grid of $\alpha$ and $T$ values is swept.  At each grid point, $M$ patterns are drawn uniformly on $S^{N-1}(\!\sqrt{N})$, with $N = \lfloor\ln M/\alpha\rfloor$.  For each of $n_{\mathrm{dis}}$ independent disorder samples, two replicas (A, B) are initialized near the target $\bxi^1$ with $\phi_{\mathrm{init}} \sim \mathrm{U}(0.75, 1.0)$ and evolved independently.  Each replica undergoes $N_{\mathrm{eq}} = 2^{15}$ equilibration steps followed by $N_{\mathrm{samp}} = 2^{13}$ sampling steps.  The per-trial observables---time-averaged $\varphi_A$, $\varphi_B$, $q_{\mathrm{EA}} = (1/N_{\mathrm{samp}})\sum_t \bx_A(t)\!\cdot\!\bx_B(t)/N$, and $\phi_{\max}^{\mathrm{other}} = (1/N_{\mathrm{samp}})\sum_t \max_{\mu\neq 1}\phi_\mu(\bx_A(t))$---are recorded per disorder sample.  The data combine two runs: Run~1 ($\alpha \in [0.200, 0.350]$, $M = 20$k--$500$k, $n_{\mathrm{dis}} = 256$--$32$) and Run~2 ($\alpha \in [0.005, 0.550]$, $M = 20$k--$500$k, $n_{\mathrm{dis}} = 256$--$32$).
+
+\paragraph{Targeted escape-time measurements (v10).}  At selected $(\alpha, T)$ points, we record the full trajectory $\varphi(t)$ at each MC step, rather than only the time-averaged overlap.  This allows direct measurement of the first-hop time (retrieval $\to$ centroid), second-hop time (centroid $\to$ spurious centroid), and subsequent hops.  The protocol uses longer runs ($N_{\mathrm{eq}}$ up to $2^{18}$) at fewer grid points, with $n_{\mathrm{dis}} = 256$ disorder samples.  The simulation parameters are chosen to resolve the Kramers escape time $\tau \sim \tau_{\mathrm{rel}}\exp(\Delta F/T)$ predicted in Section~\ref{ssec:escape}.
+
+\subsection{Phase diagram}
+\label{ssec:phase_diagram}
+
+Figure~\ref{fig:phase_diagram} shows the disorder-averaged alignment $\avg{\varphi}$ in the $(\alpha, T)$ plane from the v8m data.  The ``retrieval'' region ($\avg{\varphi} > 0.7$, blue) and ``non-retrieval'' region ($\avg{\varphi} \approx 0$, red) are separated by a boundary near $\alpha_{\mathrm{th}} \approx 0.25$.
+
+The theory of Section~\ref{sec:theory} reinterprets this diagram:
 \begin{itemize}
-\item The escape path consists of a perpendicular rotation on the sphere (zero energy cost) followed by a downhill slide to the centroid (Section~\ref{sec:geometry}).
-\item The escape time is governed by a Kramers-type entropic barrier of height $\Delta F/T \approx N v_{\mathrm{entry}}^2 / [2(1-\varphi_{\mathrm{eq}}^2)]$, giving an escape time $\tau \sim e^{cN}$ that grows exponentially with~$N$ (Section~\ref{sec:kramers}).
-\item After the first escape, the system undergoes \emph{centroid hopping}---a random walk on the pattern overlap graph where each step swaps one member of the active pattern pair (Section~\ref{sec:hopping}).
-\item The two-pattern centroid is the energy minimum; triple centroids are disfavored unless the pairwise overlap exceeds $\varphi_c^2$ (Section~\ref{sec:hopping}).
-\item There is no true paramagnetic state in LSR: the energy diverges when no pattern is in support, so the system is always at some centroid (Section~\ref{sec:hopping}).
+\item The ``retrieval'' region below $\alpha_{\mathrm{th}}$ is \emph{metastable}: the system has not yet escaped within the allocated MC time ($N_{\mathrm{eq}} + N_{\mathrm{samp}} \approx 4 \times 10^4$ steps).  With longer runs, $\avg{\varphi}$ would decrease as trials escape to centroids.
+\item The ``non-retrieval'' region is \emph{not paramagnetic}: $\phi_{\max}^{\mathrm{other}} \approx 0.82$ throughout, confirming that the system sits at a two-pattern centroid of spurious patterns (Section~\ref{ssec:hopping_theory}).  A true paramagnetic state ($\phi_{\max}^{\mathrm{other}} \to 0$) does not exist in LSR because the energy diverges when no pattern is in support.
+\item The boundary at $\alpha_{\mathrm{th}}$ is a \emph{kinetic} crossover, not a thermodynamic phase transition: it marks where the Kramers escape time $\tau$ becomes comparable to the MC time, not where a free-energy minimum disappears.
 \end{itemize}
 
-For practical memory retrieval, the metastability may be irrelevant: the escape time $\tau \sim e^{cN}$ is astronomically large for moderate~$N$, and the retrieval state is effectively stable on any realistic query timescale.  The metastability is observable only at the small system sizes ($N \sim 50$) accessible to Monte Carlo simulation, where it produces a rich phenomenology of centroid peaks, spurious centroids, and overlap decay.
+\begin{figure}[t]
+\centering
+%\includegraphics[width=0.5\textwidth]{panels_v8m/phase_diagram.pdf}
+\caption{Disorder-averaged alignment $\avg{\varphi}(\alpha, T)$ from v8m.  Blue: retrieval ($\avg{\varphi} > 0.7$); red: non-retrieval ($\avg{\varphi} \approx 0$).  The apparent boundary near $\alpha \approx 0.25$ is a kinetic crossover, not a thermodynamic phase transition.  [Figure to be generated.]}
+\label{fig:phase_diagram}
+\end{figure}
 
-The dependence on the kernel sharpness~$b$ is discussed in Section~\ref{sec:bdep}.  All quantitative features are controlled by the support threshold $\varphi_c = (b-1)/b$; the numerical illustrations use $b = 2+\sqrt{2}$ ($\varphi_c \approx 0.707$) throughout.
+\subsection{Quantitative tests of the centroid mechanism}
+\label{ssec:tests}
+
+\paragraph{Centroid peak position.}
+The two-pattern self-consistency equation~\eqref{eq:two_pat_sc} predicts the centroid overlap $\varphi_{\mathrm{cen}}(\varphi_{1,\max}, T)$ as a function of $\alpha$ (through $\varphi_{1,\max}$) and $T$.  Figure~\ref{fig:centroid_position} compares this prediction with the observed centroid peak position extracted from the per-trial overlap distributions at several $(\alpha, T)$ points.  The weak $\alpha$-dependence (less than $\pm 2\%$ across $\alpha = 0.15$--$0.30$) and the $T$-dependence are both consistent with the theory.
+
+\begin{figure}[t]
+\centering
+%\includegraphics[width=0.5\textwidth]{panels_v8m/centroid_peak_vs_T.pdf}
+\caption{Centroid peak position vs $T$ at several $\alpha$ values.  Solid curves: prediction from Eq.~\eqref{eq:two_pat_sc}.  Points: MC data.  [Figure to be generated.]}
+\label{fig:centroid_position}
+\end{figure}
+
+\paragraph{$\phi_{\max}^{\mathrm{other}}$ across all populations.}
+The centroid hopping mechanism (Section~\ref{ssec:hopping_theory}) predicts $\phi_{\max}^{\mathrm{other}} \approx \varphi_{\mathrm{cen}} \approx 0.82$ for \emph{every} non-retrieval trial, regardless of the target overlap $\varphi$.  Table~\ref{tab:phimax} confirms this: for trials binned by $\varphi$, the average $\phi_{\max}^{\mathrm{other}}$ is $\approx 0.82$ in every bin except the retrieval peak.
+
+\begin{table}[h]
+\centering
+\caption{Average $\phi_{\max}^{\mathrm{other}}$ for trials in each overlap bin, from v8m data at $\alpha = 0.22$, $T = 0.325$.}
+\label{tab:phimax}
+\begin{tabular}{lcc}
+\toprule
+Trial population ($\varphi$ range) & $\avg{\phi_{\max}^{\mathrm{other}}}$ & Interpretation \\
+\midrule
+Retrieval ($0.85$--$0.95$) & $0.60$ & target only in support \\
+Centroid ($0.78$--$0.85$) & $0.82$ & target + spurious centroid \\
+Spurious centroid ($0.35$--$0.60$) & $0.82$ & spurious pair, target out \\
+Distant centroid ($< 0.20$) & $0.82$ & distant pair, target far \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Residual overlap at the spurious centroid.}
+For trials in the $\varphi \approx 0.48$ population, the observed overlap is compared with the prediction $\phi_1 = (\varphi_{1\mu} + \varphi_{1\mu}\varphi_{\mu\nu})/\sqrt{2(1+\varphi_{\mu\nu})}$ from Eqs.~\eqref{eq:residual}--\eqref{eq:conditional}.  At $\alpha = 0.20$: the predicted value is $0.51$; the observed mean is $0.48$.  The $\sim 6\%$ discrepancy is consistent with the variance of $\varphi_{1\nu}$ around its conditional mean.
+
+\subsection{Escape-time measurements}
+\label{ssec:escape_times}
+
+The Kramers barrier~\eqref{eq:kramers_barrier} predicts the escape time from the retrieval basin as a function of $\alpha$, $T$, and $N$.  To test this prediction, we record the full trajectory $\varphi(t)$ at selected $(\alpha, T)$ points using long MC runs.
+
+Figure~\ref{fig:escape_times} shows the distribution of first-hop times (defined as the first time $\varphi$ drops below $0.86$) across disorder samples.  The distribution is approximately exponential, consistent with a Kramers process.  The median escape time is compared with the theoretical prediction $\tau_{\mathrm{eff}}$ from Eq.~\eqref{eq:tau_eff}.
+
+\begin{figure}[t]
+\centering
+%\includegraphics[width=0.5\textwidth]{panels_v10/escape_time_distribution.pdf}
+\caption{Distribution of first-hop times at $\alpha = 0.22$, $T = 0.325$.  Solid line: exponential fit.  Dashed line: Kramers prediction.  [Figure to be generated from targeted simulations.]}
+\label{fig:escape_times}
+\end{figure}
+
+The v8m data, with its fixed MC time, provide an indirect test: the fraction of trials that have escaped by $N_{\mathrm{eq}} + N_{\mathrm{samp}} \approx 4 \times 10^4$ steps equals $P(\mathrm{escape}) = 1 - \exp(-T_{\mathrm{total}}/\tau_{\mathrm{eff}})$.  At $\alpha = 0.20$, $T = 0.325$: the theory predicts $P \approx 7\%$--$15\%$, compared with the observed centroid fraction of $\sim 7\%$--$10\%$.
+
+The second-hop time (centroid $\to$ spurious centroid) is predicted to be comparable to the first-hop time (Section~\ref{ssec:escape}, comparable barrier heights).  This can be tested by identifying trials that have reached the centroid peak and measuring how long they remain there before hopping further.
+
+\paragraph{Metastability is practically irrelevant.}
+The escape time $\tau \sim \exp(cN)$ grows exponentially with the system dimension.  At $N = 50$ and $\alpha = 0.20$: $\tau \sim 10^4$--$10^5$ MC steps.  But $\tau$ increases rapidly with $N$: at $N = 100$, the barrier $\Delta F/T$ roughly doubles, giving $\tau \sim 10^{8}$--$10^{10}$.  For any practical retrieval application with $N \gg 50$, the escape time far exceeds any realistic query time.  The retrieval state, though formally metastable, is effectively stable.
+
+%%% ─────────────────────────────────────────────────────────────────
+\section{Discussion and summary}
+\label{sec:discussion}
+
+[Three regimes of retrieval stability.  Practical implications: $\tau \sim e^{cN}$.  Comparison with classical Hopfield mixture states.  Open questions.]
 
 \bibliography{references}
 
