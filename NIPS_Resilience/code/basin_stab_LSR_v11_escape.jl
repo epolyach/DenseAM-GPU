@@ -32,7 +32,7 @@ using Printf
 using ProgressMeter
 
 # ──────────────── Precision ────────────────
-const F = Float32
+const F = Float16    # halves memory bandwidth → 2× faster MC steps
 
 # ──────────────── LSR Parameters ────────────────
 const b_lsr     = F(2 + sqrt(2))
@@ -45,7 +45,7 @@ const N_STEPS     = 2^18              # 262144 total MC steps
 const TRAJ_STRIDE = 64               # record φ every 64 steps
 const N_TRAJ      = N_STEPS ÷ TRAJ_STRIDE  # 4096 trajectory points
 const M_FIXED     = 20000            # fixed M for all α
-const GPU_MEM_TARGET = 40.0          # target GPU usage in GB
+const N_DIS       = 2000             # disorder samples (Float16 → 2× less bandwidth per step)
 
 # Probe points: (α, T)
 const PROBE_POINTS = [
@@ -131,18 +131,6 @@ function initialize_near!(x::Array{F,3}, targets::Array{F,3}, N::Int)
     end
 end
 
-# ──────────────── Compute n_dis to fill GPU memory ────────────────
-function compute_n_dis(N, M, target_gb)
-    # Memory per disorder sample (bytes):
-    #   patterns: N × M × 4
-    #   states (x, xp): N × 2 × 4 × 2 = N × 16
-    #   overlaps: M × 2 × 4
-    #   energies etc: ~100 bytes
-    #   trajectory (CPU, not GPU): negligible
-    bytes_per_dis = (N * M + N * 4 + M * 2 + 100) * 4
-    n = floor(Int, target_gb * 1e9 / bytes_per_dis)
-    return max(n, 1)
-end
 
 # ──────────────── Main ────────────────
 function main()
@@ -155,7 +143,7 @@ function main()
     println("  Probe points: $(length(PROBE_POINTS))")
     println("  MC steps: $N_STEPS (record every $TRAJ_STRIDE → $N_TRAJ points)")
     println("  M = $M_FIXED (fixed)")
-    println("  GPU memory target: $(GPU_MEM_TARGET) GB")
+    println("  Disorder samples: $N_DIS")
     println("=" ^ 70)
 
     summary_file = "v11_summary.csv"
@@ -173,14 +161,14 @@ function main()
         σ = F(2.4 * T / sqrt(Float64(N)))
         n_rep = 2  # two replicas per disorder sample
 
-        n_dis = compute_n_dis(N, M, GPU_MEM_TARGET)
+        n_dis = N_DIS
         n_chains = n_rep * n_dis
 
         @printf("\n── Point %d/%d: α=%.2f, T=%.2f (N=%d, M=%d, n_dis=%d, chains=%d) ──\n",
                 pi, length(PROBE_POINTS), α, T, N, M, n_dis, n_chains)
 
         mem_gb = (N * M * n_dis + N * n_rep * n_dis * 2 + M * n_rep * n_dis) * 4 / 1e9
-        @printf("  GPU memory: %.1f GB (%.0f%% of target)\n", mem_gb, 100*mem_gb/GPU_MEM_TARGET)
+        @printf("  GPU memory: %.1f GB\n", mem_gb)
 
         # ── Generate patterns on CPU (independent per disorder sample) ──
         Random.seed!(42000 + pi)
