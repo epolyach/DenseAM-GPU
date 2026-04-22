@@ -36,7 +36,7 @@ using ProgressMeter
 
 const ALPHA_VALUES = [0.18, 0.20, 0.22, 0.24, 0.26, 0.28]
 const T_VALUES     = [0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.80]
-const M_VALUES     = [100_000, 500_000, 2_000_000]   # N-scaling (M=20k baseline already in v11)
+const M_VALUES     = [50_000, 100_000, 500_000, 2_000_000]   # N-scaling (M=20k baseline already in v11)
 
 const GPU_MEM_TARGET_GB = 35.0   # target GPU memory usage (~80% of A6000's 48 GB)
 const N_DIS_MAX         = 2000   # cap on disorder samples (even if memory allows more)
