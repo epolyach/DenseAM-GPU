@@ -18,6 +18,10 @@
 \begin{document}
 \maketitle
 
+\begin{abstract}
+Dense Associative Memory models with the log-sum-ReLU (LSR) energy function achieve exponential storage ($M = e^{\alpha N}$ patterns) and, below a critical load $\alpha_{\mathrm{th}}$, are predicted to retrieve perfectly at any temperature.  We show that within this retrieval region, the system is metastable: thermal fluctuations drive escape from the retrieval basin to two-pattern centroids via a Kramers process over a purely entropic barrier.  The escape time scales as $\tau \sim N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ with $\Delta F/T \propto N$, confirmed by Monte Carlo measurements across three decades in $\tau$ ($R^2 = 0.95$).  After the first escape, the system performs a random walk on the pattern overlap graph, hopping between centroids at comparable energy; no true paramagnetic state exists.  The apparent phase boundary observed in simulations is a kinetic crossover ($\tau \approx T_{\mathrm{MC}}$), not a thermodynamic phase transition.  Since $\tau$ grows exponentially with $N$, the retrieval state is effectively stable for practical system sizes.
+\end{abstract}
+
 \section{Introduction}
 
 Associative memory networks store patterns so that the correct memory can be retrieved from a noisy or partial cue.  In the classical Hopfield network~\citep{Hopfield1982}, storage capacity scales linearly with the number of neurons~\citep{amit1987statistical}.  Dense Associative Memory (DAM) models replace pairwise interactions with highly nonlinear energy functions, achieving exponential storage: $M = e^{\alpha N}$ patterns for $N$ continuous neurons on the unit sphere, where $\alpha = \ln M/N$ is the logarithmic load per neuron~\citep{demircigil2017model,ramsauer2021hopfield}.
@@ -43,24 +47,29 @@ f(\phi) = C_N\,(1 - \phi^2)^{(N-3)/2}\,,\qquad
 C_N = \frac{\Gamma(N/2)}{\Gamma\!\big((N\!-\!1)/2\big)\,\sqrt{\pi}}\,,
 \label{eq:exact_density}
 \end{equation}
-has the same mean ($0$) and variance ($1/N$) but lighter tails: it vanishes at $|\phi| = 1$, whereas the Gaussian assigns nonzero weight there.  Since the LSR noise floor depends on whether any pattern exceeds $\varphi_c$, the lighter tails of~\eqref{eq:exact_density} predict fewer patterns above threshold and shift $\alpha_{\mathrm{th}}$ to a higher value ($\approx 0.347$ for $b = 2+\sqrt{2}$).
-
-\begin{small}
-\noindent\textit{Remark (to be removed).}  Let $\varphi_{1,\max}$ denote the maximum of the overlap $\bxi^1\!\cdot\!\bxi^\mu/N$ over all spurious patterns $\mu \neq 1$; it is defined by the condition that on average one pattern reaches this overlap.  The Gaussian gives $\varphi_{1,\max} = \sqrt{2\alpha}$; the exact density~\eqref{eq:exact_density} gives $\varphi_{1,\max}^{\mathrm{exact}} = \sqrt{1-e^{-2\alpha}}$.  Setting $\varphi_{1,\max}^{\mathrm{exact}} = \varphi_c$: $\alpha_{\mathrm{th}}^{\mathrm{exact}} = -\tfrac{1}{2}\ln(1-\varphi_c^2) = (\ln 2)/2 \approx 0.347$.  Finite-$N$ corrections shift this further right: $\alpha_{\mathrm{th}}(N) = \alpha_{\mathrm{th}}^{\mathrm{exact}} + [\tfrac{1}{2}\ln N + \mathrm{const}]/N \approx 0.39$ at $N = 50$.
-\end{small}
+has the same mean ($0$) and variance ($1/N$) but lighter tails: it vanishes at $|\phi| = 1$, whereas the Gaussian assigns nonzero weight there.  Since the LSR noise floor depends on whether any pattern exceeds $\varphi_c$, the lighter tails of~\eqref{eq:exact_density} predict fewer patterns above threshold and shift $\alpha_{\mathrm{th}}$ to a higher value.  Specifically, the maximum inter-pattern overlap $\varphi_{1,\max}$ (defined by $n(\varphi_{1,\max}) = 1$, i.e.\ on average one pattern reaches this overlap) is $\sqrt{2\alpha}$ under the Gaussian and $\sqrt{1-e^{-2\alpha}}$ under the exact density.  Setting $\varphi_{1,\max}^{\mathrm{exact}} = \varphi_c$ gives $\alpha_{\mathrm{th}}^{\mathrm{exact}} = -\tfrac{1}{2}\ln(1-\varphi_c^2) \approx 0.347$ for $b = 2+\sqrt{2}$.  Finite-$N$ corrections shift this further right ($\approx 0.39$ at $N = 50$).
 
 \noindent However, the MC simulations of~\citet{iclr2026mc} place the LSR retrieval boundary much closer to $\alpha \approx 0.25$ than to~$0.347$.  The Gaussian approximation, despite its unphysical tails, describes the onset of interference more accurately than the exact density~\eqref{eq:exact_density}.  The reason for this is not understood; we note only that finite-$N$ corrections to the exact prediction push $\alpha_{\mathrm{th}}$ further from the MC value, not closer (see the Remark above).
 
 In this paper we set aside the question of the precise location of $\alpha_{\mathrm{th}}$ and instead examine what happens \emph{inside} the retrieval region $\alpha < \alpha_{\mathrm{th}}$, where the thermodynamic theory of~\citet{icml2026theory} predicts perfect retrieval at any temperature.  We reproduce and extend the MC simulations of~\citet{iclr2026mc} for the LSR kernel, recording per-trial observables (two replicas $\times$ up to 256 independent disorder samples per $(\alpha, T)$ point) at finite system sizes $N \approx 20$--$50$.
 
-The per-trial overlap distributions reveal that the retrieval region is richer than the thermodynamic prediction suggests.  Figure~\ref{fig:cdf} shows the empirical CDF of the time-averaged alignment $\varphi$ with the target pattern, pooled over disorder realizations and both replicas.  Rather than a single peak at the retrieval overlap $\phi_{\mathrm{eq}}(T)$, the distribution is multimodal: distinct concentrations appear at $\varphi \approx 0.90$, $0.83$, $0.48$, and near~$0$.  Each peak corresponds to a different (meta)stable state that the system can reach within the allocated MC time.  The weight of the non-retrieval peaks grows with~$\alpha$ and with the number of MC steps, suggesting that the retrieval state is metastable rather than stable at these finite system sizes.
+The per-trial overlap distributions reveal that the retrieval region is richer than the thermodynamic prediction suggests.  Figure~\ref{fig:cdf} (left) shows the empirical CDF of the time-averaged alignment $\varphi$ with the target pattern at fixed $T = 0.325$, for several values of~$\alpha$.  At $\alpha = 0.10$, all trials concentrate near $\varphi \approx 0.90$, the Boltzmann equilibrium $\phi_{\mathrm{eq}}(T)$ from the self-consistency equation of~\citet{icml2026theory}, not unity, since thermal fluctuations at $T > 0$ reduce the time-averaged alignment.  As $\alpha$ increases toward $0.25$, secondary steps appear at $\varphi \approx 0.83$ and $\varphi \approx 0.48$, indicating that a growing fraction of trials settles into states with lower alignment.  By $\alpha = 0.35$, the primary peak has disappeared.  Figure~\ref{fig:cdf} (right) shows the $T$-dependence at fixed $\alpha = 0.22$: as $T$ increases, the primary peak shifts to lower~$\varphi$ and the secondary steps grow.
 
-The goal of this paper is to explain these peaks---their positions, relative weights, and dependence on $\alpha$, $T$, and $N$---and to identify the mechanism by which the system escapes from the retrieval basin.  The analysis draws comparisons with the classical Hopfield model~\citep{amit1987statistical}, where mixture states and spin-glass phases are known to coexist with retrieval.
+These steps at $\varphi \approx 0.83$ and $0.48$ are not predicted by the thermodynamic theory of~\citet{icml2026theory}.  The goal of this paper is to identify the states they correspond to, the mechanism by which the system reaches them from the retrieval basin, the timescales involved, and how all of these depend on $\alpha$, $T$, $N$, and the kernel sharpness~$b$.  The analysis draws comparisons with the classical Hopfield model~\citep{amit1987statistical}, where mixture states and spin-glass phases are known to coexist with retrieval.
+
+%% Old figure (commented out):
+%\begin{figure}[t]
+%\centering
+%\includegraphics[width=\textwidth]{panels_v8/cdf_phi.pdf}
+%\caption{Old CDF figure from v8 data.}
+%\end{figure}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{panels_v8/cdf_phi.pdf}
-\caption{Empirical CDF of the per-trial time-averaged alignment $\varphi$ with the target pattern (both replicas pooled).  Green: $(\alpha, T)$ points in the retrieval region; orange: intermediate; blue: non-retrieval.  Dashed gray line: $\varphi_c \approx 0.707$.  The step structure reflects concentration of trials at discrete overlap values.}
+\includegraphics[width=0.48\textwidth]{panels_paper/cdf_panel_A.pdf}%
+\hfill
+\includegraphics[width=0.48\textwidth]{panels_paper/cdf_panel_B.pdf}
+\caption{Empirical CDF of the per-trial time-averaged alignment $\varphi$ with the target pattern (both replicas pooled, $b = 2+\sqrt{2}$).  Dashed gray lines mark $\varphi = 0.48$ and $0.83$.  \textbf{Left:} fixed $T = 0.325$, varying $\alpha$.  \textbf{Right:} fixed $\alpha = 0.22$, varying $T$.  The primary peak shifts left with increasing~$T$ (following $\phi_{\mathrm{eq}}(T)$), while the secondary steps at $\varphi \approx 0.83$ and $0.48$ grow in weight.}
 \label{fig:cdf}
 \end{figure}
 
@@ -87,7 +96,7 @@ The \emph{inter-pattern overlap} $\varphi_{1\mu} = \bxi^1\!\cdot\!\bxi^\mu/N$ me
 \varphi_{1\mu} > \cos(2\theta_c) = 2\varphi_c^2 - 1\,.
 \label{eq:cap_intersection}
 \end{equation}
-The threshold $2\varphi_c^2 - 1$ depends on $b$ through $\varphi_c = (b-1)/b$: it equals~$0$ at $b = 2+\sqrt{2}$, and is positive for larger~$b$.
+The threshold $2\varphi_c^2 - 1$ depends on $b$ through $\varphi_c = (b-1)/b$: it equals~$0$ at $b = 2+\sqrt{2}$, and is positive for larger~$b$.  At $b = 2+\sqrt{2}$, any positive $\varphi_{1\mu}$ suffices, so approximately half of all $M$ patterns have caps intersecting the target's, an exponentially large number $\sim M/2$.  The existence of a geometric intersection does not, however, mean that the system can reach it from the retrieval state.  Reaching the intersection requires a specific rotation in the perpendicular subspace, and the associated free-energy cost restricts the escape-enabling patterns to a much smaller subset $K \ll M/2$.  Among those, the escape is overwhelmingly dominated by the pattern with the largest overlap $\varphi_{1\mu}$, which faces the lowest barrier.
 
 For random patterns on $S^{N-1}(\!\sqrt{N})$, $\varphi_{1\mu}$ is distributed according to the exact density~\eqref{eq:exact_density}, with mean~$0$ and variance~$1/N$.  With $M = e^{\alpha N}$ patterns, the expected number having overlap exceeding any threshold $\varphi^*$ is
 \begin{equation}
@@ -111,14 +120,14 @@ Projecting the state $\bx/\sqrt{N} = a\,\mathbf{e}_1 + v\,\mathbf{e}_2 + \mathbf
 \label{eq:overlaps}
 \end{equation}
 
-The support conditions $\phi_1 > \varphi_c$ and $\phi_\mu > \varphi_c$ define two half-planes in the $(a,v)$ disk.  Their intersection---the region where both patterns are simultaneously in support---is non-empty whenever $\varphi_{1\mu} > 2\varphi_c^2 - 1$ (Eq.~\eqref{eq:cap_intersection}).
+The support conditions $\phi_1 > \varphi_c$ and $\phi_\mu > \varphi_c$ define two half-planes in the $(a,v)$ disk.  Their intersection (the region where both patterns are simultaneously in support) is non-empty whenever $\varphi_{1\mu} > 2\varphi_c^2 - 1$ (Eq.~\eqref{eq:cap_intersection}).
 
 Within this intersection, the LSR energy~\eqref{eq:lsr} is
 \begin{equation}
 \frac{E}{N} = -\frac{1}{b}\ln\!\big[(1-b+b\,\phi_1) + (1-b+b\,\phi_\mu)\big]\,.
 \label{eq:E_two}
 \end{equation}
-At zero temperature, the energy is minimized at the symmetric point $\phi_1 = \phi_\mu$, which from~\eqref{eq:overlaps} gives the \emph{geometric centroid}:
+From~\eqref{eq:overlaps}, $\phi_1 + \phi_\mu = a\,(1+\varphi_{1\mu}) + v\sqrt{1-\varphi_{1\mu}^2}$, which is linear in $(a,v)$ and independent of $\mathbf{c}_\perp$.  Since~\eqref{eq:E_two} is a decreasing function of $\phi_1 + \phi_\mu$, the $T = 0$ energy minimum maximizes this linear form on the sphere $a^2 + v^2 + |\mathbf{c}_\perp|^2 = 1$.  The optimum has $\mathbf{c}_\perp = 0$ (no contribution to the objective) and $(a,v) \propto (1+\varphi_{1\mu},\;\sqrt{1-\varphi_{1\mu}^2})$, giving $a = \sqrt{(1+\varphi_{1\mu})/2}$ and $\phi_1 = \phi_\mu = a$.  This defines the \emph{geometric centroid}:
 \begin{equation}
 \varphi_{\mathrm{cen}}^{(0)} = \sqrt{\frac{1+\varphi_{1\mu}}{2}}\,.
 \label{eq:centroid}
@@ -131,17 +140,10 @@ The energy at the geometric centroid (two patterns in support) compared with the
 \frac{E_{\mathrm{cen}}^{(0)}}{N} = -\frac{1}{b}\ln\!\Big(2\big[1-b+b\,\varphi_{\mathrm{cen}}^{(0)}\big]\Big)\,.
 \label{eq:E_compare}
 \end{equation}
-At $\alpha = 0.20$, the exact density~\eqref{eq:exact_density} gives $\varphi_{1,\max} = \sqrt{1-e^{-0.4}} \approx 0.57$.  With $\phi_{\mathrm{eq}} = 0.90$: $E_{\mathrm{ret}}/N = 0.12$, $E_{\mathrm{cen}}^{(0)}/N = -0.01$.  The centroid has \emph{lower energy} than the retrieval state.
+At $\alpha = 0.20$, the exact density~\eqref{eq:exact_density} gives $\varphi_{1,\max} = \sqrt{1-e^{-0.4}} \approx 0.57$.  Evaluating at $\varphi_{1\mu} = \varphi_{1,\max}$ (the most-overlapping spurious pattern, which faces the lowest escape barrier and produces the deepest centroid): $\varphi_{\mathrm{cen}}^{(0)} = 0.89$, and with $\phi_{\mathrm{eq}} = 0.90$: $E_{\mathrm{ret}}/N = 0.12$, $E_{\mathrm{cen}}^{(0)}/N = -0.06$.  The centroid has \emph{lower energy} than the retrieval state.
 
 \paragraph{$k$-pattern centroids.}
-If $k$ patterns have a common pairwise overlap $\varphi_{1\mu}$, the symmetric $k$-pattern centroid has geometric overlap $\varphi_k^{(0)} = \sqrt{\varphi_{1\mu} + (1-\varphi_{1\mu})/k}$ and energy $E_k/N = -b^{-1}\ln[k(1-b+b\,\varphi_k^{(0)})]$.  As $k \to \infty$, $\varphi_k^{(0)} \to \sqrt{\varphi_{1\mu}}$.  Whether adding patterns lowers the energy depends on whether this limiting overlap stays in support:
-\begin{equation}
-\sqrt{\varphi_{1\mu}} > \varphi_c \qquad\Longleftrightarrow\qquad \varphi_{1\mu} > \varphi_c^2\,.
-\label{eq:cluster}
-\end{equation}
-For $b = 2+\sqrt{2}$: $\varphi_c^2 = 0.50$.  Since $\varphi_{1,\max} < \varphi_c$ in the sub-threshold regime $\alpha < \alpha_{\mathrm{th}}$ (by definition), and $\varphi_c^2 < \varphi_c$, multi-pattern centroids may or may not be favored depending on whether $\varphi_{1,\max}$ exceeds $\varphi_c^2$.  At $b = 2+\sqrt{2}$ and $\alpha = 0.20$: $\varphi_{1,\max} \approx 0.57 > 0.50$, so tight clusters of patterns with all pairwise overlaps $> 0.50$ would form deeper centroids.  However, such clusters require all $\binom{k}{2}$ pairwise overlaps to simultaneously exceed $\varphi_c^2$, which is exponentially rare at finite $N$.  In practice, the system hops between \emph{pairs}, not clusters.
-
-For larger $b$, the cluster threshold $\varphi_c^2$ rises (e.g.\ $0.64$ at $b = 5$, $0.81$ at $b = 10$), making multi-pattern centroids even rarer.
+If $k$ patterns share a common pairwise overlap $\varphi_{1\mu}$, the symmetric $k$-pattern centroid has overlap $\varphi_k^{(0)} = \sqrt{\varphi_{1\mu} + (1-\varphi_{1\mu})/k}$ and energy $E_k/N = -b^{-1}\ln[k(1-b+b\,\varphi_k^{(0)})]$.  At $\alpha = 0.20$ ($\varphi_{1\mu} = 0.57$): $E_2/N = -0.06$, $E_3/N = -0.10$, $E_4/N = -0.14$.  Multi-pattern centroids are energetically deeper.  However, the escape mechanism of Section~\ref{ssec:escape} does not reach them: at a two-pattern centroid, only $\bxi^1$ and $\bxi^\mu$ are in support, and the Kramers escape rotates the perpendicular component toward a new pattern $\bxi^\nu$.  The sphere constraint $a^2 + v^2 + w^2 + |\mathbf{c}_\perp|^2 = 1$ (where $w$ is the component along $\bxi^\nu$) means that increasing $w$ reduces the budget for $a$ and $v$: generically, one of the two current patterns drops below $\varphi_c$ before $\bxi^\nu$ enters support.  The result is a pair-to-pair transition, not pair-to-triple.
 
 \subsection{The escape path and the Kramers barrier}
 \label{ssec:escape}
@@ -162,7 +164,7 @@ The rotation is possible only if $a^2 + v_{\mathrm{entry}}^2 \leq 1$ (the state 
 \phi_{\mathrm{eq}}^2 + \frac{(\varphi_c - \phi_{\mathrm{eq}}\,\varphi_{1\mu})^2}{1-\varphi_{1\mu}^2} \;\leq\; 1\,,
 \label{eq:sphere_constraint}
 \end{equation}
-which defines a minimum inter-pattern overlap for the escape:
+The quadratic in $\varphi_{1\mu}$ has two roots $\varphi_c\,\phi_{\mathrm{eq}} \pm \sqrt{(1-\varphi_c^2)(1-\phi_{\mathrm{eq}}^2)}$, corresponding to three regimes.  Patterns with $\varphi_{1\mu}$ below the lower root cannot escape: $v_{\mathrm{entry}}$ is too large to fit on the sphere.  Patterns with $\varphi_{1\mu} > \varphi_c/\phi_{\mathrm{eq}}$ are already in support at the retrieval state ($\phi_\mu = \phi_{\mathrm{eq}}\,\varphi_{1\mu} > \varphi_c$ from~\eqref{eq:overlaps} at $v = 0$), so no barrier exists.  The upper root exceeds $\varphi_c/\phi_{\mathrm{eq}}$ and is therefore unphysical.  The escape-enabling patterns are those with overlap above the lower root:
 \begin{equation}
 \varphi_{\min}(\phi_{\mathrm{eq}}) = \varphi_c\,\phi_{\mathrm{eq}} - \sqrt{(1-\varphi_c^2)(1-\phi_{\mathrm{eq}}^2)}\,.
 \label{eq:phi_min}
@@ -185,23 +187,54 @@ $\alpha$ & $N$ & $M$ & $n(\varphi_{1\mu} > 0.328)$ \\
 \end{tabular}
 \end{table}
 
+The strong $\alpha$-dependence of $K$ reflects the competition between $M = e^{\alpha N}$ patterns and the tail decay of the exact density~\eqref{eq:exact_density}: $K \approx M \times \Pr(\varphi_{1\mu} > \varphi_{\min}) \sim \exp\!\big(\alpha N + \tfrac{N}{2}\ln(1-\varphi_{\min}^2)\big)$.  At large $N$ (small $\alpha$), the distribution of $\varphi_{1\mu}$ concentrates near zero (variance $1/N$), so $\varphi_{\min} = 0.328$ falls deep in the tail and $K \ll 1$.  At small $N$ (large $\alpha$), the distribution is broader and $K$ grows rapidly.
+
+Figure~\ref{fig:overlap_dist} summarizes the three overlap thresholds on the exact density for $N = 16$: the geometric cap intersection ($\varphi_{1\mu} > 2\varphi_c^2 - 1 = 0$, involving $\sim M/2$ patterns), the escape-path constraint ($\varphi_{1\mu} > \varphi_{\min}$, restricting to $K$ patterns), and the most probable hop target at $\varphi_{1\mu} \approx \varphi_{1,\max}$.
+
+The Gaussian and exact densities agree in the bulk ($\varphi \sim 1/\!\sqrt{N}$, where both concentrate) but diverge in the tail ($\varphi = O(1)$, visible in Fig.~\ref{fig:overlap_dist}).  This divergence does not diminish at large~$N$; it grows.  The extreme value $\varphi_{1,\max}$ sits at a fixed $\varphi = O(1)$, where the two densities decay at different exponential rates: $\exp(-N\varphi^2/2)$ for the Gaussian versus $\exp(\tfrac{N}{2}\ln(1-\varphi^2))$ for the exact.  Even a small difference in per-pattern tail probability is amplified exponentially by the $M = e^{\alpha N}$ independent draws from the distribution: the expected number of patterns above threshold, $n(\varphi^*) = M \times \Pr(\varphi_{1\mu} > \varphi^*)$, differs by a factor $\exp(cN)$ between the two densities.  This is why $\alpha_{\mathrm{th}}$ differs by a fixed amount (0.25 vs 0.347) that does not vanish as $N \to \infty$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{panels_paper/centroid_geometry.pdf}%
+\hfill
+\includegraphics[width=0.48\textwidth]{panels_paper/overlap_distribution.pdf}
+\caption{Escape geometry and overlap filtering ($b = 2+\sqrt{2}$, $\alpha = 0.20$).  \textbf{Left:} the $(\phi_1, v)$ plane, where $\phi_1$ is the target alignment and $v$ is the perpendicular component toward $\bxi^\mu$ (Eq.~\eqref{eq:overlaps}).  Blue region: $\bxi^1$ in support ($\phi_1 > \varphi_c$).  Red region: $\bxi^\mu$ in support ($\phi_\mu > \varphi_c$).  Star: retrieval state $(\phi_{\mathrm{eq}}, 0)$.  Red dot: entry point $v_{\mathrm{entry}}$~\eqref{eq:ventry}, where $\bxi^\mu$ enters support.  Diamond: geometric centroid $\varphi_{\mathrm{cen}}^{(0)}$~\eqref{eq:centroid}.  Stage~1 ($\Delta E = 0$): perpendicular rotation at fixed $\phi_1$.  Stage~2 ($\Delta E < 0$): slide to the centroid.  \textbf{Right:} distribution of $\varphi_{1\mu}$ for $N = 16$ ($M = 25$).  Gray: $\varphi_{1\mu} > 0$ ($\sim M/2$ caps intersect).  Orange: $\varphi_{1\mu} > \varphi_{\min}$ ($K$ escape-enabling patterns).  Red: $\varphi_{1\mu} > \varphi_{1,\max}$ (the hop target).}
+\label{fig:overlap_dist}
+\end{figure}
+
 \paragraph{Stage 2: downhill slide ($\Delta E < 0$).}
 Once both patterns are in support, the sum inside the logarithm in~\eqref{eq:lsr} increases and the energy decreases.  The system slides to the two-pattern centroid~\eqref{eq:centroid}.  The energy barrier along the full escape path is \emph{zero}: Stage~1 has $\Delta E = 0$ and Stage~2 has $\Delta E < 0$.
 
 \paragraph{The entropic barrier.}
 What prevents instantaneous escape is entropy, not energy.  The rotation in Stage~1 must align the $(N\!-\!1)$-dimensional perpendicular component $\bx_\perp$ with a specific direction ($\bxi^\mu_\perp$).  The perpendicular component lives on a sphere of radius $\sqrt{N(1-a^2)}$; increasing $v$ from $0$ to $v_{\mathrm{entry}}$ reduces the available perpendicular volume.  The free energy cost of this alignment is
 \begin{equation}
-\frac{\Delta F}{T} = \frac{N-2}{2}\left[-\ln\!\left(1 - \frac{v_{\mathrm{entry}}^2}{1-\phi_{\mathrm{eq}}^2}\right)\right] \;\approx\; \frac{N}{2}\,\frac{v_{\mathrm{entry}}^2}{1-\phi_{\mathrm{eq}}^2}\,.
+\frac{\Delta F}{T} = \frac{N-3}{2}\left[-\ln\!\left(1 - \frac{v_{\mathrm{entry}}^2}{1-\phi_{\mathrm{eq}}^2}\right)\right].
 \label{eq:kramers_barrier}
 \end{equation}
-This is the barrier of a Kramers escape problem.  The variable $v$ diffuses in an entropic harmonic potential (from the sphere constraint), and the escape requires a thermal fluctuation to $v = v_{\mathrm{entry}}$.  The escape time for a single pattern scales as
+
+\paragraph{Kramers escape and the tunneling analogy.}
+The situation is mathematically identical to a particle in a potential well escaping over a barrier by thermal fluctuations (Kramers problem) or, equivalently, to radioactive alpha decay through a Coulomb barrier.  The variable $v$ diffuses in the entropic potential~\eqref{eq:kramers_barrier}, and each thermal fluctuation that reaches $v = v_{\mathrm{entry}}$ triggers an irreversible escape.  The attempt frequency is set by the relaxation time $\tau_{\mathrm{rel}}$ of the Ornstein--Uhlenbeck diffusion in the perpendicular subspace, and the ``tunneling probability'' per attempt is $e^{-\Delta F/T}$.
+
+For a single escape-enabling pattern, the escape time is
 \begin{equation}
-\tau_\mu \;\sim\; \tau_{\mathrm{rel}} \times \exp\!\left(\frac{\Delta F}{T}\right),
+\tau_\mu \;=\; \tau_{\mathrm{rel}} \times \exp\!\left(\frac{\Delta F}{T}\right),
 \label{eq:kramers_time}
 \end{equation}
-where $\tau_{\mathrm{rel}}$ is the relaxation time of the perpendicular diffusion.  At $\alpha = 0.20$ ($\varphi_{1,\max} \approx 0.57$, $\phi_{\mathrm{eq}} = 0.90$): $v_{\mathrm{entry}} = 0.236$, $\Delta F/T \approx 8.3$ at $N = 50$, giving $\tau \sim 10^5$ MC steps per pattern.
+where $\tau_{\mathrm{rel}} \approx (1-\phi_{\mathrm{eq}}^2)\,N^2 / (2.88\,T^2)$ is the OU relaxation time for the Metropolis random walk with step size $\sigma = 2.4\,T/\sqrt{N}$.  The escape is a Poisson process: the waiting time is exponentially distributed, and the probability of escaping within $t$ MC steps is
+\begin{equation}
+P(\text{escape by } t) = 1 - \exp(-t/\tau_\mu)\,.
+\label{eq:escape_prob}
+\end{equation}
+Even when $\tau_\mu \gg T_{\mathrm{MC}}$ (the allocated MC time), a nonzero fraction $\approx T_{\mathrm{MC}}/\tau_\mu$ of trials escapes.  This is analogous to a radioactive sample: the half-life may be billions of years, but a measurable fraction of atoms decays on any timescale.
 
-Patterns with lower $\varphi_{1\mu}$ have larger $v_{\mathrm{entry}}$ and exponentially higher barriers.  The escape is dominated by the pattern with the largest overlap, $\varphi_{1\mu} \approx \varphi_{1,\max}$.  With $K$ escape-enabling patterns competing independently, the effective escape time is $\tau_{\mathrm{eff}} \approx \tau_1/K$.
+Patterns with lower $\varphi_{1\mu}$ have larger $v_{\mathrm{entry}}$ and exponentially higher barriers.  Each escape-enabling pattern runs an independent Poisson clock with rate $\lambda_\mu = \tau_\mu^{-1}$.  The total escape rate is $\lambda = \sum_\mu \lambda_\mu$, but since $\tau_\mu$ depends exponentially on $\Delta F_\mu/T$, the sum is dominated by the pattern with the smallest barrier, $\varphi_{1\mu} = \varphi_{1,\max}$:
+\begin{equation}
+P(\text{escape by } t) = 1 - \exp(-\lambda\, t) \;\approx\; 1 - \exp(-t/\tau_{\mathrm{eff}})\,,
+\qquad \tau_{\mathrm{eff}} \approx \tau_{\mathrm{rel}} \times \exp\!\left(\frac{\Delta F}{T}\bigg|_{\varphi_{1,\max}}\right).
+\label{eq:escape_prob_K}
+\end{equation}
+
+At $\alpha = 0.20$ ($\varphi_{1,\max} \approx 0.57$, $\phi_{\mathrm{eq}} = 0.90$, $N = 50$): $v_{\mathrm{entry}} = 0.232$, $\Delta F/T \approx 9.0$.  The targeted escape-time measurements in Section~\ref{ssec:escape_times} calibrate the effective escape time as $\tau_{\mathrm{eff}} \approx N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ with $c \approx 0.38$.
 
 \subsection{Two-pattern thermal equilibrium}
 \label{ssec:retrieval}
@@ -251,37 +284,37 @@ In the LSR model, the energy~\eqref{eq:lsr} diverges ($\to +\infty$) when no pat
 \subsection{Predicted escape times and probe-point selection}
 \label{ssec:escape_predictions}
 
-Combining the Kramers escape time~\eqref{eq:kramers_time} with the multi-pattern competition ($K$ patterns racing independently), the effective time for the first hop is
+The MC simulations in Section~\ref{ssec:escape_times} show that the effective escape time is well described by
 \begin{equation}
-\tau_{\mathrm{eff}} = \frac{\tau_{\mathrm{rel}}}{K}\,\exp\!\left(\frac{\Delta F}{T}\right),
+\tau_{\mathrm{eff}} = N\,\tau_{\mathrm{rel}}\,\exp\!\left(c\,\frac{\Delta F}{T}\right),
 \label{eq:tau_eff}
 \end{equation}
-where $\Delta F/T$ is evaluated at $\varphi_{1\mu} = \varphi_{1,\max}$ (the pattern with the lowest barrier) and $K = n(\varphi_{\min})$ is defined in Section~\ref{ssec:escape}.  The relaxation time $\tau_{\mathrm{rel}} \approx (1-\phi_{\mathrm{eq}}^2)N^2/(2.88\,T^2)$ is the Ornstein--Uhlenbeck time scale for diffusion in the entropic potential.  Since the second hop has a comparable barrier (Section~\ref{ssec:escape}), the time to observe $k$ hops is approximately $k\,\tau_{\mathrm{eff}}$.
+where $\Delta F/T$ is evaluated at $\varphi_{1\mu} = \varphi_{1,\max}$ (the pattern with the lowest barrier), $\tau_{\mathrm{rel}} = (1-\phi_{\mathrm{eq}}^2)N^2/(2.88\,T^2)$ is the OU diffusion time, the factor $N$ accounts for geometric dilution (the MC walk distributes its displacement over $N-1$ tangent directions), and $c \approx 0.38$ is calibrated from escape-time measurements.  Since the second hop has a comparable barrier (Section~\ref{ssec:escape}), the time to observe $k$ hops is approximately $k\,\tau_{\mathrm{eff}}$.
 
 Table~\ref{tab:escape_times} evaluates~\eqref{eq:tau_eff} across a range of $\alpha$ and $T$.  The barrier $\Delta F/T$ depends weakly on $T$ (it is set primarily by the geometry through $v_{\mathrm{entry}}$ and $\phi_{\mathrm{eq}}$), but the escape time varies over many orders of magnitude due to the exponential.
 
 \begin{table}[h]
 \centering
-\caption{Predicted first-hop escape time $\tau_{\mathrm{eff}}$ (in MC steps) and number of hops observable within $2^{18} \approx 2.6 \times 10^5$ steps.  Parameters: $b = 2+\sqrt{2}$, $M = 20\,000$.}
+\caption{Predicted first-hop escape time $\tau_{\mathrm{eff}} = N\,\tau_{\mathrm{rel}}\exp(0.38\,\Delta F/T)$ (in MC steps) and number of hops observable within $2^{18} \approx 2.6 \times 10^5$ steps.  Parameters: $b = 2+\sqrt{2}$, $M = 20\,000$.}
 \label{tab:escape_times}
 \begin{tabular}{ccrccrcl}
 \toprule
-$\alpha$ & $N$ & $T$ & $\phi_{\mathrm{eq}}$ & $\Delta F/T$ & $K$ & $\tau_{\mathrm{eff}}$ & hops in $2^{18}$ \\
+$\alpha$ & $N$ & $T$ & $\phi_{\mathrm{eq}}$ & $\Delta F/T$ & $N\,\tau_{\mathrm{rel}}$ & $\tau_{\mathrm{eff}}$ & hops in $2^{18}$ \\
 \midrule
-0.18 & 55 & 0.325 & 0.899 & 11.0 & 155 & $7 \times 10^5$ & $< 1$ \\
-0.18 & 55 & 0.500 & 0.870 & 9.8 & 474 & $4 \times 10^4$ & $\sim 6$ \\
+0.18 & 55 & 0.325 & 0.899 & 11.2 & $1.2 \times 10^5$ & $7 \times 10^6$ & $< 1$ \\
+0.18 & 55 & 0.500 & 0.870 & 9.7 & $5.6 \times 10^4$ & $2 \times 10^6$ & $< 1$ \\
 \midrule
-0.20 & 50 & 0.200 & 0.928 & 9.4 & 62 & $6 \times 10^5$ & $< 1$ \\
-0.20 & 50 & 0.325 & 0.899 & 8.0 & 232 & $2 \times 10^4$ & $\sim 13$ \\
-0.20 & 50 & 0.500 & 0.870 & 7.4 & 648 & $2 \times 10^3$ & $\sim 130$ \\
+0.20 & 49 & 0.200 & 0.928 & 9.3 & $1.4 \times 10^5$ & $4 \times 10^6$ & $< 1$ \\
+0.20 & 49 & 0.325 & 0.899 & 8.1 & $8.3 \times 10^4$ & $2 \times 10^6$ & $< 1$ \\
+0.20 & 49 & 0.500 & 0.870 & 7.2 & $4.0 \times 10^4$ & $6 \times 10^5$ & $< 1$ \\
 \midrule
-0.22 & 45 & 0.150 & 0.942 & 7.3 & 41 & $1 \times 10^5$ & $\sim 2$ \\
-0.22 & 45 & 0.325 & 0.899 & 5.8 & 285 & $1.5 \times 10^3$ & $\sim 175$ \\
-0.22 & 45 & 0.500 & 0.870 & 5.5 & 728 & $2 \times 10^2$ & $> 10^3$ \\
+0.22 & 45 & 0.150 & 0.942 & 7.4 & $1.7 \times 10^5$ & $3 \times 10^6$ & $< 1$ \\
+0.22 & 45 & 0.325 & 0.899 & 5.9 & $6.8 \times 10^4$ & $6 \times 10^5$ & $< 1$ \\
+0.22 & 45 & 0.500 & 0.870 & 5.5 & $3.3 \times 10^4$ & $3 \times 10^5$ & $\sim 1$ \\
 \midrule
-0.24 & 41 & 0.100 & 0.958 & 5.9 & 22 & $8 \times 10^4$ & $\sim 3$ \\
-0.24 & 41 & 0.200 & 0.928 & 4.6 & 114 & $2 \times 10^3$ & $\sim 130$ \\
-0.24 & 41 & 0.500 & 0.870 & 4.2 & 817 & $44$ & $> 10^3$ \\
+0.24 & 41 & 0.100 & 0.958 & 6.0 & $2.4 \times 10^5$ & $2 \times 10^6$ & $< 1$ \\
+0.24 & 41 & 0.200 & 0.928 & 4.7 & $1.2 \times 10^5$ & $7 \times 10^5$ & $< 1$ \\
+0.24 & 41 & 0.500 & 0.870 & 4.2 & $2.7 \times 10^4$ & $1 \times 10^5$ & $\sim 3$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -289,11 +322,11 @@ $\alpha$ & $N$ & $T$ & $\phi_{\mathrm{eq}}$ & $\Delta F/T$ & $K$ & $\tau_{\mathr
 Three regimes are apparent:
 \begin{enumerate}
 \item \textbf{Frozen} ($\tau_{\mathrm{eff}} \gg 2^{18}$): the system remains in the retrieval basin for the duration of the simulation.  This occurs at low $T$ and low $\alpha$ (e.g.\ $\alpha = 0.18$, $T = 0.325$).
-\item \textbf{Resolvable} ($\tau_{\mathrm{eff}} \sim 10^3$--$10^5$): individual hops can be observed and timed.  The first-hop time distribution should be approximately exponential (Kramers process).  This is the regime where the theory can be tested quantitatively.
-\item \textbf{Instantaneous} ($\tau_{\mathrm{eff}} \ll 10^2$): the system hops many times during equilibration and the trajectory shows free diffusion on the pattern overlap graph.
+\item \textbf{Resolvable} ($\tau_{\mathrm{eff}} \sim 10^5$--$10^6$): individual hops can be observed as rare events.  The escape fraction $P_{\mathrm{esc}} \sim T_{\mathrm{MC}}/\tau_{\mathrm{eff}}$ is small but measurable with large $n_{\mathrm{dis}}$.  The first-hop time distribution should be approximately exponential (Kramers process).
+\item \textbf{Instantaneous} ($\tau_{\mathrm{eff}} \ll 10^4$): the system hops many times during the run and the trajectory shows free diffusion on the pattern overlap graph.
 \end{enumerate}
 
-To validate the Kramers prediction~\eqref{eq:tau_eff}, we select probe points in the resolvable regime where $\tau_{\mathrm{eff}} \sim 10^3$--$10^5$ steps (boldface rows in Table~\ref{tab:escape_times}).  At each point, long MC trajectories ($2^{18}$ steps) with $\varphi(t)$ recorded every 64 steps allow direct measurement of the first-hop, second-hop, and subsequent hop times.  The predicted approximate equality $\tau_{\mathrm{1st\,hop}} \approx \tau_{\mathrm{2nd\,hop}}$ (comparable Kramers barriers) can also be tested.
+To validate~\eqref{eq:tau_eff}, the targeted simulations (Section~\ref{ssec:escape_times}) use long MC trajectories ($2^{18}$ steps) with $\varphi(t)$ recorded every 64 steps at probe points spanning the resolvable regime.
 
 %%% ─────────────────────────────────────────────────────────────────
 \section{Monte Carlo simulations}
@@ -306,48 +339,46 @@ We simulate the Boltzmann distribution $\propto \exp(-E(\bx)/T)$ for the LSR ene
 
 Two types of simulations are reported.
 
-\paragraph{Bulk survey (v8m).}  A grid of $\alpha$ and $T$ values is swept.  At each grid point, $M$ patterns are drawn uniformly on $S^{N-1}(\!\sqrt{N})$, with $N = \lfloor\ln M/\alpha\rfloor$.  For each of $n_{\mathrm{dis}}$ independent disorder samples, two replicas (A, B) are initialized near the target $\bxi^1$ with $\phi_{\mathrm{init}} \sim \mathrm{U}(0.75, 1.0)$ and evolved independently.  Each replica undergoes $N_{\mathrm{eq}} = 2^{15}$ equilibration steps followed by $N_{\mathrm{samp}} = 2^{13}$ sampling steps.  The per-trial observables---time-averaged $\varphi_A$, $\varphi_B$, $q_{\mathrm{EA}} = (1/N_{\mathrm{samp}})\sum_t \bx_A(t)\!\cdot\!\bx_B(t)/N$, and $\phi_{\max}^{\mathrm{other}} = (1/N_{\mathrm{samp}})\sum_t \max_{\mu\neq 1}\phi_\mu(\bx_A(t))$---are recorded per disorder sample.  The data combine two runs: Run~1 ($\alpha \in [0.200, 0.350]$, $M = 20$k--$500$k, $n_{\mathrm{dis}} = 256$--$32$) and Run~2 ($\alpha \in [0.005, 0.550]$, $M = 20$k--$500$k, $n_{\mathrm{dis}} = 256$--$32$).
+\paragraph{Bulk survey.}  A grid of $110$ values of $\alpha \in [0.005, 0.550]$ and $40$ temperature values is swept, with $M = 20\,000$ patterns and $N = \lfloor\ln M/\alpha\rfloor$ ($N = 12$--$69$, depending on $\alpha$).  For each of $n_{\mathrm{dis}} = 256$ independent disorder samples, two replicas (A, B) are initialized near the target $\bxi^1$ with $\phi_{\mathrm{init}} \sim \mathrm{U}(0.75, 1.0)$ and evolved independently.  Each replica undergoes $N_{\mathrm{eq}} = 2^{15}$ equilibration steps followed by $N_{\mathrm{samp}} = 2^{13}$ sampling steps ($T_{\mathrm{MC}} = N_{\mathrm{eq}} + N_{\mathrm{samp}} \approx 4 \times 10^4$ steps total).  The per-trial observables are the time-averaged target alignment $\varphi_A$, $\varphi_B$, the Edwards--Anderson overlap $q_{\mathrm{EA}} = (1/N_{\mathrm{samp}})\sum_t \bx_A(t)\!\cdot\!\bx_B(t)/N$, and the maximum spurious overlap $\phi_{\max}^{\mathrm{other}} = (1/N_{\mathrm{samp}})\sum_t \max_{\mu\neq 1}\phi_\mu(\bx_A(t))$.
 
-\paragraph{Targeted escape-time measurements (v10).}  At selected $(\alpha, T)$ points, we record the full trajectory $\varphi(t)$ at each MC step, rather than only the time-averaged overlap.  This allows direct measurement of the first-hop time (retrieval $\to$ centroid), second-hop time (centroid $\to$ spurious centroid), and subsequent hops.  The protocol uses longer runs ($N_{\mathrm{eq}}$ up to $2^{18}$) at fewer grid points, with $n_{\mathrm{dis}} = 256$ disorder samples.  The simulation parameters are chosen to resolve the Kramers escape time $\tau \sim \tau_{\mathrm{rel}}\exp(\Delta F/T)$ predicted in Section~\ref{ssec:escape}.
+\paragraph{Targeted escape-time measurements.}  At $16$ selected $(\alpha, T)$ points ($\alpha \in \{0.18, 0.20\}$, $T \in \{0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.80\}$), the full trajectory $\varphi(t)$ is recorded every $64$ MC steps over $2^{18} \approx 2.6 \times 10^5$ total steps, with $n_{\mathrm{dis}} = 2000$ independent disorder samples per point.  The run length is $6.4$ times longer than the bulk survey, and the larger $n_{\mathrm{dis}}$ reduces the statistical uncertainty of the escape fraction.  These simulations are performed on GPU with half-precision arithmetic and batched matrix operations to accommodate $2000$ independent pattern sets simultaneously.
 
 \subsection{Phase diagram}
 \label{ssec:phase_diagram}
 
-Figure~\ref{fig:phase_diagram} shows the disorder-averaged alignment $\avg{\varphi}$ in the $(\alpha, T)$ plane from the v8m data.  The ``retrieval'' region ($\avg{\varphi} > 0.7$, blue) and ``non-retrieval'' region ($\avg{\varphi} \approx 0$, red) are separated by a boundary near $\alpha_{\mathrm{th}} \approx 0.25$.
+Figure~\ref{fig:phase_diagram} connects the Kramers escape theory to the observed phase diagram.
 
-The theory of Section~\ref{sec:theory} reinterprets this diagram:
-\begin{itemize}
-\item The ``retrieval'' region below $\alpha_{\mathrm{th}}$ is \emph{metastable}: the system has not yet escaped within the allocated MC time ($N_{\mathrm{eq}} + N_{\mathrm{samp}} \approx 4 \times 10^4$ steps).  With longer runs, $\avg{\varphi}$ would decrease as trials escape to centroids.
-\item The ``non-retrieval'' region is \emph{not paramagnetic}: $\phi_{\max}^{\mathrm{other}} \approx 0.82$ throughout, confirming that the system sits at a two-pattern centroid of spurious patterns (Section~\ref{ssec:hopping_theory}).  A true paramagnetic state ($\phi_{\max}^{\mathrm{other}} \to 0$) does not exist in LSR because the energy diverges when no pattern is in support.
-\item The boundary at $\alpha_{\mathrm{th}}$ is a \emph{kinetic} crossover, not a thermodynamic phase transition: it marks where the Kramers escape time $\tau$ becomes comparable to the MC time, not where a free-energy minimum disappears.
-\end{itemize}
+The left panel validates the exponential barrier scaling.  The Poisson-inverted escape time $\tau_{\mathrm{eff}}$~\eqref{eq:tau_poisson}, measured from the targeted simulations ($n_{\mathrm{dis}} = 2000$, $T_{\mathrm{MC}} = 2^{18}$), is divided by $N\,\tau_{\mathrm{rel}}$, where $\tau_{\mathrm{rel}} = (1-\phi_{\mathrm{eq}}^2)N^2/(2.88\,T^2)$ is the Ornstein--Uhlenbeck diffusion time.  The factor of $N$ accounts for the geometric dilution: the MC random walk explores $N-1$ tangent directions on the sphere uniformly, so the escape coordinate $v$ receives only $\sim 1/N$ of the effective diffusion.  For $\alpha = 0.20$ ($N = 49$, red squares), $\ln(\tau_{\mathrm{eff}}/(N\,\tau_{\mathrm{rel}}))$ is linear in $\Delta F/T$ with slope $c = 0.37$, $R^2 = 0.95$, and intercept $\approx 0$.  The $\alpha = 0.18$ ($N = 55$, blue circles) and $\alpha = 0.22$ ($N = 45$, green diamonds) points are shown for comparison; the latter sit close to the $\alpha = 0.20$ fit.
+
+The right panel shows the disorder-averaged alignment $\avg{\varphi}(\alpha, T)$ from the bulk survey ($M = 20\,000$, $n_{\mathrm{dis}} = 256$, $T_{\mathrm{MC}} \approx 4 \times 10^4$ steps).  Four boundaries are overlaid.  The green curve is the empirical kinetic boundary $P_{\mathrm{esc}} = 0.5$.  A trial is classified as escaped if its time-averaged alignment falls below $\varphi_{\mathrm{thresh}}(T) = (\phi_{\mathrm{eq}}(T) + \varphi_{\mathrm{cen}}(T))/2$, the midpoint between the single-pattern retrieval equilibrium (ibid., Eq.~37) and the two-pattern centroid equilibrium~\eqref{eq:two_pat_sc}.  This $T$-dependent threshold tracks both peaks as they shift with temperature, maintaining a clean separation between retrieval and escaped populations.  The red curve is the Kramers prediction $\tau_{\mathrm{eff}} = T_{\mathrm{MC}}$ from the calibrated formula~\eqref{eq:kramers_fit}.  The cyan and black curves are the noise-floor thresholds $\alpha_c(T)$ from the Gaussian and exact alignment distributions, respectively.
 
 \begin{figure}[t]
 \centering
-%\includegraphics[width=0.5\textwidth]{panels_v8m/phase_diagram.pdf}
-\caption{Disorder-averaged alignment $\avg{\varphi}(\alpha, T)$ from v8m.  Blue: retrieval ($\avg{\varphi} > 0.7$); red: non-retrieval ($\avg{\varphi} \approx 0$).  The apparent boundary near $\alpha \approx 0.25$ is a kinetic crossover, not a thermodynamic phase transition.  [Figure to be generated.]}
+\includegraphics[width=0.48\textwidth]{../panels_paper/kramers_validation.pdf}%
+\hfill
+\includegraphics[width=0.48\textwidth]{../panels_paper/heatmap_phase.pdf}
+\caption{Kramers escape theory and phase diagram ($b = 2+\sqrt{2}$, $M = 20\,000$).  \textbf{Left:} Kramers validation from targeted escape-time measurements.  Vertical axis: $\ln(\tau_{\mathrm{eff}}/(N\,\tau_{\mathrm{rel}}))$, factoring out the diffusion prefactor and the geometric dilution factor~$N$.  Horizontal axis: entropic barrier $\Delta F/T$~\eqref{eq:kramers_barrier}.  Dashed line: fit to $\alpha = 0.20$~\eqref{eq:kramers_fit}.  \textbf{Right:} disorder-averaged alignment $\avg{\varphi}(\alpha, T)$ from the bulk survey.  Green: empirical $P_{\mathrm{esc}} = 0.5$.  Red: Kramers $\tau_{\mathrm{eff}} = T_{\mathrm{MC}}$~\eqref{eq:kramers_fit}.  Cyan: Gaussian $\alpha_c(T)$.  Black: exact-density $\alpha_c(T)$.  The observed boundary tracks the Kramers kinetic contour, not the noise-floor thresholds.}
 \label{fig:phase_diagram}
 \end{figure}
 
+The centroid escape theory of Section~\ref{sec:theory} reinterprets the right panel:
+\begin{itemize}
+\item The ``retrieval'' region (blue) is \emph{metastable}: the Kramers escape time exceeds $T_{\mathrm{MC}}$, so the system has not yet escaped within the allocated MC time.  With longer runs, $\avg{\varphi}$ would decrease as more trials escape to centroids.
+\item The ``non-retrieval'' region (red) is \emph{not paramagnetic}: $\phi_{\max}^{\mathrm{other}} \approx 0.82$ throughout, confirming that the system sits at a two-pattern centroid (Section~\ref{ssec:hopping_theory}).  A true paramagnetic state ($\phi_{\max}^{\mathrm{other}} \to 0$) does not exist in LSR because the energy diverges when no pattern is in support.
+\item The boundary is a \emph{kinetic crossover}, not a thermodynamic phase transition: it marks where $\tau_{\mathrm{eff}} \approx T_{\mathrm{MC}}$, not where a free-energy minimum disappears.  Moving the boundary requires only changing the simulation time.
+\end{itemize}
+
+The overlap distribution of Figure~\ref{fig:overlap_dist} provides the key theoretical input: it determines $\varphi_{1,\max}(\alpha)$ and $K(\alpha)$, which set the barrier height~\eqref{eq:kramers_barrier} and hence $\tau_{\mathrm{eff}}$ at each point of the $(\alpha, T)$ plane.
+
 \subsection{Quantitative tests of the centroid mechanism}
 \label{ssec:tests}
-
-\paragraph{Centroid peak position.}
-The two-pattern self-consistency equation~\eqref{eq:two_pat_sc} predicts the centroid overlap $\varphi_{\mathrm{cen}}(\varphi_{1,\max}, T)$ as a function of $\alpha$ (through $\varphi_{1,\max}$) and $T$.  Figure~\ref{fig:centroid_position} compares this prediction with the observed centroid peak position extracted from the per-trial overlap distributions at several $(\alpha, T)$ points.  The weak $\alpha$-dependence (less than $\pm 2\%$ across $\alpha = 0.15$--$0.30$) and the $T$-dependence are both consistent with the theory.
-
-\begin{figure}[t]
-\centering
-%\includegraphics[width=0.5\textwidth]{panels_v8m/centroid_peak_vs_T.pdf}
-\caption{Centroid peak position vs $T$ at several $\alpha$ values.  Solid curves: prediction from Eq.~\eqref{eq:two_pat_sc}.  Points: MC data.  [Figure to be generated.]}
-\label{fig:centroid_position}
-\end{figure}
 
 \paragraph{$\phi_{\max}^{\mathrm{other}}$ across all populations.}
 The centroid hopping mechanism (Section~\ref{ssec:hopping_theory}) predicts $\phi_{\max}^{\mathrm{other}} \approx \varphi_{\mathrm{cen}} \approx 0.82$ for \emph{every} non-retrieval trial, regardless of the target overlap $\varphi$.  Table~\ref{tab:phimax} confirms this: for trials binned by $\varphi$, the average $\phi_{\max}^{\mathrm{other}}$ is $\approx 0.82$ in every bin except the retrieval peak.
 
 \begin{table}[h]
 \centering
-\caption{Average $\phi_{\max}^{\mathrm{other}}$ for trials in each overlap bin, from v8m data at $\alpha = 0.22$, $T = 0.325$.}
+\caption{Average $\phi_{\max}^{\mathrm{other}}$ for trials in each overlap bin, from bulk-survey data at $\alpha = 0.22$, $T = 0.325$.}
 \label{tab:phimax}
 \begin{tabular}{lcc}
 \toprule
@@ -367,29 +398,52 @@ For trials in the $\varphi \approx 0.48$ population, the observed overlap is com
 \subsection{Escape-time measurements}
 \label{ssec:escape_times}
 
-The Kramers barrier~\eqref{eq:kramers_barrier} predicts the escape time from the retrieval basin as a function of $\alpha$, $T$, and $N$.  To test this prediction, we record the full trajectory $\varphi(t)$ at selected $(\alpha, T)$ points using long MC runs.
+The targeted simulations measure the escape fraction $P_{\mathrm{esc}}$ (fraction of trials with $\varphi < \varphi_{\mathrm{thresh}}(T)$, defined above) at each $(\alpha, T)$ point.  For a Kramers process with exponentially distributed escape times, $P_{\mathrm{esc}} = 1 - \exp(-T_{\mathrm{MC}}/\tau_{\mathrm{eff}})$, which gives the Poisson-inverted escape time
+\begin{equation}
+\tau_{\mathrm{eff}} = -\frac{T_{\mathrm{MC}}}{\ln(1 - P_{\mathrm{esc}})}\,.
+\label{eq:tau_poisson}
+\end{equation}
+The measured $\tau_{\mathrm{eff}}$ spans three decades, from $\sim 10^5$ MC steps ($\alpha = 0.20$, $T = 0.80$, most trials escape) to $\sim 10^{7.7}$ ($\alpha = 0.20$, $T = 0.10$, only $0.5\%$ escape within $2^{18}$ steps).
 
-Figure~\ref{fig:escape_times} shows the distribution of first-hop times (defined as the first time $\varphi$ drops below $0.86$) across disorder samples.  The distribution is approximately exponential, consistent with a Kramers process.  The median escape time is compared with the theoretical prediction $\tau_{\mathrm{eff}}$ from Eq.~\eqref{eq:tau_eff}.
+Figure~\ref{fig:phase_diagram} (left) plots $\ln(\tau_{\mathrm{eff}}/(N\,\tau_{\mathrm{rel}}))$ against $\Delta F/T$, where $\tau_{\mathrm{rel}} = (1-\phi_{\mathrm{eq}}^2)N^2/(2.88\,T^2)$.  The factor $N\,\tau_{\mathrm{rel}}$ absorbs the known scaling: $\tau_{\mathrm{rel}}$ is the OU diffusion time for the perpendicular coordinate $v$, and $N$ accounts for the geometric dilution (the MC random walk distributes its displacement over $N-1$ tangent directions, so $v$ receives $\sim 1/N$ of the effective diffusion).  The linear trend for $\alpha = 0.20$ gives
+\begin{equation}
+\ln\!\left(\frac{\tau_{\mathrm{eff}}}{N\,\tau_{\mathrm{rel}}}\right) \;\approx\; 0.38 \times \frac{\Delta F}{T}\,,
+\qquad R^2 = 0.95\,,
+\label{eq:kramers_fit}
+\end{equation}
+with intercept $\approx 0$, confirming that the escape time scales as $\tau_{\mathrm{eff}} \approx N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ with $c \approx 0.38$ and no additional free parameter.  The slope $c \approx 0.38$ means the effective barrier is $\approx 37\%$ of the formula~\eqref{eq:kramers_barrier}.  Two effects contribute: (i)~at thermal equilibrium the system starts at $v \sim T/\sqrt{N}$, not $v = 0$, shortening the effective distance to $v_{\mathrm{entry}}$; (ii)~the one-dimensional projection neglects favorable fluctuations in the remaining $N-2$ coordinates.
 
-\begin{figure}[t]
-\centering
-%\includegraphics[width=0.5\textwidth]{panels_v10/escape_time_distribution.pdf}
-\caption{Distribution of first-hop times at $\alpha = 0.22$, $T = 0.325$.  Solid line: exponential fit.  Dashed line: Kramers prediction.  [Figure to be generated from targeted simulations.]}
-\label{fig:escape_times}
-\end{figure}
+The calibrated formula $\tau_{\mathrm{eff}} = N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ produces the red contour $\tau_{\mathrm{eff}} = T_{\mathrm{MC}}$ in Figure~\ref{fig:phase_diagram} (right).  The contour is shifted to the left of the empirical boundary (green) because the calibration is based on $\alpha = 0.20$ only; the remaining probe points at $\alpha = 0.22$ and $0.24$ will tighten the extrapolation.  The qualitative agreement in shape confirms that the apparent ``phase boundary'' is the kinetic locus $\tau_{\mathrm{eff}}(\alpha, T) \approx T_{\mathrm{MC}}$.
 
-The v8m data, with its fixed MC time, provide an indirect test: the fraction of trials that have escaped by $N_{\mathrm{eq}} + N_{\mathrm{samp}} \approx 4 \times 10^4$ steps equals $P(\mathrm{escape}) = 1 - \exp(-T_{\mathrm{total}}/\tau_{\mathrm{eff}})$.  At $\alpha = 0.20$, $T = 0.325$: the theory predicts $P \approx 7\%$--$15\%$, compared with the observed centroid fraction of $\sim 7\%$--$10\%$.
-
-The second-hop time (centroid $\to$ spurious centroid) is predicted to be comparable to the first-hop time (Section~\ref{ssec:escape}, comparable barrier heights).  This can be tested by identifying trials that have reached the centroid peak and measuring how long they remain there before hopping further.
-
-\paragraph{Metastability is practically irrelevant.}
-The escape time $\tau \sim \exp(cN)$ grows exponentially with the system dimension.  At $N = 50$ and $\alpha = 0.20$: $\tau \sim 10^4$--$10^5$ MC steps.  But $\tau$ increases rapidly with $N$: at $N = 100$, the barrier $\Delta F/T$ roughly doubles, giving $\tau \sim 10^{8}$--$10^{10}$.  For any practical retrieval application with $N \gg 50$, the escape time far exceeds any realistic query time.  The retrieval state, though formally metastable, is effectively stable.
+\paragraph{Practical relevance.}
+The escape time $\tau \sim \exp(cN)$ grows exponentially with the system dimension, because the barrier $\Delta F/T \propto N$.  At $N = 50$ and $\alpha = 0.20$: $\tau \sim 10^6$ MC steps.  At $N = 100$, the barrier roughly doubles, giving $\tau \sim 10^{12}$.  For any practical retrieval application with $N \gg 50$, the escape time far exceeds any realistic query time.  The retrieval state, though formally metastable, is effectively stable.
 
 %%% ─────────────────────────────────────────────────────────────────
 \section{Discussion and summary}
 \label{sec:discussion}
 
-[Three regimes of retrieval stability.  Practical implications: $\tau \sim e^{cN}$.  Comparison with classical Hopfield mixture states.  Open questions.]
+The thermodynamic theory of Dense Associative Memory predicts a sharp retrieval phase transition at $\alpha_{\mathrm{th}}$: perfect retrieval below, complete failure above.  For the LSR kernel with compact support, this picture is incomplete.  The Monte Carlo overlap distributions reveal a richer landscape \emph{within} the retrieval region, with secondary peaks at $\varphi \approx 0.83$ and $0.48$ that grow with $\alpha$ and $T$.
+
+This paper identifies these peaks as two-pattern centroids and explains their origin through a Kramers escape mechanism.  The key results are:
+
+\begin{enumerate}
+\item \textbf{Centroid escape.}  The compact support of the LSR kernel creates a zero-energy escape path: a perpendicular rotation that brings a spurious pattern into support without changing the target alignment.  The only cost is entropic, giving a barrier $\Delta F/T \propto N$ (Eq.~\eqref{eq:kramers_barrier}).  The system escapes via thermal fluctuations, with an exponentially distributed waiting time validated by MC measurements ($R^2 = 0.95$, Fig.~\ref{fig:phase_diagram} left).
+
+\item \textbf{Centroid hopping.}  After the first escape, the system performs a random walk on the pattern overlap graph~\eqref{eq:hopping_chain}, hopping between two-pattern centroids at comparable energy.  No true paramagnetic state exists: $\phi_{\max}^{\mathrm{other}} \approx 0.82$ even for trials with $\varphi \approx 0$ (Table~\ref{tab:phimax}).
+
+\item \textbf{Kinetic, not thermodynamic boundary.}  The apparent phase boundary at $\alpha \approx 0.25$ is the kinetic locus $\tau_{\mathrm{eff}} \approx T_{\mathrm{MC}}$ (Fig.~\ref{fig:phase_diagram} right), not a thermodynamic singularity.  It shifts with the simulation time.
+
+\item \textbf{Practical stability.}  The escape time $\tau \sim N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ with $\Delta F/T \propto N$ grows exponentially with $N$.  At $N = 50$ and $\alpha = 0.20$: $\tau \sim 10^6$ MC steps.  At $N = 100$: $\tau \sim 10^{12}$.  For practical retrieval ($N \gg 50$), the metastable retrieval state is effectively permanent.
+\end{enumerate}
+
+\paragraph{Finite-$N$ origin of the apparent Gaussian boundary.}
+The MC simulations use $N \approx 40$--$50$, where the Kramers escape time $\tau \sim N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ is comparable to $T_{\mathrm{MC}}$ near $\alpha \approx 0.25$.  This coincidence with the Gaussian noise-floor threshold $\alpha_{\mathrm{th}} = \varphi_c^2/2 = 0.25$ is accidental: it depends on $T_{\mathrm{MC}}$ and the system sizes accessible to the simulation.  At larger $N$, the barrier $\Delta F/T \propto N$ grows and the escape becomes unobservable; the kinetic boundary shifts rightward and eventually reaches the exact-density threshold $\alpha_{\mathrm{th}}^{\mathrm{exact}} = -\tfrac{1}{2}\ln(1-\varphi_c^2) \approx 0.347$ (the black curve in Fig.~\ref{fig:phase_diagram}, right).  At this loading, a spurious pattern enters support at the retrieval state ($\phi_\mu = \phi_{\mathrm{eq}}\,\varphi_{1,\max} > \varphi_c$) and the barrier vanishes: retrieval is lost without any thermal activation.  The Gaussian approximation does not become ``more correct'' at finite~$N$; rather, the kinetic crossover happens to pass through $\alpha \approx 0.25$ at the system sizes used in the simulations.
+
+\paragraph{Comparison with classical Hopfield models.}
+The centroids observed here are analogous to the mixture states of the classical Hopfield network~\citep{amit1987statistical}, where correlated superpositions of stored patterns form metastable fixed points.  There are two key differences.  First, in the Hopfield model, mixture states arise from the symmetry of the Hebbian interaction and exist as true fixed points of the zero-temperature dynamics; here, the centroids are thermal equilibria stabilized by entropy, not energy.  Second, in the Hopfield model, the paramagnetic state ($m = 0$) is a legitimate phase; in LSR, the energy diverges when no pattern is in support, so the system is always at some centroid.
+
+\paragraph{Open questions.}
+(i)~The barrier scaling factor $c \approx 0.38$ is empirical; a derivation from the multi-dimensional Kramers (Langer) theory would make it parameter-free.  (ii)~The analysis assumes $b = 2+\sqrt{2}$; for larger $b$ (narrower support caps), the cluster criterion~\eqref{eq:cluster} changes and multi-pattern centroids may become relevant.  (iii)~The connection to the LSE kernel, where the escape mechanism differs (no compact support, no zero-energy path), remains to be explored.
 
 \bibliography{references}
 

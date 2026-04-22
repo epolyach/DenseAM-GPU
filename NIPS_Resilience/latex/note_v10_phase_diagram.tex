@@ -1,0 +1,87 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\title{Note: LSR Phase Diagram from v10 MC and Centroid Escape Interpretation}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Observation}
+
+Figure~\ref{fig:lsr_phase} shows the disorder-averaged alignment $\langle\varphi\rangle(\alpha, T)$ from the v10 Monte Carlo simulation of the LSR model ($b = 2+\sqrt{2}$, $M = 10\,000$--$200\,000$, $N = 69$--$12$, $N_{\mathrm{eq}} = 2^{14}$, $N_{\mathrm{samp}} = 2^{12}$, 256 disorder samples per point).  Two theoretical phase boundaries are overlaid: the Gaussian approximation (blue, $\alpha_{\mathrm{th}} = 0.25$) and the exact spherical density (red dashed, $\alpha_{\mathrm{th}} = 0.347$).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{../code/panels_v10/phase_LSR_v10.pdf}
+\caption{LSR phase diagram from v10 MC.  Color: $\langle\varphi\rangle$ (blue = retrieval, red = non-retrieval).  Blue curve: Gaussian theory ($\alpha_{\mathrm{th}} = 0.25$).  Red dashed: exact density ($\alpha_{\mathrm{th}} = 0.347$).}
+\label{fig:lsr_phase}
+\end{figure}
+
+\section{The vertical boundary is centroid escape, not the noise floor}
+
+The exact density predicts the noise-floor threshold at $\alpha_{\mathrm{th}}^{\mathrm{exact}} = 0.347$: a spurious pattern enters support at the retrieval state only above this loading.  Yet the MC shows loss of retrieval near $\alpha \approx 0.25$, well below $0.347$.
+
+The resolution: the retrieval is lost not because a pattern enters support at the retrieval state, but because the system \emph{escapes to a centroid} via the zero-energy perpendicular rotation (Section~2 of the main paper).  The escape time, estimated from the Kramers formula, depends on $\alpha$ through $N(\alpha) = \lfloor\ln M/\alpha\rfloor$ and the inter-pattern overlap $\varphi_{1,\max}(\alpha)$:
+
+\begin{center}
+\begin{tabular}{ccrrl}
+\toprule
+$\alpha$ & $N$ & $\tau_{\mathrm{eff}}$ (steps) & $\tau_{\mathrm{eff}}/T_{\mathrm{MC}}$ & Status \\
+\midrule
+0.18 & 54 & $6 \times 10^5$ & 29 & frozen \\
+0.20 & 49 & $1.8 \times 10^4$ & 0.9 & first hop \\
+0.22 & 45 & $1.5 \times 10^3$ & 0.07 & many hops \\
+0.25 & 40 & $93$ & 0.005 & fully escaped \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+(Evaluated at $T = 0.325$ with $T_{\mathrm{MC}} = N_{\mathrm{eq}} + N_{\mathrm{samp}} \approx 2 \times 10^4$ steps.)
+
+The transition from ``frozen'' to ``fully escaped'' occurs between $\alpha \approx 0.20$ and $0.25$.  The coincidence with the Gaussian $\alpha_{\mathrm{th}} = 0.25$ is accidental---it depends on $T_{\mathrm{MC}}$ and the $N(\alpha)$ schedule of the simulation.  With longer MC runs, the boundary would shift left.
+
+\section{Three regimes in the $T$-dependence}
+
+At fixed $\alpha$, the behavior of $\langle\varphi\rangle(T)$ exhibits three regimes:
+
+\begin{center}
+\begin{tabular}{ccccccc}
+\toprule
+ & \multicolumn{6}{c}{$\langle\varphi\rangle$ at temperature $T$} \\
+$\alpha$ & $T=0.1$ & $0.3$ & $0.5$ & $0.7$ & $0.9$ & $1.0$ \\
+\midrule
+0.10 & 0.960 & 0.905 & 0.874 & --- & 0.832 & 0.825 \\
+0.20 & 0.960 & 0.902 & 0.863 & --- & 0.815 & 0.814 \\
+0.24 & 0.954 & 0.868 & 0.757 & --- & 0.697 & 0.678 \\
+0.30 & 0.887 & 0.630 & 0.274 & --- & 0.027 & 0.012 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{enumerate}
+\item \textbf{Low $T$ (frozen):}  $\tau_{\mathrm{eff}} \gg T_{\mathrm{MC}}$.  The system remains in the retrieval basin.  $\langle\varphi\rangle \approx \phi_{\mathrm{eq}}(T)$, the single-pattern Boltzmann equilibrium (decreasing smoothly with $T$).  Example: $\alpha = 0.10$ at all $T$; $\alpha = 0.24$ for $T < 0.3$.
+
+\item \textbf{Intermediate $T$ (partial escape):}  $\tau_{\mathrm{eff}} \sim T_{\mathrm{MC}}$.  A fraction of trials escape to the centroid; $\langle\varphi\rangle$ drops below $\phi_{\mathrm{eq}}(T)$ and $\sigma(\varphi)$ grows.  Example: $\alpha = 0.24$ for $T \approx 0.3$--$0.6$.
+
+\item \textbf{High $T$ (saturated):}  $\tau_{\mathrm{eff}} \ll T_{\mathrm{MC}}$.  All escapable trials have escaped; the hopping chain has equilibrated.  $\langle\varphi\rangle$ saturates at a value $\varphi_\infty(\alpha)$ that depends on $\alpha$ but \emph{not on $T$}.  Example: $\alpha = 0.24$ for $T > 0.6$, where $\langle\varphi\rangle \approx 0.69$; $\alpha = 0.30$ for $T > 0.8$, where $\langle\varphi\rangle \approx 0$.
+\end{enumerate}
+
+The saturation value $\varphi_\infty(\alpha)$ is set by the hopping equilibrium on the pattern overlap graph: how far the system wanders from the target pattern within $T_{\mathrm{MC}}$ steps.  It decreases with $\alpha$ (more patterns, more escape routes, system wanders further) and would decrease further with longer $T_{\mathrm{MC}}$.
+
+\section{Consistency with the main paper}
+
+These observations are fully consistent with the centroid escape theory developed in the main paper:
+\begin{itemize}
+\item The ``vertical boundary'' at $\alpha \approx 0.25$ is the locus $\tau_{\mathrm{eff}}(\alpha, T) \approx T_{\mathrm{MC}}$, not the thermodynamic noise-floor threshold $\alpha_{\mathrm{th}}$.
+\item The three $T$-regimes (frozen / partial escape / saturated) follow directly from comparing $\tau_{\mathrm{eff}}$ with $T_{\mathrm{MC}}$.
+\item The saturation at high $T$ confirms that the system reaches hopping equilibrium, independent of escape kinetics.
+\item The ``non-retrieval'' region is not paramagnetic: the system sits at distant centroids (confirmed by $\phi_{\max}^{\mathrm{other}} \approx 0.82$ throughout).
+\end{itemize}
+
+\end{document}

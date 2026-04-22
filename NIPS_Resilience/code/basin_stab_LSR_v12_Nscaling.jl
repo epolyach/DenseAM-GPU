@@ -1,26 +1,25 @@
 #=
-GPU-Accelerated LSR Escape-Time Measurement (v11)
+GPU-Accelerated LSR N-Scaling Test (v12)
 ────────────────────────────────────────────────────────────────────────
 Usage:
-  julia basin_stab_LSR_v11_escape.jl
-  julia basin_stab_LSR_v11_escape.jl --fresh
+  julia basin_stab_LSR_v12_Nscaling.jl
+  julia basin_stab_LSR_v12_Nscaling.jl --fresh
 
-Goal: Measure the Kramers escape time from the retrieval basin by
-  recording φ(t) trajectories at selected (α,T) probe points.
+Goal: Test the N-dependence of the Kramers escape time at FIXED α=0.20
+  by varying M (which changes N = ⌊ln M / α⌋ while keeping φ_{1,max} fixed).
+
+  This directly tests τ ∝ N·τ_rel·exp(c·ΔF/T) with ΔF/T ∝ N.
 
 Design:
-  - ONE (α,T) point at a time → all GPU memory for disorder samples
-  - Each disorder sample has its OWN independent pattern set (3D batched)
-  - Two replicas (A, B) per disorder sample
-  - Record φ every TRAJ_STRIDE steps → detect hop times
-  - 2^18 = 262144 MC steps per trial
-  - n_dis auto-sized to fill GPU memory (~80% target)
+  Same as v11 but with variable M per probe point.
+  - M ∈ {20k, 100k, 500k, 2M} → N ∈ {49, 57, 65, 72}
+  - α = 0.20 fixed → φ_{1,max} = 0.574 at all N
+  - T ∈ {0.15, 0.25, 0.40, 0.80} (4 temperatures)
+  - n_dis reduced for large M to fit GPU memory
 
-Output per probe point:
-  v11_trajectory_a{α}_T{T}.csv:  step, disorder, phi_a, phi_b, phimax_a
-  v11_summary.csv:               α, T, N, M, n_dis, tau_1hop_median, ...
-
-Probe points: α ∈ {0.18,0.20,0.22,0.24}, T ∈ {0.10,0.15,0.20,0.25,0.30,0.40,0.50,0.80}
+Output:
+  v12_trajectory_a{α}_M{M}_T{T}.csv
+  v12_summary.csv
 ────────────────────────────────────────────────────────────────────────
 =#
 
@@ -44,25 +43,27 @@ const INF_ENERGY = F(1e30)
 const N_STEPS     = 2^18              # 262144 total MC steps
 const TRAJ_STRIDE = 64               # record φ every 64 steps
 const N_TRAJ      = N_STEPS ÷ TRAJ_STRIDE  # 4096 trajectory points
-const M_DEFAULT   = 20000            # default M (can be overridden per probe point)
+const M_DEFAULT   = 20000            # default M
 const N_DIS_DEFAULT = 2000           # default disorder samples
 
-# Probe points: (α, T) or (α, T, M, n_dis) for custom M
-# If M and n_dis are omitted, defaults are used.
-const PROBE_POINTS = [
-    (0.18, 0.10), (0.18, 0.15), (0.18, 0.20), (0.18, 0.25),
-    (0.18, 0.30), (0.18, 0.40), (0.18, 0.50), (0.18, 0.80),
-    (0.20, 0.10), (0.20, 0.15), (0.20, 0.20), (0.20, 0.25),
-    (0.20, 0.30), (0.20, 0.40), (0.20, 0.50), (0.20, 0.80),
-    (0.22, 0.10), (0.22, 0.15), (0.22, 0.20), (0.22, 0.25),
-    (0.22, 0.30), (0.22, 0.40), (0.22, 0.50), (0.22, 0.80),
-    (0.24, 0.10), (0.24, 0.15), (0.24, 0.20), (0.24, 0.25),
-    (0.24, 0.30), (0.24, 0.40), (0.24, 0.50), (0.24, 0.80),
-    (0.26, 0.10), (0.26, 0.15), (0.26, 0.20), (0.26, 0.25),
-    (0.26, 0.30), (0.26, 0.40), (0.26, 0.50), (0.26, 0.80),
-    (0.28, 0.10), (0.28, 0.15), (0.28, 0.20), (0.28, 0.25),
-    (0.28, 0.30), (0.28, 0.40), (0.28, 0.50), (0.28, 0.80),
+# ──────────────── N-scaling probe points ────────────────
+# Fixed α=0.20, variable M → variable N = ⌊ln(M)/0.20⌋
+# (α, T, M, n_dis) — n_dis reduced for large M to fit ~40GB GPU
+const ALPHA_FIXED = 0.20
+const T_VALUES = [0.15, 0.25, 0.40, 0.80]
+const M_N_DIS = [
+    (  20_000, 2000),   # N=49, baseline (already in v11, included for self-consistency)
+    ( 100_000,  800),   # N=57
+    ( 500_000,  300),   # N=65
+    (2_000_000, 100),   # N=72
 ]
+
+const PROBE_POINTS = Tuple[]
+for (M_val, nd) in M_N_DIS
+    for T_val in T_VALUES
+        push!(PROBE_POINTS, (ALPHA_FIXED, T_val, M_val, nd))
+    end
+end
 
 # Helper to extract (α, T, M, n_dis) from a probe point tuple
 function parse_probe(pt)
@@ -155,14 +156,15 @@ function main()
     fresh = "--fresh" in ARGS
 
     println("=" ^ 70)
-    println("LSR Escape-Time Measurement – GPU v11 (batched, auto-sized)")
+    println("LSR N-Scaling Test – GPU v12 (fixed α, variable M)")
     println("  Probe points: $(length(PROBE_POINTS))")
     println("  MC steps: $N_STEPS (record every $TRAJ_STRIDE → $N_TRAJ points)")
-    println("  M = $M_DEFAULT (default, overridable per probe point)")
-    println("  Disorder samples: $N_DIS_DEFAULT (default)")
+    println("  α = $ALPHA_FIXED (fixed)")
+    println("  M values: $(first.(M_N_DIS))")
+    println("  T values: $T_VALUES")
     println("=" ^ 70)
 
-    summary_file = "v11_summary.csv"
+    summary_file = "v12_summary.csv"
     if fresh || !isfile(summary_file)
         open(summary_file, "w") do f
             write(f, "alpha,T,N,M,n_dis,phi_mean_final,phi_std_final,frac_escaped,tau_1hop_median\n")
@@ -247,7 +249,7 @@ function main()
         @printf("  Done: %.1f s (%.3f ms/step)\n", t_elapsed, 1000*t_elapsed/N_STEPS)
 
         # ── Save trajectory (subsampled) ──
-        traj_file = @sprintf("v11_trajectory_a%.2f_T%.2f.csv", α, T)
+        traj_file = @sprintf("v12_trajectory_a%.2f_M%d_T%.2f.csv", α, M, T)
         open(traj_file, "w") do f
             write(f, "step,disorder,phi_a,phi_b,phimax_a,phimax_b\n")
             for ti in 1:4:N_TRAJ  # every 4th point
