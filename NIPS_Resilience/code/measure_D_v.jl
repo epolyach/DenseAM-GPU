@@ -113,39 +113,34 @@ function initialize_near!(x::Array{F,3}, targets::Array{F,3}, N::Int)
     end
 end
 
-# ──────────────── Compute v-component (CPU, from GPU arrays) ────────────────
-# v = projection of x/√N onto e₂, where e₂ is the orthonormalized direction
-# toward the most-overlapping pattern ξ^μ_max in the (ξ¹, ξ^μ) plane.
-#
-# e₁ = ξ¹/√N
-# e₂ = (ξ^μ/√N − φ_{1μ}·e₁) / √(1−φ_{1μ}²)
-# v = (x/√N)·e₂ = (φ_μ − φ₁·φ_{1μ}) / √(1−φ_{1μ}²)
-#
-# where φ₁ = x·ξ¹/N and φ_μ = x·ξ^μ/N.
+# ──────────────── GPU projection: compute φ₁ and v from x ────────────────
+# v = (φ_μ − φ₁·φ_{1μ}) / √(1−φ_{1μ}²)
+# where φ₁ = x·ξ¹/N and φ_μ = x·ξ^μ_max/N.
+# tgt_g[N,1,n_dis], mumax_g[N,1,n_dis], x_g[N,n_rep,n_dis]
 
-function compute_phi_and_v(x_cpu::Array{Float32,3}, targets_cpu::Array{Float32,3},
-                            mumax_cpu::Array{Float32,3}, phi_1mu::Vector{Float32},
-                            N::Int)
-    n_rep = size(x_cpu, 2)
-    n_dis = size(x_cpu, 3)
-    phi1 = zeros(Float32, n_rep, n_dis)
-    v_val = zeros(Float32, n_rep, n_dis)
-    for d in 1:n_dis
-        sq = sqrt(1 - phi_1mu[d]^2)
-        sq < 1e-6 && continue
-        for r in 1:n_rep
-            p1 = Float32(0)
-            pm = Float32(0)
-            for i in 1:N
-                p1 += targets_cpu[i, 1, d] * x_cpu[i, r, d]
-                pm += mumax_cpu[i, 1, d] * x_cpu[i, r, d]
-            end
-            p1 /= N; pm /= N
-            phi1[r, d] = p1
-            v_val[r, d] = (pm - p1 * phi_1mu[d]) / sq
-        end
-    end
-    return phi1, v_val
+function compute_phi1_v_gpu!(phi1_g::CuVector{F}, v_g::CuVector{F},
+                              x_g::CuArray{F,3}, tgt_g::CuArray{F,3},
+                              mumax_g::CuArray{F,3}, phi_1mu_g::CuVector{F},
+                              sq_g::CuVector{F}, Nf::F,
+                              ov_tgt::CuArray{F,3}, ov_mu::CuArray{F,3})
+    n_rep = size(x_g, 2)
+    n_dis = size(x_g, 3)
+    # φ₁ = tgt' × x / N  →  ov_tgt[1, n_rep, n_dis]
+    CUDA.CUBLAS.gemm_strided_batched!('T', 'N', one(F), tgt_g, x_g, zero(F), ov_tgt)
+    # φ_μ = mumax' × x / N  →  ov_mu[1, n_rep, n_dis]
+    CUDA.CUBLAS.gemm_strided_batched!('T', 'N', one(F), mumax_g, x_g, zero(F), ov_mu)
+
+    p1 = vec(ov_tgt) ./ Nf    # [n_chains]
+    pm = vec(ov_mu)  ./ Nf    # [n_chains]
+
+    # v = (pm - p1 * phi_1mu) / sqrt(1-phi_1mu^2)
+    # broadcast phi_1mu and sq over replicas
+    phi_1mu_bc = repeat(phi_1mu_g, inner=n_rep)
+    sq_bc      = repeat(sq_g, inner=n_rep)
+
+    phi1_g .= p1
+    v_g    .= (pm .- p1 .* phi_1mu_bc) ./ sq_bc
+    return nothing
 end
 
 # ──────────────── Check if done ────────────────
@@ -169,12 +164,12 @@ function run_point!(α, T, M, n_dis, summary_file)
     Nf = F(N)
     β = F(1 / T)
     σ = F(2.4 * T / sqrt(Float64(N)))
-    n_rep = 1  # single replica (no need for two — just measuring D)
+    n_rep = 1
     n_chains = n_rep * n_dis
 
     @printf("  α=%.2f, T=%.2f, M=%d, N=%d, n_dis=%d\n", α, T, M, N, n_dis)
 
-    # Generate patterns on CPU
+    # Generate patterns on CPU, normalize
     Random.seed!(hash((α, T, M, :v13)))
     pat_cpu = randn(F, N, M, n_dis)
     for d in 1:n_dis, j in 1:M
@@ -183,105 +178,118 @@ function run_point!(α, T, M, n_dis, summary_file)
     end
     tgt_cpu = reshape(pat_cpu[:, 1, :], N, 1, n_dis)
 
-    # Find μ_max (most overlapping pattern) for each disorder sample
-    phi_1mu = zeros(Float32, n_dis)
-    mu_max_idx = zeros(Int, n_dis)
-    for d in 1:n_dis
-        best_ov = Float32(-Inf)
-        best_j = 2
-        for j in 2:M
-            ov = Float32(0)
-            for i in 1:N
-                ov += Float32(pat_cpu[i, j, d]) * Float32(tgt_cpu[i, 1, d])
-            end
-            ov /= N
-            if ov > best_ov
-                best_ov = ov; best_j = j
-            end
-        end
-        phi_1mu[d] = best_ov
-        mu_max_idx[d] = best_j
-    end
+    # Transfer patterns to GPU
+    pat_g = CuArray(pat_cpu)
+    tgt_g = CuArray(tgt_cpu)
+
+    # ── Find μ_max on GPU: one batched GEMM ──
+    # overlaps[M, 1, n_dis] = pat_g' × tgt_g  → φ_{1μ} for all μ, all disorder
+    ov_all = CUDA.zeros(F, M, 1, n_dis)
+    CUDA.CUBLAS.gemm_strided_batched!('T', 'N', one(F), pat_g, tgt_g, zero(F), ov_all)
+    @. ov_all = ov_all / Nf
+    ov_all[1, :, :] .= F(-Inf)  # exclude target (pattern 1)
+
+    # argmax along dim 1 for each disorder sample
+    ov_2d = dropdims(ov_all, dims=2)  # [M, n_dis]
+    mu_max_vals, mu_max_idxs = findmax(Array(ov_2d), dims=1)  # CPU for indexing
+    phi_1mu_cpu = Float32.(vec(mu_max_vals))
+    mu_idx_cpu = [ci[1] for ci in vec(CartesianIndices(size(ov_2d))[mu_max_idxs])]
+
+    CUDA.unsafe_free!(ov_all)
+
+    # Build mumax_g[N, 1, n_dis] on CPU then transfer
     mumax_cpu = zeros(F, N, 1, n_dis)
     for d in 1:n_dis
-        mumax_cpu[:, 1, d] .= pat_cpu[:, mu_max_idx[d], d]
+        mumax_cpu[:, 1, d] .= pat_cpu[:, mu_idx_cpu[d], d]
     end
+    mumax_g = CuArray(mumax_cpu)
 
-    # Initialize replicas
+    # GPU vectors for φ_{1μ} and √(1−φ_{1μ}²)
+    phi_1mu_g = CuArray(F.(phi_1mu_cpu))
+    sq_g      = CuArray(F.(sqrt.(max.(0, 1.0f0 .- phi_1mu_cpu.^2))))
+
+    @printf("  ⟨φ_{1,max}⟩ = %.3f (GPU μ_max search done)\n", mean(phi_1mu_cpu))
+
+    # Initialize replicas on CPU, transfer to GPU
     x_cpu = zeros(F, N, n_rep, n_dis)
     Random.seed!(hash((α, T, M, :v13_init)))
     initialize_near!(x_cpu, tgt_cpu, N)
+    x_g  = CuArray(x_cpu)
+    xp_g = similar(x_g)
 
-    # Transfer to GPU
-    pat_g = CuArray(pat_cpu)
-    x_g   = CuArray(x_cpu)
-    xp_g  = similar(x_g)
+    pat_cpu = nothing; x_cpu = nothing; mumax_cpu = nothing; tgt_cpu = nothing
+    GC.gc()
+
+    # MC work arrays
     ov_g  = CUDA.zeros(F, M, n_rep, n_dis)
     E_g   = CUDA.zeros(F, n_chains)
     Ep_g  = CUDA.zeros(F, n_chains)
     ra_g  = CUDA.zeros(F, n_chains)
 
-    pat_cpu = nothing; x_cpu = nothing
-    GC.gc()
+    # Projection work arrays (small: [1, n_rep, n_dis])
+    ov_tgt = CUDA.zeros(F, 1, n_rep, n_dis)
+    ov_mu  = CUDA.zeros(F, 1, n_rep, n_dis)
+
+    # GPU accumulators for ⟨Δφ₁²⟩ and ⟨Δv²⟩
+    phi1_prev = CUDA.zeros(F, n_chains)
+    v_prev    = CUDA.zeros(F, n_chains)
+    phi1_cur  = CUDA.zeros(F, n_chains)
+    v_cur     = CUDA.zeros(F, n_chains)
+    sum_dphi1_sq = CUDA.zeros(Float32, n_chains)
+    sum_dv_sq    = CUDA.zeros(Float32, n_chains)
 
     compute_energy_lsr!(E_g, x_g, pat_g, ov_g, Nf)
 
-    # Storage for time series: φ₁(t) and v(t) at every step
-    phi1_ts = zeros(Float32, N_SHORT + 1, n_chains)
-    v_ts    = zeros(Float32, N_SHORT + 1, n_chains)
+    # Record initial (φ₁, v) on GPU
+    compute_phi1_v_gpu!(phi1_prev, v_prev, x_g, tgt_g, mumax_g,
+                         phi_1mu_g, sq_g, Nf, ov_tgt, ov_mu)
 
-    # Record initial state
-    x_snap = Array{Float32}(Array(x_g))
-    tgt_f32 = Array{Float32}(Array(reshape(CuArray(tgt_cpu), N, 1, n_dis)))
-    mumax_f32 = Array{Float32}(mumax_cpu)
-    p1, vv = compute_phi_and_v(x_snap, tgt_f32, mumax_f32, phi_1mu, N)
-    phi1_ts[1, :] .= vec(p1)
-    v_ts[1, :]    .= vec(vv)
-
-    # MC loop — record every step
-    tgt_g = CuArray(tgt_cpu)
+    # MC loop — accumulate Δ² on GPU, no CPU transfer
     t_start = time()
     for step in 1:N_SHORT
         mc_step!(x_g, xp_g, E_g, Ep_g, pat_g, ov_g, β, Nf, σ, ra_g)
-        x_snap .= Array{Float32}(Array(x_g))
-        p1, vv = compute_phi_and_v(x_snap, tgt_f32, mumax_f32, phi_1mu, N)
-        phi1_ts[step + 1, :] .= vec(p1)
-        v_ts[step + 1, :]    .= vec(vv)
+        compute_phi1_v_gpu!(phi1_cur, v_cur, x_g, tgt_g, mumax_g,
+                             phi_1mu_g, sq_g, Nf, ov_tgt, ov_mu)
+        # Accumulate Δ² (in Float32 for stability)
+        @. sum_dphi1_sq += Float32(phi1_cur - phi1_prev)^2
+        @. sum_dv_sq    += Float32(v_cur - v_prev)^2
+        # Swap
+        phi1_prev .= phi1_cur
+        v_prev    .= v_cur
     end
+    CUDA.synchronize()
     t_elapsed = time() - t_start
     @printf("  Done: %.1f s (%.2f ms/step)\n", t_elapsed, 1000*t_elapsed/N_SHORT)
 
-    # Compute D_v and D_φ₁ from step-to-step displacements
-    # D = ⟨(Δx)²⟩ / (2·Δt) with Δt = 1 MC step
-    dphi1_sq = Float64[]
-    dv_sq    = Float64[]
-    for j in 1:n_chains
-        for t in 1:N_SHORT
-            push!(dphi1_sq, (phi1_ts[t+1, j] - phi1_ts[t, j])^2)
-            push!(dv_sq,    (v_ts[t+1, j]    - v_ts[t, j])^2)
-        end
-    end
+    # Fetch and compute D
+    dphi1_sq_cpu = Array(sum_dphi1_sq)
+    dv_sq_cpu    = Array(sum_dv_sq)
 
-    D_phi1 = mean(dphi1_sq) / 2
-    D_v    = mean(dv_sq) / 2
-    D_phi1_std = std(dphi1_sq) / (2 * sqrt(length(dphi1_sq)))
-    D_v_std    = std(dv_sq) / (2 * sqrt(length(dv_sq)))
+    # D = mean(Σ Δx²) / (2 · N_SHORT)  per chain, then average over chains
+    D_phi1_per = dphi1_sq_cpu ./ (2 * N_SHORT)
+    D_v_per    = dv_sq_cpu    ./ (2 * N_SHORT)
+
+    D_phi1 = mean(D_phi1_per)
+    D_v    = mean(D_v_per)
+    D_phi1_std = std(D_phi1_per) / sqrt(n_chains)
+    D_v_std    = std(D_v_per) / sqrt(n_chains)
 
     @printf("  D_v = %.3e ± %.1e,  D_φ₁ = %.3e ± %.1e,  ratio D_v/D_φ₁ = %.3f\n",
-            D_v, D_v_std, D_phi1, D_phi1_std, D_v / D_phi1)
-    @printf("  ⟨φ_{1,max}⟩ = %.3f\n", mean(phi_1mu))
+            D_v, D_v_std, D_phi1, D_phi1_std, D_v / max(D_phi1, 1e-30))
+    @printf("  ⟨φ_{1,max}⟩ = %.3f\n", mean(phi_1mu_cpu))
 
     # Append to summary
     open(summary_file, "a") do f
         @printf(f, "%.2f,%.2f,%d,%d,%d,%.6e,%.6e,%.6e,%.6e,%.4f\n",
-                α, T, N, M, n_dis, D_v, D_phi1, D_v_std, D_phi1_std, mean(phi_1mu))
+                α, T, N, M, n_dis, D_v, D_phi1, D_v_std, D_phi1_std, mean(phi_1mu_cpu))
     end
 
     # Free GPU
-    CUDA.unsafe_free!(pat_g); CUDA.unsafe_free!(tgt_g)
-    CUDA.unsafe_free!(x_g);   CUDA.unsafe_free!(xp_g)
-    CUDA.unsafe_free!(ov_g);  CUDA.unsafe_free!(E_g)
-    CUDA.unsafe_free!(Ep_g);  CUDA.unsafe_free!(ra_g)
+    for arr in [pat_g, tgt_g, mumax_g, x_g, xp_g, ov_g, E_g, Ep_g, ra_g,
+                ov_tgt, ov_mu, phi_1mu_g, sq_g,
+                phi1_prev, v_prev, phi1_cur, v_cur, sum_dphi1_sq, sum_dv_sq]
+        CUDA.unsafe_free!(arr)
+    end
     GC.gc(); CUDA.reclaim()
 end
 
