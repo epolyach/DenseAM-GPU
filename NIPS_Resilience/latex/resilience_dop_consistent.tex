@@ -213,7 +213,7 @@ What prevents instantaneous escape is entropy, not energy.  The rotation in Stag
 \end{equation}
 
 \paragraph{Kramers escape and the tunneling analogy.}
-The situation is mathematically identical to a particle in a potential well escaping over a barrier by thermal fluctuations (Kramers problem) or, equivalently, to radioactive alpha decay through a Coulomb barrier.  The variable $v$ diffuses in the entropic potential~\eqref{eq:kramers_barrier}, and each thermal fluctuation that reaches $v = v_{\mathrm{entry}}$ triggers an irreversible escape.  The attempt frequency is set by the relaxation time $\tau_{\mathrm{rel}}$ of the Ornstein--Uhlenbeck diffusion in the perpendicular subspace, and the ``tunneling probability'' per attempt is $e^{-\Delta F/T}$.
+The situation is mathematically identical to a particle in a potential well escaping over a barrier by thermal fluctuations~\citep{kramers1940,hanggi1990} or, equivalently, to radioactive alpha decay through a Coulomb barrier.  The variable $v$ diffuses in the entropic potential~\eqref{eq:kramers_barrier}, and each thermal fluctuation that reaches $v = v_{\mathrm{entry}}$ triggers an irreversible escape.  The attempt frequency is set by the relaxation time $\tau_{\mathrm{rel}}$ of the Ornstein--Uhlenbeck diffusion in the perpendicular subspace, and the ``tunneling probability'' per attempt is $e^{-\Delta F/T}$.
 
 For a single escape-enabling pattern, the escape time is
 \begin{equation}
@@ -235,6 +235,19 @@ P(\text{escape by } t) = 1 - \exp(-\lambda\, t) \;\approx\; 1 - \exp(-t/\tau_{\m
 \end{equation}
 
 At $\alpha = 0.20$ ($\varphi_{1,\max} \approx 0.57$, $\phi_{\mathrm{eq}} = 0.90$, $N = 50$): $v_{\mathrm{entry}} = 0.232$, $\Delta F/T \approx 9.0$.  The targeted escape-time measurements in Section~\ref{ssec:escape_times} calibrate the effective escape time as $\tau_{\mathrm{eff}} \approx N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ with $c \approx 0.38$.
+
+\begin{small}
+\noindent\textit{Relation to the standard Kramers formula.}
+The entropic potential $V(v) = -\tfrac{N-3}{2}\ln(R^2 - v^2)$ with $R^2 = 1-\phi_{\mathrm{eq}}^2$ is monotonically increasing for $v > 0$: there is no saddle point.  The escape occurs when $v$ diffuses to the absorbing boundary $v = v_{\mathrm{entry}}$, not over a potential maximum.  For one-dimensional diffusion with coefficient $D$ in the potential $V(v)$, reflecting at $v = 0$ and absorbing at $v = v_{\mathrm{entry}}$, the mean first passage time is~\citep{hanggi1990}
+\[
+\tau = \frac{1}{D}\int_0^{v_{\mathrm{entry}}} \!\!e^{V(x)}\left[\int_0^{x} e^{-V(y)}\,dy\right] dx\,.
+\]
+In the high-barrier limit ($\Delta V = V(v_{\mathrm{entry}}) - V(0) \gg 1$), the outer integral is dominated by $x \approx v_{\mathrm{entry}}$ and the inner by $y \approx 0$, giving
+\[
+\tau \;\approx\; \frac{\sqrt{2\pi R^2/(N\!-\!3)}}{D}\;\exp\!\left(\frac{\Delta F}{T}\right).
+\]
+The prefactor $\sqrt{2\pi R^2/(N-3)}/D$ differs from our $\tau_{\mathrm{rel}} = R^2/D$ by the factor $\sqrt{2\pi/((N-3)R^2)}$, which is $O(1)$ for the relevant parameters ($\approx 0.7$--$1.2$).  Using the exact 1D prefactor changes the fitted slope negligibly ($c = 0.365$ vs $0.372$, $R^2 = 0.930$ vs $0.929$).  The dominant discrepancies, the factor~$N$ in the prefactor and $c \approx 0.38$ instead of~$1$ in the exponent, arise from the multi-dimensional escape geometry on the $(N\!-\!1)$-sphere, which requires the Langer theory of metastable decay~\citep{langer1969} and is beyond the scope of this work.
+\end{small}
 
 \subsection{Two-pattern thermal equilibrium}
 \label{ssec:retrieval}
@@ -443,7 +456,7 @@ The MC simulations use $N \approx 40$--$50$, where the Kramers escape time $\tau
 The centroids observed here are analogous to the mixture states of the classical Hopfield network~\citep{amit1987statistical}, where correlated superpositions of stored patterns form metastable fixed points.  There are two key differences.  First, in the Hopfield model, mixture states arise from the symmetry of the Hebbian interaction and exist as true fixed points of the zero-temperature dynamics; here, the centroids are thermal equilibria stabilized by entropy, not energy.  Second, in the Hopfield model, the paramagnetic state ($m = 0$) is a legitimate phase; in LSR, the energy diverges when no pattern is in support, so the system is always at some centroid.
 
 \paragraph{Open questions.}
-(i)~The barrier scaling factor $c \approx 0.38$ is empirical; a derivation from the multi-dimensional Kramers (Langer) theory would make it parameter-free.  (ii)~The analysis assumes $b = 2+\sqrt{2}$; for larger $b$ (narrower support caps), the cluster criterion~\eqref{eq:cluster} changes and multi-pattern centroids may become relevant.  (iii)~The connection to the LSE kernel, where the escape mechanism differs (no compact support, no zero-energy path), remains to be explored.
+(i)~The barrier scaling factor $c \approx 0.38$ is empirical; a derivation from the multi-dimensional Kramers--Langer theory~\citep{langer1969,hanggi1990} would make it parameter-free.  (ii)~The analysis assumes $b = 2+\sqrt{2}$; for larger $b$ (narrower support caps), the cluster criterion~\eqref{eq:cluster} changes and multi-pattern centroids may become relevant.  (iii)~The connection to the LSE kernel, where the escape mechanism differs (no compact support, no zero-energy path), remains to be explored.
 
 \bibliography{references}
 
