@@ -1,0 +1,3 @@
+alpha,T,N,M,n_dis,phi_mean_final,phi_std_final,frac_escaped,tau_1hop_median
+0.18,0.10,60,50000,2000,0.9585,0.0087,0.0003,64.0
+0.18,0.10,64,100000,2000,0.9586,0.0075,0.0003,64.0
