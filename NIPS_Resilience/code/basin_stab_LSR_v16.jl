@@ -47,26 +47,49 @@ const DV_RATIO_THRESH   = 2.0   # D_v(post)/D_v(retrieval) must exceed this
 # Centroid arrival: both φ₁ and φ_μ within δ of φ_cen
 const CENTROID_DELTA_SIGMA = 2.0  # multiples of thermal σ
 
-# Probe points: (α, T, T_run, stride)
-const PROBE_POINTS = [
-    # ── Moderate T (clean Kramers regime) ──
-    (0.20, 0.25,  500_000,    16),
-    (0.20, 0.30,  500_000,    16),
-    (0.22, 0.20,  500_000,    16),
-    (0.22, 0.25,  500_000,    16),
-    (0.22, 0.30,  300_000,    16),
-    (0.24, 0.15,  500_000,    16),
-    (0.24, 0.20,  500_000,    16),
-    (0.24, 0.25,  300_000,    16),
-    (0.24, 0.30,  200_000,    16),
-    (0.26, 0.20,  300_000,    16),
-    (0.26, 0.25,  200_000,    16),
-    (0.26, 0.30,  100_000,    16),
-    (0.28, 0.15,  200_000,    16),
-    (0.28, 0.20,  100_000,    16),
-    (0.28, 0.25,   50_000,    16),
-    (0.28, 0.30,   30_000,    16),
-]
+# Probe grid (same as v15)
+const ALPHA_VALUES = [0.20, 0.22, 0.24, 0.26, 0.28, 0.30]
+const T_VALUES     = [0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.80]
+
+# Adaptive T_run and stride — fastest first (learned from v14/v15)
+function get_run_params(alpha, T)
+    if T >= 0.80
+        return (10_000, 4)
+    elseif T >= 0.50
+        return (30_000, 8)
+    elseif T >= 0.40
+        return (100_000, 16)
+    elseif T >= 0.30
+        if alpha >= 0.26; return (100_000, 16)
+        else;             return (300_000, 32)
+        end
+    elseif T >= 0.25
+        if alpha >= 0.26; return (200_000, 32)
+        else;             return (500_000, 64)
+        end
+    elseif T >= 0.20
+        if alpha >= 0.26; return (300_000, 32)
+        else;             return (500_000, 64)
+        end
+    else  # T=0.15
+        if alpha >= 0.28; return (300_000, 32)
+        else;             return (500_000, 64)
+        end
+    end
+end
+
+# Build probe list sorted by T_run (fastest first)
+function build_probe_points()
+    pts = Tuple{Float64,Float64,Int,Int}[]
+    for α in ALPHA_VALUES, T in T_VALUES
+        T_run, stride = get_run_params(α, T)
+        push!(pts, (α, T, T_run, stride))
+    end
+    sort!(pts, by=p -> p[3])  # fastest first
+    return pts
+end
+
+const PROBE_POINTS = build_probe_points()
 
 # ══════════════════════════════════════════════════════════════════════
 
