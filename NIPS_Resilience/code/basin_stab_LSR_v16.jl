@@ -160,23 +160,22 @@ function compute_phi1!(phi_out, x, tgt, Nf)
     phi_out .= vec(sum(tgt .* x, dims=1)) ./ Nf
 end
 
-# ──────────────── Find max non-target overlap and its index ────────────────
-# ov is (M, n_rep, n_dis) after energy computation, already clamped to max(0,...)
-# Returns (max_val, max_idx) for μ≠1
-function find_max_nontarget!(max_val, max_idx, ov)
-    # Zero out pattern 1 contribution, then find max
-    M = size(ov, 1)
-    # ov[1,:,:] is target — set to 0 temporarily
-    ov1_save = ov[1:1, :, :]
-    ov[1:1, :, :] .= zero(F)
-    # Max over patterns (dim 1)
-    mv, mi = findmax(ov, dims=1)
+# ──────────────── Max non-target overlap (GPU, no index) ────────────────
+# Fast path: just the max VALUE — used every stride
+function max_nontarget_val!(max_val, ov)
+    ov_notgt = @view ov[2:end, :, :]
+    mv = maximum(ov_notgt, dims=1)
     max_val .= vec(mv)
-    # Extract pattern index from CartesianIndex
-    max_idx .= vec([ci[1] for ci in mi])
-    # Restore
-    ov[1:1, :, :] .= ov1_save
     return nothing
+end
+
+# Slow path: find which pattern — called only when escape detected (rare)
+# Transfers one disorder sample's ov slice to CPU
+function find_escape_pattern(ov, d, n_rep)
+    ov_cpu = Array(ov[:, 1, d])  # (M,) — single disorder sample
+    ov_cpu[1] = 0  # exclude target
+    idx = argmax(ov_cpu)
+    return idx, Float64(ov_cpu[idx])
 end
 
 # ──────────────── Check if done ────────────────
@@ -224,16 +223,13 @@ function run_point!(α, T, T_run, stride, n_dis)
 
     tgt_g = reshape(pat_g[:, 1, :], N, 1, n_dis)
 
-    # Compute inter-pattern overlaps φ_{1μ} for each disorder sample
-    # φ_{1μ} = ξ¹·ξ^μ / N
-    phi_1mu_cpu = zeros(Float32, M, n_dis)
-    for d in 1:n_dis
-        tgt_cpu = Array(pat_g[:, 1, d])
-        for mu in 1:M
-            pat_cpu = Array(pat_g[:, mu, d])
-            phi_1mu_cpu[mu, d] = Float32(dot(tgt_cpu, pat_cpu) / N)
-        end
-    end
+    # Compute inter-pattern overlaps φ_{1μ} = ξ¹·ξ^μ / N via batched GEMM on GPU
+    tgt_col = reshape(pat_g[:, 1:1, :], N, 1, n_dis)  # (N, 1, n_dis)
+    phi_1mu_g = CUDA.zeros(F, M, 1, n_dis)
+    CUDA.CUBLAS.gemm_strided_batched!('T', 'N', one(F), pat_g, tgt_col, zero(F), phi_1mu_g)
+    @. phi_1mu_g = phi_1mu_g / Nf
+    phi_1mu_cpu = Float32.(Array(dropdims(phi_1mu_g, dims=2)))  # (M, n_dis) on CPU
+    CUDA.unsafe_free!(phi_1mu_g)
 
     # Initialize at φ=1: x = ξ¹
     x_g = CUDA.zeros(F, N, n_rep, n_dis)
@@ -249,9 +245,8 @@ function run_point!(α, T, T_run, stride, n_dis)
     ra_g = CUDA.zeros(F, n_chains)
     phi1_g = CUDA.zeros(F, n_chains)
 
-    # Max non-target overlap tracking
+    # Max non-target overlap (value only — index found lazily on escape)
     max_ov_val = CUDA.zeros(F, n_chains)
-    max_ov_idx = CUDA.zeros(Int32, n_chains)
 
     compute_energy_lsr!(E_g, x_g, pat_g, ov_g, Nf)
 
@@ -267,14 +262,9 @@ function run_point!(α, T, T_run, stride, n_dis)
     Dv_sum  = zeros(Float64, n_chains, 4)  # zones 1-4
     Dv_cnt  = zeros(Int32, n_chains, 4)
 
-    # Rolling buffer for v toward current top pattern (pre-barrier)
-    roll_v   = zeros(Float32, ROLL_BUF_LEN, n_chains)
-    roll_idx = zeros(Int32, n_chains)  # circular index
-    roll_mu  = zeros(Int32, n_chains)  # which μ the v is computed toward
-
     # Confirmation counter (strides since candidate escape)
     confirm_cnt = zeros(Int32, n_chains)
-    confirm_dv  = zeros(Float64, n_chains)  # Dv accumulator in confirmation window
+    confirm_dv  = zeros(Float64, n_chains)
 
     # Survival curve
     escape_count = zeros(Int, n_record)  # cumulative confirmed escapes
@@ -292,140 +282,112 @@ function run_point!(α, T, T_run, stride, n_dis)
 
         if step % stride == 0
             rec_idx += 1
+
+            # GPU reductions (fast — no per-element transfers)
             compute_phi1!(phi1_g, x_g, tgt_g, Nf)
+            max_nontarget_val!(max_ov_val, ov_g)
+
+            # Single bulk transfer: phi1 + max_val → CPU
             phi1_cpu = Array(phi1_g)
-
-            # Find max non-target overlap
-            find_max_nontarget!(max_ov_val, max_ov_idx, ov_g)
             max_val_cpu = Array(max_ov_val)
-            max_idx_cpu = Array(max_ov_idx)
 
-            # Process each chain
+            b_f64 = Float64(b_lsr)
+
             for j in 1:n_chains
-                d = (j - 1) ÷ n_rep + 1  # disorder index
-
-                # Current top non-target pattern
-                mu_top = Int(max_idx_cpu[j])
-                phi_mu_top = Float32(max_val_cpu[j])  # this is ov value, not φ
-
-                # Convert ov to φ: ov = max(0, 1-b+b*φ/N*N) → if ov > 0: φ = (ov/b_lsr + b_lsr - 1) * N / (b_lsr * ... )
-                # Actually ov = max(0, 1 - b + b * φ_μ). So φ_μ = (ov + b - 1) / b if ov > 0
-                # But we need the actual φ_μ from the overlap, not from ov
-                # The overlap with mu_top: φ_{mu_top} = x · ξ^{mu_top} / N
-                # We have phi_1mu_cpu[mu_top, d] = inter-pattern overlap
-                # For v computation: v = (φ_μ - φ₁ × φ_{1μ}) / √(1 - φ_{1μ}²)
-                # φ_μ at current state: need to extract from ov
-                # ov[mu,:,:] = max(0, 1 - b + b × φ_μ). If ov > 0: φ_μ = (ov - 1 + b) / b
-                # But ov was computed with Nf normalization: ov = max(0, 1 - b + b * (pat'x)/(N))
-                # So if ov[mu] > 0: φ_μ = (ov[mu] - 1 + b_lsr) / b_lsr
-
-                b_f64 = Float64(b_lsr)
-                phi_mu = phi_mu_top > 0 ? (Float64(phi_mu_top) - 1 + b_f64) / b_f64 : 0.0
-
-                phi_1mu_j = Float64(phi_1mu_cpu[mu_top, d])
-                denom = sqrt(max(1e-10, 1 - phi_1mu_j^2))
-                v_now = Float32((phi_mu - Float64(phi1_cpu[j]) * phi_1mu_j) / denom)
+                d = (j - 1) ÷ n_rep + 1
+                ov_top = Float64(max_val_cpu[j])
+                # Convert ov to φ_μ: ov = max(0, 1-b+bφ) → φ = (ov-1+b)/b
+                phi_mu = ov_top > 0 ? (ov_top - 1 + b_f64) / b_f64 : 0.0
 
                 if status[j] == 0  # ── RETRIEVAL ──
-                    # Accumulate D_v at zone 1 (retrieval center)
-                    if v_prev_valid[j] && roll_mu[j] == mu_top
-                        Δv = Float64(v_now - v_prev[j])
-                        Dv_sum[j, 1] += Δv^2
-                        Dv_cnt[j, 1] += 1
-                    end
+                    # Check for barrier crossing: any non-target in support?
+                    if ov_top > 0
+                        # Rare event — find WHICH pattern (lazy, single sample)
+                        mu_top, _ = find_escape_pattern(ov_g, d, n_rep)
+                        phi_1mu_j = Float64(phi_1mu_cpu[mu_top, d])
+                        denom = sqrt(max(1e-10, 1 - phi_1mu_j^2))
+                        v_now = Float32((phi_mu - Float64(phi1_cpu[j]) * phi_1mu_j) / denom)
 
-                    # Update rolling buffer
-                    ri = (roll_idx[j] % ROLL_BUF_LEN) + 1
-                    roll_v[ri, j] = v_now
-                    roll_idx[j] = ri
-                    roll_mu[j] = Int32(mu_top)
-
-                    v_prev[j] = v_now
-                    v_prev_valid[j] = true
-
-                    # Check for barrier crossing: φ_μ ≥ φ_c (ov > 0 means in support)
-                    if phi_mu ≥ PHI_C && mu_top != 1
                         status[j] = 1  # candidate
                         t_escape[j] = Int32(step)
                         mu_escape[j] = Int32(mu_top)
                         phi_1mu_esc[j] = Float32(phi_1mu_j)
                         confirm_cnt[j] = 0
                         confirm_dv[j] = 0.0
-
-                        # Compute D_v at zone 2 (pre-barrier) from rolling buffer
-                        # Use the last entries where roll_mu == mu_top
-                        prev_v = NaN32
-                        for k in 1:min(ROLL_BUF_LEN, roll_idx[j])
-                            idx_k = ((roll_idx[j] - k) % ROLL_BUF_LEN) + 1
-                            if idx_k >= 1 && idx_k <= ROLL_BUF_LEN
-                                vk = roll_v[idx_k, j]
-                                if !isnan(prev_v)
-                                    Δv = Float64(vk - prev_v)
-                                    Dv_sum[j, 2] += Δv^2
-                                    Dv_cnt[j, 2] += 1
-                                end
-                                prev_v = vk
-                            end
-                        end
+                        v_prev[j] = v_now
+                        v_prev_valid[j] = true
                     end
+                    # D_v zone 1: accumulate using φ₁ displacement (model-free)
+                    # Δφ₁² / (2 Δt) is a proxy for D at retrieval center
+                    if rec_idx > 1
+                        Δφ = Float64(phi1_cpu[j]) - Float64(v_prev[j])  # reuse v_prev as φ₁_prev for zone 1
+                        Dv_sum[j, 1] += Δφ^2
+                        Dv_cnt[j, 1] += 1
+                    end
+                    v_prev[j] = Float32(phi1_cpu[j])  # store φ₁ for zone 1 D_v
 
                 elseif status[j] == 1  # ── CANDIDATE ESCAPE ──
-                    # Accumulate D_v in confirmation window (zone 3)
+                    # Compute v toward the escaping pattern
+                    mu_j = Int(mu_escape[j])
+                    phi_1mu_j = Float64(phi_1mu_esc[j])
+                    # Need φ_μ for the specific escaping pattern
+                    # Approximate: if it's still the max, use phi_mu from above
+                    # Otherwise the escape may have reversed
+                    denom = sqrt(max(1e-10, 1 - phi_1mu_j^2))
+                    v_now = Float32((phi_mu - Float64(phi1_cpu[j]) * phi_1mu_j) / denom)
+
                     if v_prev_valid[j]
                         Δv = Float64(v_now - v_prev[j])
                         confirm_dv[j] += Δv^2
                     end
                     confirm_cnt[j] += 1
                     v_prev[j] = v_now
+                    v_prev_valid[j] = true
 
                     if confirm_cnt[j] >= CONFIRM_WINDOW
-                        # Check if D_v jumped
                         Dv_post = confirm_dv[j] / confirm_cnt[j]
                         Dv_ret  = Dv_cnt[j,1] > 0 ? Dv_sum[j,1] / Dv_cnt[j,1] : 1e-10
-
                         if Dv_post > DV_RATIO_THRESH * Dv_ret
-                            # Confirmed escape
-                            status[j] = 2
+                            status[j] = 2  # confirmed
                             Dv_sum[j, 3] = confirm_dv[j]
                             Dv_cnt[j, 3] = confirm_cnt[j]
                         else
-                            # False alarm — reset to retrieval
-                            status[j] = 0
-                            t_escape[j] = -1
-                            mu_escape[j] = 0
+                            status[j] = 0  # false alarm
+                            t_escape[j] = -1; mu_escape[j] = 0
                             v_prev_valid[j] = false
                         end
                     end
 
-                elseif status[j] == 2  # ── CONFIRMED ESCAPE, sliding to centroid ──
-                    # Continue accumulating D_v at zone 3
+                elseif status[j] == 2  # ── CONFIRMED, sliding to centroid ──
+                    mu_j = Int(mu_escape[j])
+                    phi_1mu_j = Float64(phi_1mu_esc[j])
+                    denom = sqrt(max(1e-10, 1 - phi_1mu_j^2))
+                    v_now = Float32((phi_mu - Float64(phi1_cpu[j]) * phi_1mu_j) / denom)
                     if v_prev_valid[j]
                         Δv = Float64(v_now - v_prev[j])
-                        Dv_sum[j, 3] += Δv^2
-                        Dv_cnt[j, 3] += 1
+                        Dv_sum[j, 3] += Δv^2; Dv_cnt[j, 3] += 1
                     end
-                    v_prev[j] = v_now
+                    v_prev[j] = v_now; v_prev_valid[j] = true
 
-                    # Check centroid arrival
-                    φcen_j = φ_cen_eq(T, Float64(phi_1mu_esc[j]))
+                    φcen_j = φ_cen_eq(T, phi_1mu_j)
                     if abs(Float64(phi1_cpu[j]) - φcen_j) < centroid_δ &&
                        abs(phi_mu - φcen_j) < centroid_δ
-                        status[j] = 3
-                        t_centroid[j] = Int32(step)
+                        status[j] = 3; t_centroid[j] = Int32(step)
                     end
 
                 elseif status[j] == 3  # ── AT CENTROID ──
-                    # Accumulate D_v at zone 4
+                    mu_j = Int(mu_escape[j])
+                    phi_1mu_j = Float64(phi_1mu_esc[j])
+                    denom = sqrt(max(1e-10, 1 - phi_1mu_j^2))
+                    v_now = Float32((phi_mu - Float64(phi1_cpu[j]) * phi_1mu_j) / denom)
                     if v_prev_valid[j]
                         Δv = Float64(v_now - v_prev[j])
-                        Dv_sum[j, 4] += Δv^2
-                        Dv_cnt[j, 4] += 1
+                        Dv_sum[j, 4] += Δv^2; Dv_cnt[j, 4] += 1
                     end
-                    v_prev[j] = v_now
+                    v_prev[j] = v_now; v_prev_valid[j] = true
                 end
             end
 
-            # Count confirmed escapes for survival curve
             n_esc = count(s -> s >= 2, status)
             escape_count[rec_idx] = n_esc
             ProgressMeter.update!(prog, step,
@@ -479,7 +441,7 @@ function run_point!(α, T, T_run, stride, n_dis)
 
     # Free GPU
     for arr in [pat_g, tgt_g, x_g, xp_g, ov_g, E_g, Ep_g, ra_g, phi1_g,
-                max_ov_val, max_ov_idx]
+                max_ov_val]
         CUDA.unsafe_free!(arr)
     end
     GC.gc(); CUDA.reclaim()
