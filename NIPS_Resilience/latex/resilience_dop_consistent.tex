@@ -11,7 +11,7 @@
 \newcommand{\bx}{\mathbf{x}}
 \newcommand{\avg}[1]{\langle #1 \rangle}
 
-\title{Metastability of Retrieval in LSR Dense Associative Memory}
+\title{Retrieval Metastability via Kramers Escape and Centroid Hopping in Log-Sum-ReLU Dense Associative Memory}
 \author{}
 \date{}
 
@@ -19,7 +19,7 @@
 \maketitle
 
 \begin{abstract}
-Dense Associative Memory models with the log-sum-ReLU (LSR) energy function achieve exponential storage ($M = e^{\alpha N}$ patterns) and, below a critical load $\alpha_{\mathrm{th}}$, are predicted to retrieve perfectly at any temperature.  We show that within this retrieval region, the system is metastable: thermal fluctuations drive escape from the retrieval basin to two-pattern centroids via a Kramers process over a purely entropic barrier.  The escape time scales as $\tau \sim N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ with $\Delta F/T \propto N$, confirmed by Monte Carlo measurements across three decades in $\tau$ ($R^2 = 0.95$).  After the first escape, the system performs a random walk on the pattern overlap graph, hopping between centroids at comparable energy; no true paramagnetic state exists.  The apparent phase boundary observed in simulations is a kinetic crossover ($\tau \approx T_{\mathrm{MC}}$), not a thermodynamic phase transition.  Since $\tau$ grows exponentially with $N$, the retrieval state is effectively stable for practical system sizes.
+We study the retrieval properties of Dense Associative Memory with the log-sum-ReLU (LSR) energy depending on the load $\alpha$ and temperature $T$. The retrieval region in the $(\alpha, T)$ plane contains three regimes. At low $\alpha$, no spurious pattern has sufficient overlap with the target to enable escape, and retrieval is absolutely stable. At moderate $\alpha$, spurious patterns enter the escape-enabling range but are separated from the retrieval basin by a purely entropic barrier; the retrieval state is metastable, with an escape time $\tau$ that grows exponentially with the system dimension $N$. We identify the escape as Kramers process: thermal fluctuations drive the system from the retrieval basin to a two-pattern centroid via a perpendicular rotation on the $N$-sphere. The exponential scaling of $\tau$ with the barrier height $\Delta F/T$ is confirmed by Monte Carlo measurements across three decades in $\tau$. After the first escape, the system performs a random walk on the pattern overlap graph, hopping between centroids at comparable energy; no true paramagnetic state exists in the LSR model. The apparent phase boundary observed in MC simulations is a kinetic crossover where $\tau \approx T_{\mathrm{MC}}$, not a thermodynamic phase transition; for practical system sizes ($N \gg 50$), the retrieval state is effectively stable. At high $\alpha$, a spurious pattern occurs within the retrieval basin and is strong enough to flatten the retrieval well; the barrier vanishes and retrieval is lost.
 \end{abstract}
 
 \section{Introduction}
@@ -212,8 +212,17 @@ What prevents instantaneous escape is entropy, not energy.  The rotation in Stag
 \label{eq:kramers_barrier}
 \end{equation}
 
-\paragraph{Kramers escape and the tunneling analogy.}
-The situation is mathematically identical to a particle in a potential well escaping over a barrier by thermal fluctuations~\citep{kramers1940,hanggi1990} or, equivalently, to radioactive alpha decay through a Coulomb barrier.  The variable $v$ diffuses in the entropic potential~\eqref{eq:kramers_barrier}, and each thermal fluctuation that reaches $v = v_{\mathrm{entry}}$ triggers an irreversible escape.  The attempt frequency is set by the relaxation time $\tau_{\mathrm{rel}}$ of the Ornstein--Uhlenbeck diffusion in the perpendicular subspace, and the ``tunneling probability'' per attempt is $e^{-\Delta F/T}$.
+\paragraph{Kramers escape.}
+The variable $v$ undergoes diffusion on the sphere in the entropic potential $V(v) = -\tfrac{N-3}{2}\ln(R^2 - v^2)$, where $R^2 = 1-\phi_{\mathrm{eq}}^2$.  Each thermal fluctuation that reaches $v = v_{\mathrm{entry}}$ triggers an irreversible escape to the centroid~\citep{kramers1940,hanggi1990}.
+
+\begin{small}
+\noindent\textit{Origin of the entropic barrier.}
+The Metropolis dynamics on $S^{N-1}(\!\sqrt{N})$ proposes isotropic displacements and projects onto the sphere.  Along the escape path (Stage~1), the energy is exactly constant ($\Delta E = 0$), so every proposal is accepted regardless of~$v$.  However, the volume of the perpendicular subspace at position~$v$ is $\mathrm{Vol}(v) \propto (R^2 - v^2)^{(N-3)/2}$: it is maximal at $v = 0$ and shrinks as $v$ increases toward~$v_{\mathrm{entry}}$.  The sphere projection after each MC step creates a geometric drift toward $v = 0$, not from energy rejection, but because there is more room at low~$v$.  The equilibrium distribution of~$v$ is the volume element itself, $P_{\mathrm{eq}}(v) \propto (R^2 - v^2)^{(N-3)/2} = e^{-V(v)}$.  The escape requires diffusing from $v = 0$ (maximum volume) to $v_{\mathrm{entry}}$ (reduced volume) against this geometric bias.  The ratio of volumes is the barrier:
+\[
+\exp\!\left(\frac{\Delta F}{T}\right) = \frac{\mathrm{Vol}(0)}{\mathrm{Vol}(v_{\mathrm{entry}})} = \left(\frac{R^2}{R^2 - v_{\mathrm{entry}}^2}\right)^{(N-3)/2}\!,
+\]
+and the escape time scales as $\tau \sim \tau_{\mathrm{diff}} \times \exp(\Delta F/T)$, where $\tau_{\mathrm{diff}}$ is the local diffusion time.  The exponential factor counts how many diffusion attempts are needed before the geometric drift allows the system to reach~$v_{\mathrm{entry}}$.
+\end{small}
 
 For a single escape-enabling pattern, the escape time is
 \begin{equation}
@@ -227,12 +236,35 @@ P(\text{escape by } t) = 1 - \exp(-t/\tau_\mu)\,.
 \end{equation}
 Even when $\tau_\mu \gg T_{\mathrm{MC}}$ (the allocated MC time), a nonzero fraction $\approx T_{\mathrm{MC}}/\tau_\mu$ of trials escapes.  This is analogous to a radioactive sample: the half-life may be billions of years, but a measurable fraction of atoms decays on any timescale.
 
-Patterns with lower $\varphi_{1\mu}$ have larger $v_{\mathrm{entry}}$ and exponentially higher barriers.  Each escape-enabling pattern runs an independent Poisson clock with rate $\lambda_\mu = \tau_\mu^{-1}$.  The total escape rate is $\lambda = \sum_\mu \lambda_\mu$, but since $\tau_\mu$ depends exponentially on $\Delta F_\mu/T$, the sum is dominated by the pattern with the smallest barrier, $\varphi_{1\mu} = \varphi_{1,\max}$:
+Patterns with lower $\varphi_{1\mu}$ have larger $v_{\mathrm{entry}}$ and exponentially higher barriers.  Each escape-enabling pattern runs an independent Poisson clock with rate $\lambda_\mu = \tau_\mu^{-1}$.  The total escape rate is
 \begin{equation}
-P(\text{escape by } t) = 1 - \exp(-\lambda\, t) \;\approx\; 1 - \exp(-t/\tau_{\mathrm{eff}})\,,
-\qquad \tau_{\mathrm{eff}} \approx \tau_{\mathrm{rel}} \times \exp\!\left(\frac{\Delta F}{T}\bigg|_{\varphi_{1,\max}}\right).
+\lambda = \sum_{\mu:\,\varphi_{1\mu} > \varphi_{\min}} \lambda_\mu\,,
+\label{eq:lambda_total}
+\end{equation}
+and the survival probability is
+\begin{equation}
+P(\text{escape by } t) = 1 - \exp(-\lambda\, t)\,.
 \label{eq:escape_prob_K}
 \end{equation}
+
+\paragraph{Multi-channel escape.}
+A natural expectation is that the sum~\eqref{eq:lambda_total} is dominated by the pattern with the smallest barrier ($\varphi_{1\mu} = \varphi_{1,\max}$), since the rates are exponentially sensitive to the barrier.  However, the number of competing channels $K = n(\varphi_{\min})$ grows exponentially with $\alpha N$ (Table~\ref{tab:n_overlap}), and the barrier variation among them is modest (a factor of $\sim 6$ in rate between the fastest and the mean).  The effective escape rate is therefore $\lambda \sim K\,\langle\lambda\rangle$, not $\lambda_{\max}$.
+
+This is confirmed by comparing two MC experiments.  In one (v14), the escape is detected by a drop in the target overlap $\varphi$, which captures escape through \emph{any} pattern.  In the other (v15), the escape is detected by the most-overlapping pattern entering support ($\phi_{\mu_{\max}} \geq \varphi_c$), which captures escape through $\mu_{\max}$ only.  The ratio $\tau_{\mathrm{v15}}/\tau_{\mathrm{v14}} \approx 15$--$100$ across the measured $(\alpha, T)$ range, confirming that the escape goes through a random channel, not preferentially through $\mu_{\max}$ (Fig.~\ref{fig:escape_channels}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{../panels_paper/escape_channels.pdf}
+\caption{Schematic of the multi-channel escape.  The system (blue path) wanders inside the retrieval basin and escapes through one of $K$ channels (orange arrows), each corresponding to an escape-enabling pattern.  The escape does not preferentially go through the channel with the lowest barrier ($\bxi^{\mu_{\max}}$, red); the $K$-fold competition determines the total rate.}
+\label{fig:escape_channels}
+\end{figure}
+
+The disorder-averaged total rate can be computed exactly from the single-pattern overlap density $f(\varphi)$ (Eq.~\eqref{eq:exact_density}):
+\begin{equation}
+\langle\lambda\rangle = M \int_{\varphi_{\min}}^{1} \frac{C}{\tau_{\mathrm{rel}}}\,\exp\!\left(-c\,\frac{\Delta F(\varphi)}{T}\right) f(\varphi)\,d\varphi\,,
+\label{eq:lambda_avg}
+\end{equation}
+where $\Delta F(\varphi)/T$ is the barrier~\eqref{eq:kramers_barrier} evaluated at inter-pattern overlap $\varphi$, and the integral runs over all escape-enabling overlaps.  This formula replaces the single-pattern estimate~\eqref{eq:kramers_time}: the escape rate is set by the \emph{sum} over all $K$ channels, not by the maximum alone.
 
 At $\alpha = 0.20$ ($\varphi_{1,\max} \approx 0.57$, $\phi_{\mathrm{eq}} = 0.90$, $N = 50$): $v_{\mathrm{entry}} = 0.232$, $\Delta F/T \approx 9.0$.  The targeted escape-time measurements in Section~\ref{ssec:escape_times} calibrate the effective escape time as $\tau_{\mathrm{eff}} \approx N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ with $c \approx 0.38$.
 
@@ -367,9 +399,9 @@ The right panel shows the disorder-averaged alignment $\avg{\varphi}(\alpha, T)$
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.48\textwidth]{../panels_paper/kramers_validation.pdf}%
+\includegraphics[width=0.48\textwidth]{panels_paper/kramers_validation.pdf}%
 \hfill
-\includegraphics[width=0.48\textwidth]{../panels_paper/heatmap_phase.pdf}
+\includegraphics[width=0.48\textwidth]{panels_paper/heatmap_phase.pdf}
 \caption{Kramers escape theory and phase diagram ($b = 2+\sqrt{2}$, $M = 20\,000$).  \textbf{Left:} Kramers validation from targeted escape-time measurements.  Vertical axis: $\ln(\tau_{\mathrm{eff}}/(N\,\tau_{\mathrm{rel}}))$, factoring out the diffusion prefactor and the geometric dilution factor~$N$.  Horizontal axis: entropic barrier $\Delta F/T$~\eqref{eq:kramers_barrier}.  Dashed line: fit to $\alpha = 0.20$~\eqref{eq:kramers_fit}.  \textbf{Right:} disorder-averaged alignment $\avg{\varphi}(\alpha, T)$ from the bulk survey.  Green: empirical $P_{\mathrm{esc}} = 0.5$.  Red: Kramers $\tau_{\mathrm{eff}} = T_{\mathrm{MC}}$~\eqref{eq:kramers_fit}.  Cyan: Gaussian $\alpha_c(T)$.  Black: exact-density $\alpha_c(T)$.  The observed boundary tracks the Kramers kinetic contour, not the noise-floor thresholds.}
 \label{fig:phase_diagram}
 \end{figure}
@@ -426,7 +458,10 @@ Figure~\ref{fig:phase_diagram} (left) plots $\ln(\tau_{\mathrm{eff}}/(N\,\tau_{\
 \end{equation}
 with intercept $\approx 0$, confirming that the escape time scales as $\tau_{\mathrm{eff}} \approx N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ with $c \approx 0.38$ and no additional free parameter.  The slope $c \approx 0.38$ means the effective barrier is $\approx 37\%$ of the formula~\eqref{eq:kramers_barrier}.  Two effects contribute: (i)~at thermal equilibrium the system starts at $v \sim T/\sqrt{N}$, not $v = 0$, shortening the effective distance to $v_{\mathrm{entry}}$; (ii)~the one-dimensional projection neglects favorable fluctuations in the remaining $N-2$ coordinates.
 
-The calibrated formula $\tau_{\mathrm{eff}} = N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ produces the red contour $\tau_{\mathrm{eff}} = T_{\mathrm{MC}}$ in Figure~\ref{fig:phase_diagram} (right).  The contour is shifted to the left of the empirical boundary (green) because the calibration is based on $\alpha = 0.20$ only; the remaining probe points at $\alpha = 0.22$ and $0.24$ will tighten the extrapolation.  The qualitative agreement in shape confirms that the apparent ``phase boundary'' is the kinetic locus $\tau_{\mathrm{eff}}(\alpha, T) \approx T_{\mathrm{MC}}$.
+\paragraph{Survival curve validation.}
+Direct MC measurements of the survival probability $P(\text{survive} > t)$ confirm the Kramers mechanism.  Trials are initialized at $\phi_1 = 1$ and evolved with the Metropolis dynamics.  At moderate temperatures ($T \geq 0.25$), the survival curves are exponential over the entire measured range, consistent with a single escape rate per disorder sample.  At lower temperatures ($T \leq 0.20$), the survival becomes non-exponential: it decays steeply at early times (fast-escaping samples with high $\varphi_{1,\max}$ and low barriers) and flattens at late times (slow-escaping samples with low $\varphi_{1,\max}$ and high barriers).  This shape is quantitatively consistent with the disorder average~\eqref{eq:lambda_avg}: each disorder sample escapes exponentially, but the distribution of barriers across samples produces a mixture of exponentials with the observed concave shape on the log scale.  At low $T$, the sensitivity of the barrier to $\varphi_{1,\max}$ is amplified (because $\phi_{\mathrm{eq}}\,\varphi_{1,\max}$ is close to $\varphi_c$, making $v_{\mathrm{entry}}$ small and sensitive to $\varphi_{1,\max}$), which broadens the rate distribution and destroys the single-exponential character.
+
+The calibrated formula $\tau_{\mathrm{eff}} = N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ produces the red contour $\tau_{\mathrm{eff}} = T_{\mathrm{MC}}$ in Figure~\ref{fig:phase_diagram} (right).  The contour is shifted to the left of the empirical boundary (green) because the calibration is based on $\alpha \geq 0.20$ only.  The multi-channel formula~\eqref{eq:lambda_avg}, which sums the rates over all $K$ escape-enabling patterns, provides the correct $\alpha$- and $T$-dependence of the total escape rate without fitting to the heatmap data directly.  The qualitative agreement in shape confirms that the apparent ``phase boundary'' is the kinetic locus $\tau_{\mathrm{eff}}(\alpha, T) \approx T_{\mathrm{MC}}$.
 
 \paragraph{Practical relevance.}
 The escape time $\tau \sim \exp(cN)$ grows exponentially with the system dimension, because the barrier $\Delta F/T \propto N$.  At $N = 50$ and $\alpha = 0.20$: $\tau \sim 10^6$ MC steps.  At $N = 100$, the barrier roughly doubles, giving $\tau \sim 10^{12}$.  For any practical retrieval application with $N \gg 50$, the escape time far exceeds any realistic query time.  The retrieval state, though formally metastable, is effectively stable.
