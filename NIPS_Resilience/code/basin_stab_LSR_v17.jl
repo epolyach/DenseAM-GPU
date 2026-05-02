@@ -406,8 +406,6 @@ function run_point!(α, T, T_run, stride, n_dis)
             escape_count[rec_idx] = n_esc
             ProgressMeter.update!(prog, step,
                 showvalues=[(:confirmed_esc, @sprintf("%d/%d", n_esc, n_chains))])
-        else
-            next!(prog)
         end
     end
     CUDA.synchronize()
