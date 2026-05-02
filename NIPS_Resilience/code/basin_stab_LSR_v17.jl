@@ -116,21 +116,25 @@ function φ_cen_eq(T, φ_1mu)
 end
 
 # ──────────────── GPU kernels ────────────────
-function compute_energy_lsr!(E, x, pat, ov, Nf)
+function compute_energy_lsr!(E, x, pat, ov, Nf; raw_phi=nothing)
     Nb = Nf / b_lsr
     CUDA.CUBLAS.gemm_strided_batched!('T', 'N', one(F), pat, x, zero(F), ov)
-    @. ov = max(zero(F), one(F) - b_lsr + b_lsr * ov / Nf)
+    @. ov = ov / Nf  # now ov = φ_μ (raw overlaps)
+    if raw_phi !== nothing
+        raw_phi .= ov  # save raw overlaps before ReLU
+    end
+    @. ov = max(zero(F), one(F) - b_lsr + b_lsr * ov)
     s = sum(ov, dims=1)
     E .= vec(@. ifelse(s > zero(F), -Nb * log(s), INF_ENERGY))
     return nothing
 end
 
-function mc_step!(x, xp, E, Ep, pat, ov, β, Nf, σ, ra)
+function mc_step!(x, xp, E, Ep, pat, ov, β, Nf, σ, ra; raw_phi=nothing)
     randn!(xp)
     @. xp = x + σ * xp
     nrm = sqrt.(sum(xp .^ 2, dims=1))
     @. xp = sqrt(Nf) * xp / nrm
-    compute_energy_lsr!(Ep, xp, pat, ov, Nf)
+    compute_energy_lsr!(Ep, xp, pat, ov, Nf; raw_phi=raw_phi)
     rand!(ra)
     acc = @. (Ep < INF_ENERGY) & (ra < exp(-β * (Ep - E)))
     a3 = reshape(acc, 1, size(x,2), size(x,3))
@@ -146,6 +150,21 @@ function max_nontarget_val!(max_val, ov)
     ov_notgt = @view ov[2:end, :, :]
     mv = maximum(ov_notgt, dims=1)
     max_val .= vec(mv)
+    return nothing
+end
+
+# Bulk GPU: max raw overlap and its index (excluding target pattern 1)
+# Transfer only the result (2 × n_chains floats)
+function max_nontarget_raw_bulk!(raw_phi, _buf_val, _buf_idx)
+    # Work on [2:end, :, :] to exclude target
+    notgt = @view raw_phi[2:end, :, :]
+    # Max value (GPU reduction)
+    mv = maximum(notgt, dims=1)
+    _buf_val .= vec(mv)
+    # Index: use findmax — returns CartesianIndex, extract on CPU
+    _, mi = findmax(notgt, dims=1)
+    mi_cpu = Array(mi)
+    _buf_idx .= vec([Int32(ci[1]) + Int32(1) for ci in mi_cpu])  # +1 offset
     return nothing
 end
 
@@ -231,8 +250,11 @@ function run_point!(α, T, T_run, stride, n_dis)
     ra_g = CUDA.zeros(F, n_chains)
     phi1_g = CUDA.zeros(F, n_chains)
     max_ov_val = CUDA.zeros(F, n_chains)
+    raw_phi_g = CUDA.zeros(F, M, n_rep, n_dis)  # raw φ_μ before ReLU
+    raw_max_val = CUDA.zeros(F, n_chains)
+    raw_max_idx = zeros(Int32, n_chains)  # CPU — filled by bulk function
 
-    compute_energy_lsr!(E_g, x_g, pat_g, ov_g, Nf)
+    compute_energy_lsr!(E_g, x_g, pat_g, ov_g, Nf; raw_phi=raw_phi_g)
 
     # Per-trial state
     status        = zeros(Int32, n_chains)
@@ -268,15 +290,18 @@ function run_point!(α, T, T_run, stride, n_dis)
     prog = Progress(T_run, desc="  MC: ", showspeed=true)
 
     for step in 1:T_run
-        mc_step!(x_g, xp_g, E_g, Ep_g, pat_g, ov_g, β, Nf, σ, ra_g)
+        mc_step!(x_g, xp_g, E_g, Ep_g, pat_g, ov_g, β, Nf, σ, ra_g; raw_phi=raw_phi_g)
 
         if step % stride == 0
             rec_idx += 1
             compute_phi1!(phi1_g, x_g, tgt_g, Nf)
             max_nontarget_val!(max_ov_val, ov_g)
-
             phi1_cpu = Array(phi1_g)
             max_val_cpu = Array(max_ov_val)
+            # Bulk raw max (value + index)
+            max_nontarget_raw_bulk!(raw_phi_g, raw_max_val, raw_max_idx)
+            max_raw_val_cpu = Float64.(Array(raw_max_val))
+            max_raw_idx_cpu = raw_max_idx  # already on CPU
 
             b_f64 = Float64(b_lsr)
 
@@ -294,44 +319,44 @@ function run_point!(α, T, T_run, stride, n_dis)
                     end
                     phi1_prev[j] = phi1_cpu[j]
 
-                    # Rolling buffer: track v toward current top pattern
-                    if ov_top > 0
-                        mu_top, _ = find_escape_pattern(ov_g, d, n_rep)
-                        phi_1mu_j = Float64(phi_1mu_cpu[mu_top, d])
-                        denom = sqrt(max(1e-10, 1 - phi_1mu_j^2))
-                        v_now = Float32((phi_mu_top - Float64(phi1_cpu[j]) * phi_1mu_j) / denom)
+                    # Top non-target from bulk raw overlaps (pre-computed on GPU)
+                    mu_top = Int(max_raw_idx_cpu[j])
+                    phi_mu_raw = max_raw_val_cpu[j]
 
-                        # Store in rolling buffer
-                        pos = (roll_pos[j] % ROLL_BUF_LEN) + 1
-                        roll_v[pos, j] = v_now
-                        roll_mu[pos, j] = Int32(mu_top)
-                        roll_pos[j] = pos
-                        roll_fill[j] = min(roll_fill[j] + 1, ROLL_BUF_LEN)
+                    phi_1mu_j = Float64(phi_1mu_cpu[mu_top, d])
+                    denom = sqrt(max(1e-10, 1 - phi_1mu_j^2))
+                    v_now = Float32((phi_mu_raw - Float64(phi1_cpu[j]) * phi_1mu_j) / denom)
 
-                        # Check barrier crossing
-                        if phi_mu_top ≥ PHI_C && mu_top != 1
-                            status[j] = 1
-                            t_escape[j] = Int32(step)
-                            mu_escape[j] = Int32(mu_top)
-                            phi_1mu_esc[j] = Float32(phi_1mu_j)
-                            confirm_cnt[j] = 0
-                            confirm_dv[j] = 0.0
-                            v_prev[j] = v_now
-                            v_prev_valid[j] = true
+                    # Store in rolling buffer (ALWAYS, even when not in support)
+                    pos = (roll_pos[j] % ROLL_BUF_LEN) + 1
+                    roll_v[pos, j] = v_now
+                    roll_mu[pos, j] = Int32(mu_top)
+                    roll_pos[j] = pos
+                    roll_fill[j] = min(roll_fill[j] + 1, ROLL_BUF_LEN)
 
-                            # D_v zone 2: from rolling buffer entries matching this μ
-                            prev_v_buf = NaN32
-                            n_buf = min(Int(roll_fill[j]), ROLL_BUF_LEN)
-                            for k in 1:n_buf
-                                idx_k = ((roll_pos[j] - k + ROLL_BUF_LEN) % ROLL_BUF_LEN) + 1
-                                if roll_mu[idx_k, j] == mu_top
-                                    if !isnan(prev_v_buf)
-                                        Δv = Float64(roll_v[idx_k, j] - prev_v_buf)
-                                        Dv_sum[j, 2] += Δv^2
-                                        Dv_cnt[j, 2] += 1
-                                    end
-                                    prev_v_buf = roll_v[idx_k, j]
+                    # Check barrier crossing (from clamped ov)
+                    if ov_top > 0 && mu_top != 1
+                        status[j] = 1
+                        t_escape[j] = Int32(step)
+                        mu_escape[j] = Int32(mu_top)
+                        phi_1mu_esc[j] = Float32(phi_1mu_j)
+                        confirm_cnt[j] = 0
+                        confirm_dv[j] = 0.0
+                        v_prev[j] = v_now
+                        v_prev_valid[j] = true
+
+                        # D_v zone 2: from rolling buffer entries matching this μ
+                        prev_v_buf = NaN32
+                        n_buf = min(Int(roll_fill[j]), ROLL_BUF_LEN)
+                        for k in 1:n_buf
+                            idx_k = ((roll_pos[j] - k + ROLL_BUF_LEN) % ROLL_BUF_LEN) + 1
+                            if roll_mu[idx_k, j] == mu_top
+                                if !isnan(prev_v_buf)
+                                    Δv = Float64(roll_v[idx_k, j] - prev_v_buf)
+                                    Dv_sum[j, 2] += Δv^2
+                                    Dv_cnt[j, 2] += 1
                                 end
+                                prev_v_buf = roll_v[idx_k, j]
                             end
                         end
                     end
@@ -451,7 +476,7 @@ function run_point!(α, T, T_run, stride, n_dis)
                 α, T, N, M, n_dis, τ_median, P_final, n_confirmed)
     end
 
-    for arr in [pat_g, tgt_g, x_g, xp_g, ov_g, E_g, Ep_g, ra_g, phi1_g, max_ov_val]
+    for arr in [pat_g, tgt_g, x_g, xp_g, ov_g, E_g, Ep_g, ra_g, phi1_g, max_ov_val, raw_phi_g, raw_max_val]
         CUDA.unsafe_free!(arr)
     end
     GC.gc(); CUDA.reclaim()
