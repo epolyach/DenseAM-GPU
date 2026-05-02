@@ -158,6 +158,15 @@ v_{\mathrm{entry}} = \frac{\varphi_c - \phi_{\mathrm{eq}}\,\varphi_{1\mu}}{\sqrt
 \end{equation}
 the spurious pattern enters support ($\phi_\mu = \varphi_c$).
 
+The barrier-crossing condition $v \geq v_{\mathrm{entry}}$ has a direct physical meaning.  From~\eqref{eq:overlaps}, $\phi_\mu = a\,\varphi_{1\mu} + v\sqrt{1-\varphi_{1\mu}^2}$, so
+\[
+v \geq v_{\mathrm{entry}} \quad\Longleftrightarrow\quad
+\phi_\mu \;\geq\; a\,\varphi_{1\mu} + v_{\mathrm{entry}}\sqrt{1-\varphi_{1\mu}^2}
+\;=\; a\,\varphi_{1\mu} + (\varphi_c - a\,\varphi_{1\mu})
+\;=\; \varphi_c\,.
+\]
+That is, $v$ reaching $v_{\mathrm{entry}}$ is \emph{equivalent} to the spurious pattern entering support: $\phi_\mu \geq \varphi_c$.  The barrier crossing is not an abstract geometric event in the perpendicular subspace; it is the concrete physical event of a second pattern contributing to the LSR energy.  This equivalence holds for any value of $a$ (not only at $a = \phi_{\mathrm{eq}}$), so the condition $\phi_\mu \geq \varphi_c$ can be used as the escape criterion in MC simulations without computing $v$ explicitly.
+
 \paragraph{Escape-path constraint.}
 The rotation is possible only if $a^2 + v_{\mathrm{entry}}^2 \leq 1$ (the state must remain on the sphere).  This requires
 \begin{equation}
@@ -386,7 +395,21 @@ Two types of simulations are reported.
 
 \paragraph{Bulk survey.}  A grid of $110$ values of $\alpha \in [0.005, 0.550]$ and $40$ temperature values is swept, with $M = 20\,000$ patterns and $N = \lfloor\ln M/\alpha\rfloor$ ($N = 12$--$69$, depending on $\alpha$).  For each of $n_{\mathrm{dis}} = 256$ independent disorder samples, two replicas (A, B) are initialized near the target $\bxi^1$ with $\phi_{\mathrm{init}} \sim \mathrm{U}(0.75, 1.0)$ and evolved independently.  Each replica undergoes $N_{\mathrm{eq}} = 2^{15}$ equilibration steps followed by $N_{\mathrm{samp}} = 2^{13}$ sampling steps ($T_{\mathrm{MC}} = N_{\mathrm{eq}} + N_{\mathrm{samp}} \approx 4 \times 10^4$ steps total).  The per-trial observables are the time-averaged target alignment $\varphi_A$, $\varphi_B$, the Edwards--Anderson overlap $q_{\mathrm{EA}} = (1/N_{\mathrm{samp}})\sum_t \bx_A(t)\!\cdot\!\bx_B(t)/N$, and the maximum spurious overlap $\phi_{\max}^{\mathrm{other}} = (1/N_{\mathrm{samp}})\sum_t \max_{\mu\neq 1}\phi_\mu(\bx_A(t))$.
 
-\paragraph{Targeted escape-time measurements.}  At $16$ selected $(\alpha, T)$ points ($\alpha \in \{0.18, 0.20\}$, $T \in \{0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.80\}$), the full trajectory $\varphi(t)$ is recorded every $64$ MC steps over $2^{18} \approx 2.6 \times 10^5$ total steps, with $n_{\mathrm{dis}} = 2000$ independent disorder samples per point.  The run length is $6.4$ times longer than the bulk survey, and the larger $n_{\mathrm{dis}}$ reduces the statistical uncertainty of the escape fraction.  These simulations are performed on GPU with half-precision arithmetic and batched matrix operations to accommodate $2000$ independent pattern sets simultaneously.
+\paragraph{Targeted escape-time measurements.}
+Two methods for detecting escape from the retrieval basin are compared.
+
+\emph{Threshold method (naive).}
+A trial is declared escaped when the target overlap $\phi_1$ drops below a threshold $\varphi_{\mathrm{thresh}}(T) = (\phi_{\mathrm{eq}}(T) + \varphi_{\mathrm{cen}}(T))/2$, the midpoint between the retrieval and centroid equilibria.  An absorbing boundary is used: once $\phi_1 < \varphi_{\mathrm{thresh}}$, the trial is marked escaped permanently.  This method is simple but suffers from threshold contamination: at temperatures $T \gtrsim 0.4$, the threshold lies within $\sim 0.5\sigma$ of $\phi_{\mathrm{eq}}$ (where $\sigma \approx \sqrt{(1-\phi_{\mathrm{eq}}^2)/N}$ is the thermal fluctuation scale), so momentary fluctuations that do not represent genuine basin escape are counted as irreversible transitions.  The resulting escape times are biased low by a factor of $5$--$20$ at $T \geq 0.4$.
+
+\emph{Confirmed barrier crossing (physical criterion).}
+The Kramers theory identifies the barrier crossing with a spurious pattern $\bxi^\mu$ entering support: $\phi_\mu \geq \varphi_c$ (equivalently, $v \geq v_{\mathrm{entry}}$; see Section~\ref{ssec:escape}).  The escape is detected in two steps:
+\begin{enumerate}
+\item At each recording stride, all $M$ overlaps $\phi_\mu$ are checked (these are already computed in the energy evaluation).  When any $\phi_\mu \geq \varphi_c$ for $\mu \neq 1$, a \emph{candidate escape} is flagged, and the identity of pattern~$\mu$ and its inter-pattern overlap $\varphi_{1\mu}$ are recorded.
+\item The escape is \emph{confirmed} by measuring the diffusion coefficient $D_v$ in the perpendicular direction toward~$\bxi^\mu$ over the next $50$ strides.  A genuine escape triggers Stage~2 (downhill slide, $\Delta E < 0$), which accelerates the motion: $D_v^{\mathrm{post}} / D_v^{\mathrm{ret}} > 2$.  If the ratio falls below this threshold, the event is classified as a thermal fluctuation at the support boundary and the trial is reset to the retrieval state.
+\end{enumerate}
+This two-step criterion eliminates the threshold contamination of the naive method.  At $T = 0.30$ (where contamination is mild), the two methods agree within $5\%$.  At $T = 0.80$, the confirmed escape time is $10$--$20\times$ longer than the naive estimate, demonstrating that the naive method was measuring thermal-fluctuation crossing times rather than Kramers escape.
+
+The confirmed-escape measurements cover a grid of $\alpha \in \{0.20, 0.22, 0.24, 0.26, 0.28, 0.30\}$ and $T \in \{0.15, 0.20, \ldots, 0.80, 1.2, 1.6, 2.0\}$, with $n_{\mathrm{dis}} = 2000$ disorder samples per point, adaptive run lengths ($10^4$--$5 \times 10^5$ MC steps), and stride $4$--$64$.  The simulations are performed on GPU with half-precision arithmetic and batched matrix operations.
 
 \subsection{Phase diagram}
 \label{ssec:phase_diagram}
@@ -443,25 +466,28 @@ For trials in the $\varphi \approx 0.48$ population, the observed overlap is com
 \subsection{Escape-time measurements}
 \label{ssec:escape_times}
 
-The targeted simulations measure the escape fraction $P_{\mathrm{esc}}$ (fraction of trials with $\varphi < \varphi_{\mathrm{thresh}}(T)$, defined above) at each $(\alpha, T)$ point.  For a Kramers process with exponentially distributed escape times, $P_{\mathrm{esc}} = 1 - \exp(-T_{\mathrm{MC}}/\tau_{\mathrm{eff}})$, which gives the Poisson-inverted escape time
+The confirmed-escape simulations measure the survival probability $S(t) = 1 - P_{\mathrm{esc}}(t)$, where $P_{\mathrm{esc}}(t)$ is the fraction of trials with a confirmed barrier crossing by time~$t$.  For a single disorder sample with escape rate~$\lambda$, $S(t) = e^{-\lambda t}$.  Averaging over disorder (each of $M-1$ patterns runs an independent escape clock with rate $\lambda(\varphi_{1\mu})$):
 \begin{equation}
-\tau_{\mathrm{eff}} = -\frac{T_{\mathrm{MC}}}{\ln(1 - P_{\mathrm{esc}})}\,.
-\label{eq:tau_poisson}
+S(t) = \left[\int_{-1}^{1} e^{-\lambda(\varphi)\,t}\,f(\varphi)\,d\varphi\right]^{M-1}
+\approx \exp\!\left(-(M{-}1)\int_{\varphi_{\min}}^{1}\!\bigl(1 - e^{-\lambda(\varphi)\,t}\bigr)\,f(\varphi)\,d\varphi\right),
+\label{eq:compound_poisson}
 \end{equation}
-The measured $\tau_{\mathrm{eff}}$ spans three decades, from $\sim 10^5$ MC steps ($\alpha = 0.20$, $T = 0.80$, most trials escape) to $\sim 10^{7.7}$ ($\alpha = 0.20$, $T = 0.10$, only $0.5\%$ escape within $2^{18}$ steps).
+where $f(\varphi)$ is the exact density~\eqref{eq:exact_density} and $\lambda(\varphi) = (A/\tau_{\mathrm{rel}})\exp(-c\,\Delta F(\varphi)/T)$ is the per-channel Kramers rate with $\tau_{\mathrm{rel}} = R^2/D_v$ computed from independently measured diffusion coefficients (Section~\ref{ssec:diffusion}).
 
-Figure~\ref{fig:phase_diagram} (left) plots $\ln(\tau_{\mathrm{eff}}/(N\,\tau_{\mathrm{rel}}))$ against $\Delta F/T$, where $\tau_{\mathrm{rel}} = (1-\phi_{\mathrm{eq}}^2)N^2/(2.88\,T^2)$.  The factor $N\,\tau_{\mathrm{rel}}$ absorbs the known scaling: $\tau_{\mathrm{rel}}$ is the OU diffusion time for the perpendicular coordinate $v$, and $N$ accounts for the geometric dilution (the MC random walk distributes its displacement over $N-1$ tangent directions, so $v$ receives $\sim 1/N$ of the effective diffusion).  The linear trend for $\alpha = 0.20$ gives
+The compound Poisson model~\eqref{eq:compound_poisson} has two free parameters: the dimensionless attempt-rate prefactor~$A$ and the barrier scaling coefficient~$c$.  These are fitted globally to all $31$ survival curves simultaneously by minimizing the mean squared error of $\ln S$ over $S \in [0.01, 0.99]$.  The fit gives
 \begin{equation}
-\ln\!\left(\frac{\tau_{\mathrm{eff}}}{N\,\tau_{\mathrm{rel}}}\right) \;\approx\; 0.38 \times \frac{\Delta F}{T}\,,
-\qquad R^2 = 0.95\,,
-\label{eq:kramers_fit}
+A = 2.5 \times 10^{-3}\,, \qquad c = 0.25\,,
+\label{eq:compound_fit}
 \end{equation}
-with intercept $\approx 0$, confirming that the escape time scales as $\tau_{\mathrm{eff}} \approx N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ with $c \approx 0.38$ and no additional free parameter.  The slope $c \approx 0.38$ means the effective barrier is $\approx 37\%$ of the formula~\eqref{eq:kramers_barrier}.  Two effects contribute: (i)~at thermal equilibrium the system starts at $v \sim T/\sqrt{N}$, not $v = 0$, shortening the effective distance to $v_{\mathrm{entry}}$; (ii)~the one-dimensional projection neglects favorable fluctuations in the remaining $N-2$ coordinates.
+with RMS error $0.9$ in $\ln S$.  The barrier coefficient $c = 0.25$ means the effective barrier is $25\%$ of the geometric formula~\eqref{eq:kramers_barrier}; the reduction from $c = 1$ reflects the multi-dimensional escape geometry on the $(N{-}1)$-sphere, where favorable fluctuations in the $N-2$ transverse coordinates lower the effective barrier.
 
 \paragraph{Survival curve validation.}
-Direct MC measurements of the survival probability $P(\text{survive} > t)$ confirm the Kramers mechanism.  Trials are initialized at $\phi_1 = 1$ and evolved with the Metropolis dynamics.  At moderate temperatures ($T \geq 0.25$), the survival curves are exponential over the entire measured range, consistent with a single escape rate per disorder sample.  At lower temperatures ($T \leq 0.20$), the survival becomes non-exponential: it decays steeply at early times (fast-escaping samples with high $\varphi_{1,\max}$ and low barriers) and flattens at late times (slow-escaping samples with low $\varphi_{1,\max}$ and high barriers).  This shape is quantitatively consistent with the disorder average~\eqref{eq:lambda_avg}: each disorder sample escapes exponentially, but the distribution of barriers across samples produces a mixture of exponentials with the observed concave shape on the log scale.  At low $T$, the sensitivity of the barrier to $\varphi_{1,\max}$ is amplified (because $\phi_{\mathrm{eq}}\,\varphi_{1,\max}$ is close to $\varphi_c$, making $v_{\mathrm{entry}}$ small and sensitive to $\varphi_{1,\max}$), which broadens the rate distribution and destroys the single-exponential character.
+Figure~\ref{fig:survival_grid} shows the disorder-averaged survival probability $S(t) = 1 - P_{\mathrm{esc}}(t)$ from the confirmed-escape measurements.  At high temperatures ($T \geq 0.40$), $S(t)$ is approximately exponential, consistent with a well-defined mean escape rate.  At lower temperatures ($T \leq 0.25$), $S(t)$ develops a concave shape on the log scale: steep initial decay (fast-escaping samples with high $\varphi_{1,\max}$ and low barriers) followed by a flattening tail (slow-escaping samples with high barriers).  This is the expected signature of disorder-averaged Kramers escape: each sample escapes exponentially with its own rate $\lambda_j$, but the distribution of rates across samples produces a mixture of exponentials.
 
-The calibrated formula $\tau_{\mathrm{eff}} = N\,\tau_{\mathrm{rel}}\exp(c\,\Delta F/T)$ produces the red contour $\tau_{\mathrm{eff}} = T_{\mathrm{MC}}$ in Figure~\ref{fig:phase_diagram} (right).  The contour is shifted to the left of the empirical boundary (green) because the calibration is based on $\alpha \geq 0.20$ only.  The multi-channel formula~\eqref{eq:lambda_avg}, which sums the rates over all $K$ escape-enabling patterns, provides the correct $\alpha$- and $T$-dependence of the total escape rate without fitting to the heatmap data directly.  The qualitative agreement in shape confirms that the apparent ``phase boundary'' is the kinetic locus $\tau_{\mathrm{eff}}(\alpha, T) \approx T_{\mathrm{MC}}$.
+The compound Poisson model~\eqref{eq:compound_poisson} with the globally fitted $(A, c)$ from~\eqref{eq:compound_fit} captures both the initial slope and the late-time curvature across all $31$ panels (Fig.~\ref{fig:survival_grid}, green curves).  The initial slope of the model, $\langle\lambda\rangle = (M{-}1)\int \lambda(\varphi)\,f(\varphi)\,d\varphi$, gives the mean escape rate.  The late-time floor, $S(\infty) = \exp(-(M{-}1)\int_{\varphi_{\min}}^1 f(\varphi)\,d\varphi) = e^{-K}$, is set by the expected number of escape-enabling patterns $K$ and is not a free parameter.
+
+\paragraph{Phase diagram contour.}
+The calibrated compound Poisson model defines the kinetic boundary: for each $(\alpha, T)$, we compute $S(T_{\mathrm{MC}})$ from~\eqref{eq:compound_poisson} and find the locus where $S(T_{\mathrm{MC}}) = e^{-1}$, i.e., where the characteristic escape time equals the simulation budget.  This contour is shown in Figure~\ref{fig:phase_diagram} (right).  It tracks the observed transition in the heatmap: the metastable retrieval region (blue) lies to the left, and the non-retrieval region (red) lies to the right.  Increasing $T_{\mathrm{MC}}$ shifts the contour to the left (more trials escape given more time), confirming that the boundary is kinetic, not thermodynamic.
 
 \paragraph{Practical relevance.}
 The escape time $\tau \sim \exp(cN)$ grows exponentially with the system dimension, because the barrier $\Delta F/T \propto N$.  At $N = 50$ and $\alpha = 0.20$: $\tau \sim 10^6$ MC steps.  At $N = 100$, the barrier roughly doubles, giving $\tau \sim 10^{12}$.  For any practical retrieval application with $N \gg 50$, the escape time far exceeds any realistic query time.  The retrieval state, though formally metastable, is effectively stable.

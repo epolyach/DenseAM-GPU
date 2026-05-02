@@ -318,7 +318,13 @@ function setup_Dv()
         mask = v13_α .== α_near
         Ts_a = v13_T[mask]; Ds_a = v13_Dv[mask]
         perm = sortperm(Ts_a); Ts_a = Ts_a[perm]; Ds_a = Ds_a[perm]
-        T_q = clamp(T_q, Ts_a[1], Ts_a[end])
+        # For T above the D_v peak, use peak value (prevent MC acceptance drop)
+        Dv_peak, i_peak = findmax(Ds_a)
+        T_peak = Ts_a[i_peak]
+        if T_q > T_peak
+            return Dv_peak
+        end
+        T_q = clamp(T_q, Ts_a[1], T_peak)
         for i in 1:length(Ts_a)-1
             if Ts_a[i] ≤ T_q ≤ Ts_a[i+1]
                 frac = (T_q - Ts_a[i]) / (Ts_a[i+1] - Ts_a[i])
@@ -333,8 +339,8 @@ end
 const INTERP_DV = setup_Dv()
 
 # Global (A, c) from compound Poisson fit to v14 survival curves
-const BEST_A = 4.5146
-const BEST_C = 0.5051
+const BEST_A = 2.4787e-03
+const BEST_C = 0.2501
 @printf("  Global compound Poisson: A = %.4f, c = %.4f\n", BEST_A, BEST_C)
 
 # ══════════════════════════════════════════════════════════════════════
@@ -378,7 +384,7 @@ function compute_cp_contour(A_val, c_val; α_lo=0.08, α_hi=0.52, n_α=200, T_ma
     T_scan = range(0.02, T_max, length=300)
     for α_val in α_range_kr
         for i in 1:(length(T_scan)-1)
-            N = max(round(Int, log(M_PAT)/α_val), 3)
+            N = max(log(M_PAT)/α_val, 3.0)  # continuous N for smooth contour
             lnS1 = compound_poisson_lnS_single(Float64(T_MC_v8m), α_val, T_scan[i], N, A_val, c_val; Dv_func=INTERP_DV)
             lnS2 = compound_poisson_lnS_single(Float64(T_MC_v8m), α_val, T_scan[i+1], N, A_val, c_val; Dv_func=INTERP_DV)
             # Contour where S(T_MC) = 1/e → ln S = -1
@@ -405,35 +411,10 @@ println("\nComputing contours...")
 α_c0, T_c0 = compute_cp_contour(BEST_A, BEST_C)
 @printf("  A=%.1f c=%.2f: %d points\n", BEST_A, BEST_C, length(α_c0))
 
-α_c1, T_c1 = compute_cp_contour(1.0, 1.0)
-@printf("  A=1.0  c=1.00: %d points\n", length(α_c1))
-
-α_c2, T_c2 = compute_cp_contour(0.01, 0.4)
-@printf("  A=0.01 c=0.40: %d points\n", length(α_c2))
 
 # Keep original as α_contour, T_contour for the main plot
 α_contour = α_c0; T_contour = T_c0
 
-# ── P_esc = 0.63 contour from v8m (green dots for comparison) ──
-# P_esc ≈ 1 - ⟨φ⟩/φ_eq(T).  At P_esc = 1-e⁻¹ ≈ 0.632: ⟨φ⟩ = e⁻¹ φ_eq
-println("Computing P_esc=0.63 contour from v8m...")
-α_pesc63 = Float64[]; T_pesc63 = Float64[]
-for iT in 1:nT
-    T_val = Ts[iT]
-    φeq = φ_eq_LSR(T_val)
-    target_phi = exp(-1) * φeq  # ⟨φ⟩ at P_esc = 0.63
-    row = [(alphas[ia], phi_grid[iT, ia]) for ia in 1:na if !isnan(phi_grid[iT, ia])]
-    for i in 1:length(row)-1
-        a1, p1 = row[i]; a2, p2 = row[i+1]
-        if p1 > target_phi && p2 ≤ target_phi
-            frac = (target_phi - p2) / (p1 - p2)
-            push!(α_pesc63, a2 + frac * (a1 - a2))
-            push!(T_pesc63, T_val)
-            break
-        end
-    end
-end
-@printf("  P_esc=0.63 contour: %d points\n", length(α_pesc63))
 
 # ──────────────── K = 1 contour (exact density) ────────────────
 println("Computing K=1 boundary...")
@@ -506,39 +487,26 @@ if !isempty(T_solid_e)
           color=:black, lw=1.5, ls=:dot, label=false)
 end
 
-# 3. Compound Poisson contours
-# Original (A=4.5, c=0.5)
+# 3. Compound Poisson contour τ = T_MC
 if !isempty(α_c0)
-    plot!(p1, α_c0, T_c0, color=:red, lw=2.0, ls=:solid,
-          label=@sprintf("A=%.1f c=%.2f", BEST_A, BEST_C))
-end
-# c=1
-if !isempty(α_c1)
-    plot!(p1, α_c1, T_c1, color=:orange, lw=2.0, ls=:dash,
-          label="A=1.0 c=1.0")
-end
-# A=500
-if !isempty(α_c2)
-    plot!(p1, α_c2, T_c2, color=:yellow, lw=2.0, ls=:dashdot,
-          label="A=0.01 c=0.40")
+    plot!(p1, α_c0, T_c0, color=:green, lw=2.0, ls=:dot,
+          label=L"\tau = T_\mathrm{MC}")
 end
 
-# 4. P_esc = 0.63 from v8m (green dotted line, for comparison)
-if !isempty(α_pesc63)
-    plot!(p1, α_pesc63, T_pesc63,
-          color=:green, lw=1.5, ls=:dot,
-          label=L"P_\mathrm{esc}=0.63")
-end
 
 # Phase labels — metastable is to the LEFT of the red curve
 annotate!(p1, 0.04, 1.0, text("Absolute\nretrieval", :black, 5, :center))
 annotate!(p1, 0.18, 0.25, text("Metastable", :white, 6, :center))
 annotate!(p1, 0.47, 0.8, text("Non-\nretrieval", :white, 6, :center))
 
-# v14 calibration points
-for (α, T, τm) in v14_data
-    scatter!(p1, [α], [T], markersize=2, color=:white,
-             markerstrokecolor=:black, markerstrokewidth=0.5, label=false)
+# v16 calibration points (white circles)
+v16_dir = @__DIR__
+v16_files = filter(f -> startswith(f, "v16_Pesc_a") && endswith(f, ".csv"), readdir(v16_dir))
+for f in v16_files
+    m_a = match(r"a(\d+\.\d+)", f); m_T = match(r"T(\d+\.\d+)", f)
+    m_a === nothing && continue; m_T === nothing && continue
+    scatter!(p1, [parse(Float64, m_a.captures[1])], [parse(Float64, m_T.captures[1])],
+             markersize=2, color=:white, markerstrokecolor=:black, markerstrokewidth=0.5, label=false)
 end
 
 for ext in ("png", "pdf")
