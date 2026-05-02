@@ -154,17 +154,21 @@ function max_nontarget_val!(max_val, ov)
 end
 
 # Bulk GPU: max raw overlap and its index (excluding target pattern 1)
-# Transfer only the result (2 × n_chains floats)
 function max_nontarget_raw_bulk!(raw_phi, _buf_val, _buf_idx)
-    # Work on [2:end, :, :] to exclude target
     notgt = @view raw_phi[2:end, :, :]
-    # Max value (GPU reduction)
+    # Max value on GPU (works with Float16)
     mv = maximum(notgt, dims=1)
     _buf_val .= vec(mv)
-    # Index: use findmax — returns CartesianIndex, extract on CPU
-    _, mi = findmax(notgt, dims=1)
-    mi_cpu = Array(mi)
-    _buf_idx .= vec([Int32(ci[1]) + Int32(1) for ci in mi_cpu])  # +1 offset
+    # Index: transfer notgt to CPU per-sample and argmax there
+    # Only n_dis transfers of (M-1) values each — but that's still slow.
+    # Instead: transfer the max value, then for each sample find the index on CPU
+    # by transferring just ONE column at a time...
+    # Simplest correct approach: transfer the full (M-1 × n_dis) slice to CPU ONCE
+    n_dis = size(raw_phi, 3)
+    notgt_cpu = Array(notgt[:, 1, :])  # (M-1, n_dis) — single transfer
+    for d in 1:n_dis
+        _buf_idx[d] = Int32(argmax(@view notgt_cpu[:, d]) + 1)  # +1 for skipped target
+    end
     return nothing
 end
 
