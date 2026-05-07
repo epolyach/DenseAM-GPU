@@ -252,10 +252,9 @@ function main()
 
     available_mem = CUDA.free_memory() * 0.85
     target_mem = min(available_mem, TARGET_MEM_PER_CHUNK_GB * 1e9)
-    chunk_size = max(1, floor(Int, target_mem / max_mem_per_alpha))
 
     @printf("Available GPU memory: %.2f GB\n", available_mem/1e9)
-    @printf("Chunk size: %d α value(s) at a time\n\n", chunk_size)
+    @printf("Adaptive chunking: packing α by actual memory cost\n\n")
 
     # ── Determine pending α values (grid-aware resume) ──
     csv_out = "basin_stab_LSR_v8m.csv"
@@ -330,14 +329,25 @@ function main()
     t_total_eq = 0.0
     t_total_samp = 0.0
 
-    for pend_start in 1:chunk_size:n_pending
-        pend_end = min(pend_start + chunk_size - 1, n_pending)
+    pend_start = 1
+    while pend_start <= n_pending
+        # Pack as many pending α as fit in target_mem
+        chunk_mem = 0.0
+        pend_end = pend_start - 1
+        while pend_end + 1 <= n_pending
+            next_mem = mem_per_alpha_vec[pending_indices[pend_end + 1]]
+            if chunk_mem + next_mem > target_mem && pend_end >= pend_start
+                break
+            end
+            pend_end += 1
+            chunk_mem += next_mem
+        end
         chunk_indices = pending_indices[pend_start:pend_end]
         n_chunk = length(chunk_indices)
 
         println("\n" * "=" ^ 70)
-        @printf("Processing chunk: pending %d–%d of %d  (α indices %s)\n",
-                pend_start, pend_end, n_pending, join(chunk_indices, ","))
+        @printf("Processing chunk: pending %d–%d of %d  (%d α, %.1f GB)\n",
+                pend_start, pend_end, n_pending, n_chunk, chunk_mem/1e9)
         println("=" ^ 70)
 
         # ── Allocate GPU memory for this chunk ──
@@ -525,6 +535,7 @@ function main()
         β_g = nothing; ra_g = nothing; ss_g = nothing
         GC.gc()
         CUDA.reclaim()
+        pend_start = pend_end + 1
     end
 
     println("\n" * "=" ^ 70)
