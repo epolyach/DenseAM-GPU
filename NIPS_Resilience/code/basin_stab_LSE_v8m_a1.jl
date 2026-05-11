@@ -24,8 +24,10 @@ Resulting (α, M, N) ramp:
   α=0.50 → M≈170k,  N≈24
   α=1.00 → M=1.2M,  N=14
 
-Protocol (unchanged from v8m):
-- Random initial states: φ_initial ∈ [0.75, 1.0]
+Protocol (unchanged from v8m, except initialization):
+- Initial states: φ_initial = 1.0 (both replicas start exactly at ξ¹)
+  Rationale: equilibration (N_EQ=2^15) washes out init details; we
+  test retrieval stability of ξ¹, not basin width.
 - Equilibration: N_EQ = 2^15 steps (unmeasured)
 - Sampling: N_SAMP = 2^13 steps (measured, time-averaged)
 - Adaptive trials: 512 (α_min) → 64 (α_max)
@@ -51,8 +53,8 @@ const F = USE_FLOAT16 ? Float16 : Float32
 
 # ──────────────── Basin Stability Parameters ────────────────
 const betanet     = F(1.0)            # LSE kernel inverse variance
-const PHI_MIN     = F(0.75)
-const PHI_MAX     = F(1.0)
+const PHI_MIN     = F(1.0)            # initialize exactly at target ξ¹
+const PHI_MAX     = F(1.0)            # equilibration washes out init details
 const MAX_N_TRIALS = 512
 const MIN_N_TRIALS = 64
 const N_EQ        = 2^15              # 16384 equilibration steps (unmeasured)
