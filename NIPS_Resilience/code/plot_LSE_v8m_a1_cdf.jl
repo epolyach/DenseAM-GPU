@@ -26,25 +26,30 @@ csv_file = joinpath(@__DIR__, "basin_stab_LSE_v8m_a1.csv")
 out_dir  = joinpath(@__DIR__, "..", "panels_paper")
 mkpath(out_dir)
 
-# Panel A: fixed T_A varying α (T_A = lowest grid value)
+# Panel A: fixed T_A varying α near transition zone
+# (at T=0.025 the MC boundary sits around α≈0.6; we want resolution there
+#  rather than collapsing all retrieval cases onto one line at φ_eq.)
 const T_A = 0.025
 const PROBE_A = [
-    (0.10, T_A),
-    (0.30, T_A),
-    (0.50, T_A),   # Gaussian boundary at T=0
+    (0.50, T_A),   # Ramsauer α_c^G(0)=0.5: should still retrieve
+    (0.55, T_A),
+    (0.60, T_A),
+    (0.65, T_A),   # transition zone
     (0.70, T_A),
-    (0.90, T_A),
+    (0.80, T_A),
 ]
 
-# Panel B: fixed α_B varying T (α_B sits on Gaussian boundary at T=0)
+# Panel B: fixed α_B varying T, finer T grid in the transition
+# (at α=0.50, exact theory gives α_c^E(T)=0.5 around T≈0.14, so the
+#  interesting variation is between T=0.025 and T≈0.20.)
 const α_B = 0.50
 const PROBE_B = [
     (α_B, 0.025),
+    (α_B, 0.075),
     (α_B, 0.125),
+    (α_B, 0.175),
+    (α_B, 0.225),
     (α_B, 0.325),
-    (α_B, 0.525),
-    (α_B, 0.825),
-    (α_B, 1.225),
 ]
 
 # ──────────────── Figure settings (match plot_cdf_v8m.jl) ────────────────
