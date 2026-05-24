@@ -19,7 +19,6 @@ Output: ../panels_paper/heatmap_LSE.{png,pdf}
 using Plots
 using Printf
 using Statistics
-using LaTeXStrings
 
 # ──────────────── Figure settings (match paper) ────────────────
 const FIG_DPI  = 300
@@ -78,9 +77,9 @@ println("Plotting heatmap...")
 
 p1 = heatmap(alphas, Ts, phi_grid,
     color=cgrad(:RdYlBu, rev=false), clims=(0, 1),
-    xlabel=L"\alpha = \ln M / N", ylabel=L"T",
+    xlabel="α = ln M / N", ylabel="T",
     xlims=(0, 1.0), ylims=(0, maximum(Ts)),
-    colorbar_title=L"\langle\varphi\rangle",
+    colorbar_title="⟨φ⟩",
     size=(FIG_W + 40, FIG_H), dpi=FIG_DPI,
     left_margin=2Plots.mm, bottom_margin=1Plots.mm)
 
@@ -92,14 +91,14 @@ T_range = range(0.005, maximum(Ts), length=500)
 mask_g = (α_g .>= 0) .& (α_g .<= 1.0)
 plot!(p1, α_g[mask_g], T_range[mask_g],
       color=:blue, lw=2.0, ls=:solid,
-      label=L"\alpha_c^{G}(T)")
+      label="α_c^G(T) Gaussian")
 
 # Exact: diverges as T → 0; clip at the right edge of the plot
 α_e = [α_c_exact(t) for t in T_range]
 mask_e = isfinite.(α_e) .& (α_e .<= 1.0)
 plot!(p1, α_e[mask_e], T_range[mask_e],
       color=:red, lw=2.0, ls=:dash,
-      label=L"\alpha_c^{E}(T)")
+      label="α_c^E(T) Exact")
 
 for ext in ("png", "pdf")
     savefig(p1, joinpath(out_dir, "heatmap_LSE.$ext"))
