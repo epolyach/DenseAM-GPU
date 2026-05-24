@@ -13,6 +13,8 @@ Output: ../panels_paper/cdf_LSE_panel_A.{png,pdf}
 ────────────────────────────────────────────────────────────────────────
 =#
 
+ENV["GKSwstype"] = "100"   # file-only GR backend (headless: no display)
+
 using CSV
 using DataFrames
 using Plots
