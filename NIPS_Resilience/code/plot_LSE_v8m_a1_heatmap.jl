@@ -16,6 +16,8 @@ Output: ../panels_paper/heatmap_LSE.{png,pdf}
 ────────────────────────────────────────────────────────────────────────
 =#
 
+ENV["GKSwstype"] = "100"   # file-only GR backend (headless: no display)
+
 using Plots
 using Printf
 using Statistics
