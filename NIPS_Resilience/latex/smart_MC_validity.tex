@@ -1,0 +1,180 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{natbib}
+\bibliographystyle{plainnat}
+
+\newcommand{\bxi}{\boldsymbol{\xi}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\avg}[1]{\langle #1 \rangle}
+\newcommand{\Pcut}{\phi_{\mathrm{cut}}}
+\newcommand{\Pmax}{\phi_{\max}}
+\newcommand{\Peq}{\phi_{\mathrm{eq}}}
+\newcommand{\Tcrit}{T_{\mathrm{crit}}}
+\newcommand{\Tmax}{T_{\mathrm{max}}}
+\newcommand{\Tsafe}{T_{\mathrm{safe}}}
+
+\title{Smart Monte Carlo for the LSE Dense Associative Memory:\\
+Budget Truncation and Validity Window}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Motivation}
+
+Naive Metropolis--Hastings (MH) on the LSE Dense Associative Memory at load $\alpha$ stores $M = e^{\alpha N}$ random patterns; the per-step cost is $\mathcal{O}(M)$. The interesting limit for the AAAI paper is $\alpha \sim 1$, where $M = e^N$ — exponentially out of reach for $N \gtrsim 30$. This note describes a truncated (``smart'') MC scheme that retains a fixed budget $K \ll M$ of the most relevant patterns, derives the cutoff $\Pcut(\alpha, N, K)$, and quantifies the temperature window in which the truncation remains faithful.
+
+\section{Setup}
+
+The LSE energy on the $N$-sphere $\lvert\bx\rvert^2 = N$ is
+\begin{equation}
+H_{\mathrm{LSE}}(\bx) = -\frac{1}{\beta_{\mathrm{net}}}\ln p(\bx),
+\qquad p(\bx) = \sum_{\mu=1}^M e^{-\beta_{\mathrm{net}}\, |\bx-\bxi^\mu|^2/2}.
+\label{eq:Hdef}
+\end{equation}
+Writing $\phi_\mu = \bx\!\cdot\!\bxi^\mu / N$ and $b \equiv \beta_{\mathrm{net}} N$ gives the equivalent form
+\begin{equation}
+p(\bx) = \sum_\mu e^{-b(1-\phi_\mu)}.
+\label{eq:pphi}
+\end{equation}
+The MC dynamics samples $\bx$ at temperature $T$ from $\exp[-H_{\mathrm{LSE}}/T]$. The parameters $\beta_{\mathrm{net}}$ and $T$ are \emph{independent}: $\beta_{\mathrm{net}}$ shapes the LSE kernel, $T$ is the MC environment.
+
+For patterns $\bxi^\mu$ drawn uniformly on $S^{N-1}(\sqrt{N})$, the marginal alignment with any fixed reference unit on the sphere is
+\begin{equation}
+\phi \sim f(\phi) = C_N(1-\phi^2)^{(N-3)/2},
+\qquad
+\tfrac{1+\phi}{2}\sim\mathrm{Beta}\!\big(\tfrac{N-1}{2},\tfrac{N-1}{2}\big).
+\label{eq:fphi}
+\end{equation}
+
+\section{Budget truncation and the cutoff $\Pcut$}
+
+Near a stored pattern $\bxi^1$ the sum~\eqref{eq:pphi} is dominated by the champion $\mu=1$ plus contributions from competitors with the largest $\phi_\mu$. We retain a budget of $K$ live patterns, defined by the upper-tail condition $\phi_\mu > \Pcut$, where
+\begin{equation}
+\boxed{\;\Pr(\phi > \Pcut) \;=\; \frac{K}{M} \;=\; e^{\,\ln K - \alpha N}.\;}
+\label{eq:phicut}
+\end{equation}
+Equivalently, in the Beta coordinate $x = (1+\phi)/2$,
+\begin{equation}
+1 - I_{x_{\mathrm{cut}}}\!\Big(\tfrac{N-1}{2},\tfrac{N-1}{2}\Big) = \tfrac{K}{M},\qquad \Pcut = 2x_{\mathrm{cut}}-1,
+\label{eq:phicut_beta}
+\end{equation}
+with $I_x(a,b)$ the regularised incomplete beta function. For $\log(K/M) \ll 0$ a stable evaluation uses the leading asymptotic $a\ln u \simeq \ln(K/M) + \ln a + \ln B(a,a)$ with $u = 1-x_{\mathrm{cut}}$, refined by Newton iteration in $\ln u$.
+
+The remaining $M-K$ patterns form a ``passive sea''. On the sphere, by rotation invariance,
+\begin{equation}
+\sum_{\mu\,\notin\,\mathrm{live}} e^{-b(1-\phi_\mu)} \;\overset{N\to\infty}{=}\; C(\alpha,N,K) + \mathcal{O}\!\big(\sqrt{M-K}\big),
+\label{eq:Cdef}
+\end{equation}
+with mean $C = (M-K)\,\mathbb{E}_f\!\big[e^{-b(1-\phi)}\big]$ computed from~\eqref{eq:fphi}. By the law of large numbers over $(M-K)$ i.i.d. weak contributions, the fluctuations of the passive sum about its mean are subdominant; we replace it by the constant $C$ in the simplified dynamics:
+\begin{equation}
+\tilde p(\bx) \;\equiv\; \sum_{\mu\in\mathrm{live}} e^{-b(1-\phi_\mu(\bx))} \;+\; C.
+\label{eq:ptilde}
+\end{equation}
+Crucially, $C$ enters \emph{inside} the logarithm in $\tilde H = -\beta_{\mathrm{net}}^{-1}\ln\tilde p$ — it is \emph{not} an additive shift of the energy. Where the live sum exceeds $C$, the dynamics is the truncated LSE; where it falls below $C$, the energy flattens into a noise plateau.
+
+\section{Bare validity bound}
+
+The smart-MC approximation is faithful while the MH chain in equilibrium around $\bxi^1$ keeps the champion's alignment $\phi_1$ above $\Pcut$. The single-basin equilibrium gives
+\begin{equation}
+\Peq(T) = \tfrac{1}{2}\!\left[-T + \sqrt{T^2 + 4}\right]
+\label{eq:phieq}
+\end{equation}
+(independent of $\beta_{\mathrm{net}}$, since the $1/\beta_{\mathrm{net}}$ in~\eqref{eq:Hdef} cancels for a single dominant pattern). Demanding $\Peq(T) \ge \Pcut$ inverts to
+\begin{equation}
+\boxed{\;\Tmax(\alpha, N, K) \;=\; \frac{1 - \Pcut^2}{\Pcut}.\;}
+\label{eq:Tmax}
+\end{equation}
+Above $\Tmax$ the equilibrium drives $\bx$ into territory where no live pattern has appreciable overlap with it, and the simulation collapses onto the artificial noise floor $C$.
+
+\section{Thermal fluctuation correction}
+
+The bare bound~\eqref{eq:Tmax} ignores Gaussian fluctuations of $\phi$ about $\Peq$. Working from
+\begin{equation}
+P(\phi)\propto \exp\!\Big(N\big[\,\phi/T + \tfrac{1}{2}\ln(1-\phi^2)\big]\Big),
+\label{eq:Pphi}
+\end{equation}
+the saddle is~\eqref{eq:phieq} and the second derivative of the per-spin exponent is
+\begin{equation}
+f''_{\mathrm{ps}}(\Peq) = \frac{1+\Peq^2}{(1-\Peq^2)^2}\cdot T.
+\end{equation}
+The variance of $\phi$ around $\Peq$ is then
+\begin{equation}
+\boxed{\;\sigma_\phi^2 \;=\; \frac{T}{N f''_{\mathrm{ps}}(\Peq)} \;=\; \frac{(1-\Peq^2)^2}{N\,(1+\Peq^2)}.\;}
+\label{eq:sigma}
+\end{equation}
+
+\paragraph{Two points to flag.}
+\textit{(i)}~The explicit $T$ cancels in~\eqref{eq:sigma}. The dependence on $T$ enters only through $\Peq(T)$.
+\textit{(ii)}~As $T\!\to\!0$, $\Peq\!\to\!1$ and $\sigma_\phi \to 0$ as $(1-\Peq^2)/\sqrt{N}$. This is \emph{not} a generic ``small-$T$ implies small fluctuations'' statement; rather, the geometric-entropy curvature $\propto 1/(1-\phi^2)^2$ diverges as the saddle approaches the sphere wall $\phi=1$, and that diverging stiffness suppresses fluctuations even though $T$ itself cancels.
+
+A naive equipartition estimate $\sigma \sim \sqrt{T/N}$ — appropriate for a free particle — overestimates $\sigma_\phi$ by a factor $\sqrt{N(1+\Peq^2)}/(1-\Peq^2)$, which is large in the low-$T$ regime that controls retrieval.
+
+A safety margin $k\sigma_\phi$ ($k\!\sim\!3$) yields the refined bound
+\begin{equation}
+\Tsafe(\alpha,N,K;\,k):\quad \Peq(\Tsafe) - k\,\sigma_\phi\big(\Peq(\Tsafe),N\big) = \Pcut,
+\label{eq:Tsafe}
+\end{equation}
+solved by bisection. With $\sigma_\phi$ from~\eqref{eq:sigma}, this correction is small in the regime relevant to the LSE retrieval boundary.
+
+\section{Physical retrieval boundary $\Tcrit(\alpha)$}
+
+The exact LSE retrieval phase boundary follows from setting the retrieval free-energy density equal to the noise floor (cf. LSE\_gaussian.tex):
+\begin{equation}
+f_{\mathrm{ret}}(T) = 1 - \Peq(T) - \tfrac{T}{2}\ln\!\big(1-\Peq^2(T)\big),\qquad
+\alpha_c^{\mathrm E}(T) = -\tfrac{1}{2}\ln\!\big(1-(1-f_{\mathrm{ret}})^2\big).
+\end{equation}
+Inverting $\alpha_c^{\mathrm E}(T) = \alpha$ gives the temperature $\Tcrit(\alpha)$ at which retrieval fails at load $\alpha$. The smart-MC simulation is meaningful for measuring this boundary provided
+\begin{equation}
+\boxed{\;\Tmax(\alpha,N,K) \;>\; \Tcrit(\alpha)\quad\text{for every }\alpha\text{ we sweep}.\;}
+\label{eq:validity}
+\end{equation}
+
+\section{Validity diagram and design choices}
+
+\paragraph{Monotonicity.} At fixed $K$, increasing $N$ moves $\Pcut$ closer to $1$ (the budget covers a thinner tail), shrinking $\Tmax$ via~\eqref{eq:Tmax}. The shrinkage is bounded: as $N\to\infty$, $\Pcut\to\Pmax(\alpha)= \sqrt{1-e^{-2\alpha}}$, so $\Tmax$ approaches an $N$-independent floor $(1-\Pmax^2)/\Pmax = e^{-2\alpha}/\sqrt{1-e^{-2\alpha}}$ at the same $\alpha$. For $\alpha\!=\!1$ the floor is $\Tmax \to 0.142$, while $\Tcrit(1)\approx 0.031$; the validity inequality~\eqref{eq:validity} survives the large-$N$ limit by a factor $\sim 5$.
+
+\paragraph{Concrete operating points for the AAAI sweep.} Table~\ref{tab:Tmax} (computed in {\tt plot\_smart\_MC\_validity.jl}) lists $\Tmax(\alpha,N,K)$ relative to $\Tcrit(\alpha)$ for the canonical configurations.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccccc}
+\toprule
+config & $\alpha\!=\!0.5$ & $\alpha\!=\!0.7$ & $\alpha\!=\!1.0$ & $\alpha\!=\!1.2$ & $\alpha\!=\!1.5$ \\
+\midrule
+$\Tcrit(\alpha)$ (theory)         & 0.135 & 0.073 & 0.031 & 0.019 & 0.009 \\
+\midrule
+$N\!=\!50$,\ $K\!=\!10^4$         & 0.896 & 0.497 & 0.239 & 0.152 & 0.080 \\
+$N\!=\!100$,\ $K\!=\!10^4$        & 0.636 & 0.375 & 0.187 & 0.121 & 0.064 \\
+$N\!=\!100$,\ $K\!=\!e^{12}$      & 0.690 & 0.402 & 0.199 & 0.128 & 0.068 \\
+$N\!=\!200$,\ $K\!=\!10^4$        & 0.543 & 0.327 & 0.165 & 0.108 & 0.057 \\
+$N\!=\!500$,\ $K\!=\!10^4$        & 0.494 & 0.301 & 0.153 & 0.100 & 0.054 \\
+\bottomrule
+\end{tabular}
+\caption{Bare validity temperature $\Tmax(\alpha,N,K)$ vs. the physical retrieval temperature $\Tcrit(\alpha)$ for several smart-MC operating points (LSE, $\alpha\in[0.5,1.5]$). All listed configurations satisfy~\eqref{eq:validity} across the table.}
+\label{tab:Tmax}
+\end{table}
+
+\paragraph{Reading the design space.} For $\alpha\!\le\!1.2$, $N\!=\!100$ with $K\!=\!10^4$ already provides a $\sim$6$\times$ cushion above $\Tcrit$. To extend cleanly to $\alpha\!=\!1.5$, $N\!=\!200$ with $K\!=\!10^4$ keeps a $\sim$6$\times$ cushion. Pushing $K$ from $10^4$ to $e^{12}\!\approx\!1.6\!\times\!10^5$ only moves $\Tmax$ by a few percent — the dominant constraint is on $K$ rather than on $N$ for $\alpha\!\le\!1$, with the roles partially reversing only at high $\alpha$.
+
+\section{Consistency check with honest Monte Carlo}
+
+The cleanest validation runs at moderate $N$ where honest (untruncated) MC is still tractable. We propose:
+\begin{enumerate}
+\item Fix $N\!=\!15$ and run honest MC across $\alpha\in\{0.2,0.5,0.8,1.0\}$ with $M = e^{\alpha N}$. This is the ground truth.
+\item Run smart MC at the same $(N,\alpha)$ with $K$ swept from $K\!=\!M$ down to $K\!=\!100$, using the truncated dynamics~\eqref{eq:ptilde} with $C$ from~\eqref{eq:Cdef}.
+\item Plot $\avg{\phi}(K)$ at fixed $T$. The curve must be flat (within MC error) at $K\!=\!M$ and only bend systematically as $K$ enters the regime where~\eqref{eq:validity} fails.
+\item The systematic bias is upward in $\avg{\phi}$: smart MC overestimates retrieval because the passive sea's $x$-dependent fluctuations are replaced by their mean.
+\end{enumerate}
+A second sanity check is trivial: for $\alpha<0.2$ the budget $K=10^4$ already exceeds $M$ at $N\!=\!30$--$50$, so smart MC reduces to honest MC by construction.
+
+\section{Summary}
+
+Smart MC for the LSE memory keeps the $K$ patterns with the largest overlap with a reference, replaces the remaining $M-K$ patterns by their mean contribution $C$ inside the log, and uses the truncated $\tilde p$ for MH dynamics. The scheme is faithful provided $\Tmax(\alpha,N,K) = (1-\Pcut^2)/\Pcut > \Tcrit(\alpha)$, with $\Pcut$ determined by the upper-tail condition~\eqref{eq:phicut}. Thermal corrections to this bound, computed from the proper saddle curvature, are small and do not change the picture: the validity inequality survives the large-$N$ limit by a factor $\sim 5$ at $\alpha=1$, leaving ample design room for the AAAI sweep.
+
+\end{document}
