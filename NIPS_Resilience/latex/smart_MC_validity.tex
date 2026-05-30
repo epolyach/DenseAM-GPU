@@ -162,6 +162,87 @@ $N\!=\!500$,\ $K\!=\!10^4$        & 0.494 & 0.301 & 0.153 & 0.100 & 0.054 \\
 
 \paragraph{Reading the design space.} For $\alpha\!\le\!1.2$, $N\!=\!100$ with $K\!=\!10^4$ already provides a $\sim$6$\times$ cushion above $\Tcrit$. To extend cleanly to $\alpha\!=\!1.5$, $N\!=\!200$ with $K\!=\!10^4$ keeps a $\sim$6$\times$ cushion. Pushing $K$ from $10^4$ to $e^{12}\!\approx\!1.6\!\times\!10^5$ only moves $\Tmax$ by a few percent — the dominant constraint is on $K$ rather than on $N$ for $\alpha\!\le\!1$, with the roles partially reversing only at high $\alpha$.
 
+\section{Two thresholds in $\alpha$}
+
+The analysis of the smart-MC scheme uncovers \emph{two} distinct $\alpha$-thresholds, easy to confuse but with different meanings.
+
+\paragraph{Closed forms.}
+The mean weight $\langle w\rangle = \mathbb{E}_f[e^{-\beta_{\mathrm{net}}N(1-\phi)}]$ is dominated, at large $N$, by a saddle at $\phi^* = (\sqrt5-1)/2 = 1/\varphi_g$ (inverse golden ratio):
+\begin{equation}
+\langle w\rangle \;\approx\; e^{-\lambda_w N},\qquad
+\lambda_w = 2 - \varphi_g + \tfrac{1}{2}\ln\varphi_g \;\approx\; 0.6226,
+\end{equation}
+with $\varphi_g = (1+\sqrt5)/2$. The second moment $\langle w^2\rangle$ has its own saddle at $\phi^*_2 = (\sqrt{17}-1)/4$, giving
+\begin{equation}
+\langle w^2\rangle \;\approx\; e^{-\lambda_{w^2} N},\qquad \lambda_{w^2} \approx 0.909.
+\end{equation}
+Define the relative-variance exponent
+\begin{equation}
+\lambda_{\mathrm{var}} \;=\; 2\lambda_w - \lambda_{w^2} \;\approx\; 0.336.
+\end{equation}
+
+\paragraph{Threshold \#1 — self-averaging ($\alpha > \lambda_{\mathrm{var}} \approx 0.34$).}
+\begin{equation}
+\frac{\sigma_S}{C} \;=\; \frac{1}{\sqrt{M-K}}\sqrt{\frac{\langle w^2\rangle}{\langle w\rangle^2}} \;\approx\; \exp\!\Big(\tfrac{1}{2}(\lambda_{\mathrm{var}} - \alpha)\,N\Big),
+\end{equation}
+which is $\ll 1$ \emph{iff} $\alpha > \lambda_{\mathrm{var}}$. \textbf{This is a hard validity bound on the mean-replacement.} It cannot be repaired by adjusting $K$: $\sigma_S/C$ scales as $1/\sqrt{M-K}$, so larger $K$ only worsens self-averaging. Below $\lambda_{\mathrm{var}}$, the heavy-tailed weight distribution is intrinsically non-self-averaging at any $(N,K)$, and one must fall back on honest MC.
+
+\paragraph{Threshold \#2 — floor-vs-live crossover ($\alpha \approx \lambda_w \approx 0.62$).}
+\begin{equation}
+C(\alpha, N) \;\approx\; e^{(\alpha - \lambda_w)\,N},
+\end{equation}
+so $C$ crosses unity at $\alpha = \lambda_w$. For $\alpha < \lambda_w$, $C\ll p_{\mathrm{live}}$ and the dynamics is dominated by the live patterns:
+\begin{equation}
+H \;\approx\; -\tfrac{1}{\beta_{\mathrm{net}}}\,\ln p_{\mathrm{live}} \;+\; \mathcal{O}(C/p_{\mathrm{live}}).
+\end{equation}
+For $\alpha > \lambda_w$, $C\gg p_{\mathrm{live}}$ and the log expands the other way:
+\begin{equation}
+H \;\approx\; -\tfrac{1}{\beta_{\mathrm{net}}}\!\Big[\ln C + \frac{p_{\mathrm{live}}}{C}\Big],
+\end{equation}
+i.e.\ a constant shift plus the live signal rescaled by $1/C$. \textbf{This is not a validity threshold:} the simulator evaluates $H = -\beta_{\mathrm{net}}^{-1}\ln(C+p_{\mathrm{live}})$ exactly via max-shift LSE, and the basin shape in $\phi$-space is preserved on both sides. Only the analytical reasoning about which term sets the energy scale differs.
+
+\paragraph{Where the AAAI sweep sits.}
+The simulator covers $\alpha \in [0.40,\,1.00]$ at $N=500$, $K=10^4$, $\beta_{\mathrm{net}}=1$.
+\begin{table}[h]
+\centering
+\caption{Regime map of the AAAI sweep.}
+\begin{tabular}{cccc}
+\toprule
+$\alpha$ window & self-averaging & dominant LSE term & $\sigma_S/C$ at $N=500$ \\
+\midrule
+$0.40$–$0.62$ & yes (well above $\lambda_{\mathrm{var}}$) & $p_{\mathrm{live}}$ & $\le 10^{-15}$ \\
+$0.62$–$1.00$ & yes               & $C$                  & $\to 10^{-70}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The MH validity condition $\phi_{\mathrm{eq}}(T) > \phi_{\mathrm{cut}}$, derived in Sec.~4, is geometric and applies in both regimes — the chain escapes the basin when thermal fluctuations of $\phi_1$ reach the nearest live competitor's overlap, independently of whether $C$ or $p_{\mathrm{live}}$ dominates the energy magnitude.
+
+\section{Simulation grids}
+
+\paragraph{$\alpha$-grid:} $\alpha \in \{0.40,\, 0.45,\, 0.50,\, \ldots,\, 1.00\}$ — 13 values, step $0.05$.
+
+\paragraph{$T$-grid (per $\alpha$):} 30 linearly-spaced points from $T_{\min}=0.005$ up to $0.9\,T_{\max}(\alpha,N,K)$, with $T_{\max} = (1-\phi_{\mathrm{cut}}^2)/\phi_{\mathrm{cut}}$ from~\eqref{eq:Tmax}. The grid is therefore a \emph{wedge} narrowing at large $\alpha$, with resolution naturally densest where $T_{\mathrm{crit}}(\alpha)$ lives.
+
+\begin{table}[h]
+\centering
+\caption{T-grid range per $\alpha$ at $N=500$, $K=10^4$.}
+\begin{tabular}{ccccc}
+\toprule
+$\alpha$ & $\phi_{\mathrm{cut}}$ & $T_{\max}$ & top of grid & $T_{\mathrm{crit}}$ (physical) \\
+\midrule
+0.40 & 0.838 & 0.61 & 0.55 & $\approx 0.20$ \\
+0.50 & 0.873 & 0.43 & 0.39 & 0.135 \\
+0.70 & 0.918 & 0.25 & 0.22 & 0.073 \\
+1.00 & 0.951 & 0.15 & 0.14 & 0.031 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Disorder samples.}  $n_{\mathrm{disorder}}$ ramps from 128 at $\alpha=0.40$ down to 32 at $\alpha=1.00$ (cheap at high $\alpha$, expensive at low $\alpha$ — but signal cleaner there).
+
+\paragraph{Hardware.}  A single NVIDIA A6000 (48~GB) accommodates the full sweep at $N=500$, $K=10^4$, $n_{\mathrm{dis,max}}=128$ in one chunk (peak memory $\sim$33 GB out of a 40 GB budget). Expected wall time $\sim$30 minutes.
+
 \section{Consistency check with honest Monte Carlo}
 
 The cleanest validation runs at moderate $N$ where honest (untruncated) MC is still tractable. We propose:
@@ -172,6 +253,27 @@ The cleanest validation runs at moderate $N$ where honest (untruncated) MC is st
 \item The systematic bias is upward in $\avg{\phi}$: smart MC overestimates retrieval because the passive sea's $x$-dependent fluctuations are replaced by their mean.
 \end{enumerate}
 A second sanity check is trivial: for $\alpha<0.2$ the budget $K=10^4$ already exceeds $M$ at $N\!=\!30$--$50$, so smart MC reduces to honest MC by construction.
+
+\section{Open question: why does $\alpha_c^{\mathrm E}(T)$ not depend on $\beta_{\mathrm{net}}$?}
+
+\paragraph{Observation.} The exact LSE retrieval boundary $\alpha_c^{\mathrm E}(T)$ derived in {\tt LSE\_gaussian.tex} has no $\beta_{\mathrm{net}}$ in it. This is at first puzzling because $\beta_{\mathrm{net}}$ visibly controls the LSE kernel sharpness in~\eqref{eq:Hdef} and, intuitively, should set how distinct basins are.
+
+\paragraph{Working hypothesis.} The single-pattern retrieval analysis collapses the LSE \emph{onto its dominant term} near a stored pattern $\bxi^1$:
+\begin{equation}
+H_{\mathrm{LSE}}(\bx) = -\frac{1}{\beta_{\mathrm{net}}}\,\ln p(\bx)
+\;\;\overset{\bx\to\bxi^1}{\longrightarrow}\;\;
+-\frac{1}{\beta_{\mathrm{net}}}\,\ln\!\big[e^{-\beta_{\mathrm{net}} N(1-\phi_1)}\big]
+\;=\;N(1-\phi_1),
+\end{equation}
+so the $1/\beta_{\mathrm{net}}$ in front of $\ln p$ exactly cancels the $\beta_{\mathrm{net}}$ in the exponent. The free-energy density $f_{\mathrm{ret}}(T)$ depends only on $(1-\phi)$ and the geometric entropy $s(\phi)$. The same cancellation occurs on the noise-floor side: the spurious branch energy is $1-\varphi_{\max}$, again with no $\beta_{\mathrm{net}}$.
+
+\paragraph{Where $\beta_{\mathrm{net}}$ then survives.} It controls only the \emph{sub-leading} log-sum-exp correction that mixes the champion with the next-best competitor. Concretely, near $\bxi^1$,
+\begin{equation}
+H = N(1-\phi_1) - \frac{1}{\beta_{\mathrm{net}}}\,\ln\!\Big[1 + \sum_{\mu\ge 2} e^{-\beta_{\mathrm{net}} N(\phi_1 - \phi_\mu)}\Big].
+\end{equation}
+For $\beta_{\mathrm{net}} N(\phi_1 - \phi_\mu) \gg 1$ this correction is exponentially suppressed and the dynamics is governed entirely by the champion. The retrieval/no-retrieval transition is then set by the \emph{location} of the spurious maximum $\varphi_{\max}$, which is a property of the pattern distribution and is itself independent of $\beta_{\mathrm{net}}$.
+
+\paragraph{To verify in the AAAI paper.} Run the smart-MC simulator (Sec.~7) at several values of $\beta_{\mathrm{net}}$ on the same $(\alpha, T, N, K)$ grid and check that the measured boundary collapses onto one curve. If it does not collapse cleanly, the dependence we predict to be sub-leading is in fact load-bearing in a finite-$N$ regime, and the analytic boundary $\alpha_c^{\mathrm E}(T)$ should be re-derived with an explicit $\beta_{\mathrm{net}}$-dependent finite-temperature competition term.
 
 \section{Summary}
 
