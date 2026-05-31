@@ -57,18 +57,48 @@ alphas = sort(unique(round.(alpha, digits=4)))
 @printf("Rows: %d   α values: %d   α∈[%.3f, %.3f]\n",
         n, length(alphas), first(alphas), last(alphas))
 
-# Wedge grid: T values differ per α.  Build a regular T-axis for the heatmap
-# by union-of-grids + nearest-snap; cells where the sim never visited (above
-# T_max(α)) will be NaN and the heatmap shows them as background.
-T_all_set = Set{Float64}()
-for ti in T; push!(T_all_set, round(ti, digits=5)); end
-Ts = sort(collect(T_all_set))
-na = length(alphas); nT = length(Ts)
+# Wedge grid: T values differ per α.  For each α, collect its T-column,
+# then linearly interpolate onto a common dense T-axis.  Cells above
+# T_max(α) (i.e. above the highest sim T at that α) are NaN.
+na = length(alphas)
+col_T   = Vector{Vector{Float64}}(undef, na)
+col_phi = Vector{Vector{Float64}}(undef, na)
+for ia in 1:na
+    α = alphas[ia]
+    mask = abs.(alpha .- α) .< 1e-4
+    # Per (α, T) cell: average φ_a and φ_b across disorder replicas
+    Ts_here = sort(unique(round.(T[mask], digits=6)))
+    phis = zeros(length(Ts_here))
+    for (k, t) in enumerate(Ts_here)
+        m2 = mask .& (abs.(T .- t) .< 1e-6)
+        phis[k] = mean(vcat(phi_a[m2], phi_b[m2]))
+    end
+    col_T[ia]   = Ts_here
+    col_phi[ia] = phis
+end
+
+# Common dense T-axis for the heatmap (linear, 300 points across full range)
+T_lo  = minimum(minimum.(col_T))
+T_hi  = maximum(maximum.(col_T))
+Ts    = collect(range(T_lo, T_hi, length=300))
+nT    = length(Ts)
 phi_grid = fill(NaN, nT, na)
-for ia in 1:na, iT in 1:nT
-    mask = (abs.(alpha .- alphas[ia]) .< 1e-4) .& (abs.(T .- Ts[iT]) .< 1e-4)
-    vals = vcat(phi_a[mask], phi_b[mask])
-    !isempty(vals) && (phi_grid[iT, ia] = mean(vals))
+
+function interp_lin(xs, ys, x)
+    (x < first(xs) || x > last(xs)) && return NaN
+    i = searchsortedlast(xs, x)
+    i == length(xs) && return ys[end]
+    i == 0 && return ys[1]
+    x0, x1 = xs[i], xs[i+1]
+    y0, y1 = ys[i], ys[i+1]
+    return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+end
+
+for ia in 1:na
+    Tcol = col_T[ia]; Pcol = col_phi[ia]
+    for iT in 1:nT
+        phi_grid[iT, ia] = interp_lin(Tcol, Pcol, Ts[iT])
+    end
 end
 
 # ──────────────── Theory ────────────────
