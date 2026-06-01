@@ -412,7 +412,8 @@ function main()
 
         # ── Memory check ──
         pat_mem = N * N_DYN * n_T_l * n_dis * sizeof(F)
-        @printf("─"^72 * "\nα=%.2f   n_dis=%d  n_T=%d  pat_mem=%.2f GB\n",
+        println("─"^72)
+        @printf("α=%.2f   n_dis=%d  n_T=%d  pat_mem=%.2f GB\n",
                 α, n_dis, n_T_l, pat_mem/1e9)
         println("─"^72)
 
