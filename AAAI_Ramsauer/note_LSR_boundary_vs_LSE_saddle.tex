@@ -1,0 +1,246 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath, amssymb, mathtools}
+\usepackage{bm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\geometry{a4paper, margin=2.4cm}
+
+\newcommand{\bxi}{\boldsymbol{\xi}}
+\newcommand{\bx}{\bm{x}}
+\newcommand{\Bnet}{\beta_{\mathrm{net}}}
+\newcommand{\athLSR}{\alpha_{\mathrm{th}}^{\mathrm{LSR}}}
+\newcommand{\acLSE}{\alpha_c^{\mathrm{LSE}}}
+
+\title{\bfseries Internal note: is the LSR boundary-driven threshold
+0.347 (NeurIPS) actually the correct analog of the LSE saddle-driven
+threshold 0.6226?}
+\author{}
+\date{Drafted as a reference for referee responses to the AAAI submission.}
+
+\begin{document}
+\maketitle
+
+\section*{Anticipated referee question}
+
+The AAAI submission compares two thermodynamic-limit capacity numbers
+under the exact spherical density:
+\begin{itemize}
+  \item LSE (this work): $\acLSE \approx 0.6226$, derived from a saddle of
+        the spurious-sum integrand at the golden ratio
+        $\varphi^{*} = (\sqrt{5}-1)/2$.
+  \item LSR (NeurIPS companion~\cite{petrova2026metastable}):
+        $\athLSR \approx 0.347$, derived from the support-entry condition
+        $M \cdot \Pr[\varphi_{1\mu} > \varphi_c] \simeq 1$.
+\end{itemize}
+A careful referee may object that these are not the same kind of quantity.
+The NeurIPS number is the threshold at which the \emph{first} spurious
+pattern enters the LSR kernel support, computed from a single-closest /
+extreme-value argument. The AAAI number is the threshold at which the
+\emph{cumulative} spurious sum saturates the retrieval term, computed from
+a saddle of the integrand. If for LSR the cumulative contribution from the
+band of patterns near $\varphi_c$ overtakes the single closest pattern,
+one might worry that $\athLSR = 0.347$ is the wrong number to compare
+against $\acLSE = 0.6226$, and that the LSR cumulative-band saturation
+threshold is different.
+
+This note shows that, in the thermodynamic limit $N \to \infty$, the two
+LSR criteria \emph{coincide}: NeurIPS's $0.347$ is simultaneously the
+support-entry threshold and the boundary-driven cumulative-saturation
+threshold, and it is therefore the correct apples-to-apples analog of the
+LSE $0.6226$. The finite-$N$ correction is $O(\ln N / N)$ and explicitly
+computed below.
+
+\section{The two parallel derivations}
+
+The spurious sum at the retrieval state $\bx = \bxi^1$ is
+\begin{equation}
+S \;=\; \sum_{\mu \neq 1} K\bigl(\varphi_{1\mu}\bigr)
+   \;\approx\; M \int_{-1}^{1} f(\varphi)\,K(\varphi)\,\mathrm{d}\varphi,
+\qquad f(\varphi) = C_N(1-\varphi^2)^{(N-3)/2},
+\label{eq:S}
+\end{equation}
+where $K$ is the kernel and $C_N = 1/B((N-1)/2, 1/2)$. We compare with
+the retrieval term $K_{\mathrm{ret}} = K(1)$ and call the breakdown the
+condition $S \simeq K_{\mathrm{ret}}$.
+
+\paragraph{LSE.}
+Kernel $K_{\mathrm{LSE}}(\varphi) = \exp(\Bnet N \varphi)$,
+retrieval value $K_{\mathrm{ret}} = \mathrm{e}^{\Bnet N}$. The integrand
+exponent (per unit $N$) is
+\begin{equation}
+g_{\mathrm{LSE}}(\varphi) \;=\; \tfrac12 \ln(1-\varphi^2) \;+\; \Bnet\,\varphi.
+\label{eq:gLSE}
+\end{equation}
+Stationarity at $\Bnet = 1$ gives $\varphi^{*2} + \varphi^{*} - 1 = 0$,
+so $\varphi^{*} = (\sqrt{5}-1)/2$ and (using $1 - \varphi^{*2} = \varphi^{*}$)
+\begin{equation}
+g_{\max} \;=\; \tfrac12 \ln \varphi^{*} + \varphi^{*} \;\approx\; 0.3774.
+\end{equation}
+Setting $\alpha N + g_{\max} N = \Bnet N$ yields the saddle-driven LSE
+threshold
+\begin{equation}
+\boxed{\;\acLSE \;=\; \Bnet - g_{\max} \;\approx\; 0.6226.\;}
+\label{eq:acLSE}
+\end{equation}
+
+\paragraph{LSR.}
+Kernel $K_{\mathrm{LSR}}(\varphi) = \max(0,\,1 - b + b\varphi) = b\,(\varphi-\varphi_c)\,\mathbf{1}_{\varphi \geq \varphi_c}$
+with $\varphi_c = (b-1)/b$. Retrieval value $K_{\mathrm{ret}} = K_{\mathrm{LSR}}(1) = 1$.
+The integrand on $[\varphi_c, 1]$ is $f(\varphi)\,b\,(\varphi-\varphi_c)$.
+Taking logarithms, the exponent (per unit $N$) is
+\begin{equation}
+h_{\mathrm{LSR}}(\varphi)
+\;=\; \underbrace{\tfrac12 \ln(1-\varphi^2)}_{\text{entropy, }O(1)}
+   \;+\; \underbrace{\tfrac{1}{N}\ln\bigl[b(\varphi-\varphi_c)\bigr]}_{O(1/N),\,\text{subleading}}.
+\label{eq:hLSR}
+\end{equation}
+To leading order in $N$ only the entropy contributes. The entropy
+$\tfrac12 \ln(1-\varphi^2)$ is monotonically decreasing on $[\varphi_c, 1]$
+(its global maximum at $\varphi = 0$ lies \emph{outside} the LSR support),
+so the integrand-exponent maximum is at the left boundary $\varphi = \varphi_c$
+with value
+\begin{equation}
+h_{\max} \;=\; \tfrac12 \ln(1-\varphi_c^2).
+\end{equation}
+Setting $\alpha N + h_{\max} N = 0$ yields the boundary-driven LSR threshold
+\begin{equation}
+\boxed{\;\athLSR \;=\; -h_{\max} \;=\; -\tfrac12 \ln(1-\varphi_c^2).\;}
+\label{eq:athLSR}
+\end{equation}
+For $b = 2 + \sqrt{2}$ this is $\athLSR = \tfrac12 \ln 2 \approx 0.347$,
+which is exactly the NeurIPS number.
+
+\section{Why the numbers (0.6226 vs.\ 0.347) look so different}
+
+Both formulas are instances of the same identity:
+\begin{equation}
+\boxed{\;\alpha_c \;=\; (\text{retrieval rate}) \;-\; (\text{integrand maximum value}).\;}
+\end{equation}
+The contrast in the numerical answers has two ingredients, not one.
+\begin{enumerate}
+  \item \textbf{Where the integrand maximum sits.}
+        LSE's exponential kernel adds the linear term $\Bnet\varphi$ to
+        the entropy, pushing the maximum inward to an interior saddle at
+        the golden ratio $\varphi^{*}=0.618$. LSR's compactly-supported
+        kernel contributes only an $O(1/N)$ correction; the leading-order
+        maximum sits at the support boundary $\varphi_c = 0.707$ for
+        $b = 2+\sqrt{2}$.
+  \item \textbf{Retrieval-kernel scale.}
+        LSE's $K_{\mathrm{ret}} = \mathrm{e}^{\Bnet N}$ supplies a rate
+        $\Bnet$ on the right-hand side of the balance. LSR's
+        $K_{\mathrm{ret}} = 1$ supplies a rate of $0$. Algebraically:
+        $\acLSE = \Bnet - g_{\max}$ and $\athLSR = 0 - h_{\max}$.
+\end{enumerate}
+
+The values inserted into the boxed identity are:
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{lcccc}
+\hline
+                  & retrieval rate & integrand max position & integrand max value & threshold \\
+\hline
+LSE (this work)   & $\Bnet = 1$ & $\varphi^{*} = (\sqrt{5}-1)/2$ & $g_{\max} = +0.3774$ & $0.6226$ \\
+LSR (NeurIPS)     & $0$         & $\varphi_c = (b-1)/b$          & $h_{\max} = -0.347$  & $0.347$ \\
+\hline
+\end{tabular}
+\end{center}
+
+The 0.6226-vs-0.347 contrast is therefore neither a saddle-vs-boundary
+distinction alone nor a kernel-scale distinction alone: it is both.
+
+\section{Cumulative band vs.\ single closest, the original worry}
+
+The referee's intuition is correct that there is a band of patterns just
+above $\varphi_c$ whose cumulative contribution exceeds that of the single
+closest pattern. The point of this section is that the threshold extracted
+from the cumulative-band calculation coincides with the threshold extracted
+from the single-closest / support-entry calculation in the thermodynamic
+limit.
+
+\paragraph{Position of the cumulative band.}
+The full LSR integrand is $f(\varphi)\,(\varphi-\varphi_c)$. Setting its
+log-derivative to zero,
+\begin{equation}
+-\frac{(N-3)\varphi}{1-\varphi^2} + \frac{1}{\varphi-\varphi_c} = 0,
+\end{equation}
+and expanding around $\varphi_c$ with $\delta = \varphi-\varphi_c \ll 1$
+gives the interior maximum at
+\begin{equation}
+\delta_{\star} \;\approx\; \frac{1-\varphi_c^{2}}{N\,\varphi_c} \;=\; O(1/N).
+\end{equation}
+So LSR \emph{does} have a formal interior maximum of the integrand, but its
+position is glued to the support boundary in the $N \to \infty$ limit. The
+Gaussian width of the saddle is $\sigma \sim 1/\sqrt{N}$.
+
+\paragraph{Cumulative-band sum.}
+Laplace integration around $\delta_{\star}$ gives
+\begin{equation}
+S_{\mathrm{LSR}} \;\sim\; M \, b \, f(\varphi_c) \cdot \frac{1}{N^{2}\varphi_c^{2}}
+\;=\; \exp\!\bigl[(\alpha - \athLSR)\,N\bigr] \cdot \frac{b\sqrt{2}}{N^{3/2}\sqrt{\pi}\varphi_c}
+\end{equation}
+(using $f(\varphi_c) \sim \sqrt{N/(2\pi)} \, \mathrm{e}^{-\athLSR N}$
+at leading order). Setting $S_{\mathrm{LSR}} = K_{\mathrm{ret}} = 1$:
+\begin{equation}
+\alpha_c^{\mathrm{cum,\,LSR}}(N)
+\;=\; \athLSR \;+\; \frac{\tfrac{3}{2}\ln N + \tfrac12 \ln \tfrac{\pi}{2} + \ln(\varphi_c/b)}{N}
+\;=\; \athLSR + O\!\left(\frac{\ln N}{N}\right).
+\label{eq:athLSR-cum}
+\end{equation}
+For $N = 25$ and $b = 2+\sqrt{2}$ this gives a shift of about $+0.15$
+relative to the leading-order value; for $N = 100$ it is about $+0.05$; in
+the thermodynamic limit it vanishes.
+
+\paragraph{Single-closest argument.}
+NeurIPS works with the typical maximum overlap among $M$ patterns:
+$\varphi_{\max}(\alpha) \approx \sqrt{1 - \mathrm{e}^{-2\alpha}}$ (from
+inverting $M \int_{\varphi_{\max}}^{1} f \, \mathrm{d}\varphi = 1$). The
+condition $\varphi_{\max} = \varphi_c$ gives precisely the leading-order
+value of \eqref{eq:athLSR-cum}, with no $O(\ln N / N)$ correction. The
+single-closest argument is the leading-order term of the cumulative one.
+
+\paragraph{Why they agree at $N \to \infty$.}
+Because the LSR integrand maximum sits \emph{at} the support boundary
+(unlike the LSE case, where the saddle is in the interior at
+$\varphi^{*} = 0.618$), the band of patterns and the single closest pattern
+are not statistically separable structures: the band collapses onto the
+boundary as $N \to \infty$, the width $\delta_{\star} \to 0$ as $1/N$, and
+the number of patterns inside the band stays $O(1)$ at the threshold.
+For LSE the saddle width is also $\sigma \sim 1/\sqrt{N}$ but its
+\emph{position} is bounded away from any boundary (at $\varphi^{*} \approx 0.618$),
+so the cumulative-band picture survives the thermodynamic limit and is
+qualitatively distinct from any single-closest argument.
+
+\section{Bottom line for the referee response}
+
+There is no separate ``cumulative-band breakdown threshold for LSR''
+distinct from NeurIPS's $\athLSR = 0.347$ in the thermodynamic limit.
+$\athLSR = 0.347$ is simultaneously
+\begin{enumerate}
+  \item the support-entry threshold (first pattern enters the LSR kernel
+        support), and
+  \item the boundary-driven cumulative-saturation threshold (spurious sum
+        first balances the retrieval term),
+\end{enumerate}
+to leading order in $N$. Its finite-$N$ correction is the $+ O(\ln N / N)$
+shift in \eqref{eq:athLSR-cum}, which appears as a small additive offset
+in the apparent boundary at the moderate $N$ accessible to honest Monte
+Carlo and vanishes in the $N \to \infty$ limit. Comparing $0.6226$ (LSE,
+this work) and $0.347$ (LSR, NeurIPS) is therefore an apples-to-apples
+comparison of thermodynamic-limit, exact-density, first-noise-saturation
+thresholds. The numerical contrast reflects both the interior-saddle vs.\
+boundary-max distinction (the kernel-shape effect) and the
+$\mathrm{e}^{\Bnet N}$ vs.\ $1$ scaling of the retrieval term (the
+kernel-amplitude effect).
+
+\begin{thebibliography}{9}
+\bibitem{petrova2026metastable}
+T.\ Petrova, E.\ Polyachenko, R.\ State.
+\emph{Retrieval Metastability via Kramers Escape and Centroid Hopping}.
+NeurIPS, 2026 (placeholder bib key).
+\end{thebibliography}
+
+\end{document}
