@@ -12,6 +12,12 @@ TOML/Manifest.toml
 *.synctex.gz
 *.fls
 *.fdb_latexmk
+*.bbl
+*.blg
+*.toc
+*.nav
+*.snm
+*.vrb
 
 # Editor/IDE
 .vscode/
