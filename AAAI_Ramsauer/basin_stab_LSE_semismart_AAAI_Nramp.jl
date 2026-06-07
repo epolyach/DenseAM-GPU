@@ -41,7 +41,7 @@ using Distributions
 const F = Float32
 
 # ──────────────── N(α) ramp + truncation budget ────────────────
-const M_TARGET     = 4.4e7
+const M_TARGET     = 4.4e6
 const N_FLOOR      = 12
 const K_TARGET     = 30_000
 const K_HARD_CAP   = 200_000
@@ -54,8 +54,9 @@ const N_SAMP        = 2^13
 const N_DIS_TARGET  = 64                  # disorder samples per α (chunked if needed)
 const MEM_BUDGET_GB = 40.0
 
-const alpha_vec = collect(F(0.20):F(0.01):F(0.70))
-const T_vec     = collect(F(0.005):F(0.01):F(0.485))
+# const alpha_vec = collect(F(0.20):F(0.01):F(0.70))
+const alpha_vec = collect(F(0.20):F(0.1):F(0.60))
+const T_vec     = collect(F(0.005):F(0.01):F(0.495))
 const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
 
@@ -222,7 +223,7 @@ end
 
 # ──────────────── CLI & Resume ────────────────
 const FRESH_START = "--fresh" in ARGS
-const csv_out     = "basin_stab_LSE_semismart_AAAI_Nramp.csv"
+const csv_out     = "basin_stab_LSE_semismart_AAAI_Nramp_M4.4e6.csv"
 
 # Per-α: how many disorder samples are already in the CSV?
 function read_disorder_progress(csv_file::String)
@@ -388,8 +389,12 @@ function main()
     @printf("  M_TARGET = %.1e   N(α) = round(log(M)/α)   anchor: α=0.70 → N=25\n", M_TARGET)
     @printf("  K_TARGET = %d   N_DIS_TARGET = %d   MEM_BUDGET = %.1f GB\n",
             K_TARGET, N_DIS_TARGET, MEM_BUDGET_GB)
-    @printf("  α grid: %.2f : %.2f : %.2f  (%d values)\n",
-            alpha_vec[1], alpha_vec[2]-alpha_vec[1], alpha_vec[end], n_alpha)
+    if n_alpha > 1
+        @printf("  α grid: %.2f : %.2f : %.2f  (%d values)\n",
+                alpha_vec[1], alpha_vec[2]-alpha_vec[1], alpha_vec[end], n_alpha)
+    else
+        @printf("  α grid: %.2f  (single value)\n", alpha_vec[1])
+    end
     @printf("  T grid: %.4f : %.4f  (%d points)\n", T_vec[1], T_vec[end], n_T)
     @printf("  MC: %d eq + %d samp\n", N_EQ, N_SAMP)
     println("="^76)
