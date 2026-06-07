@@ -38,17 +38,17 @@ using Dates: now
 const F = Float32
 
 # ──────────────── N(α) ramp ────────────────
-const M_TARGET      = 4.4e7
+const M_TARGET      = 4.4e6
 const N_FLOOR       = 12
 const betanet       = F(1.0)
-const N_EQ          = 2^15
-const N_SAMP        = 2^13
-const N_DIS_TARGET  = 32          # disorder samples per α — honest is expensive at large N
+const N_EQ          = 2^14
+const N_SAMP        = 2^12
+const N_DIS_TARGET  = 8           # disorder samples per α — honest is expensive at large N
 const MEM_BUDGET_GB = 40.0
 
 # const alpha_vec = collect(F(0.20):F(0.01):F(0.70))
 const alpha_vec = F[0.30]
-const T_vec     = collect(F(0.005):F(0.01):F(0.485))
+const T_vec     = collect(F(0.005):F(0.01):F(0.495))
 const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
 
