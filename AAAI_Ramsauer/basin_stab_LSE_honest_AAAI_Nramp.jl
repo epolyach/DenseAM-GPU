@@ -277,8 +277,12 @@ function main()
     @printf("  M_TARGET = %.1e   N(α) = round(log(M)/α)   anchor: α=0.70 → N=25\n", M_TARGET)
     @printf("  N_FLOOR = %d   N_DIS_TARGET = %d   MEM_BUDGET = %.1f GB\n",
             N_FLOOR, N_DIS_TARGET, MEM_BUDGET_GB)
-    @printf("  α grid: %.2f : %.2f : %.2f  (%d values)\n",
-            alpha_vec[1], alpha_vec[2]-alpha_vec[1], alpha_vec[end], n_alpha)
+    if n_alpha > 1
+        @printf("  α grid: %.2f : %.2f : %.2f  (%d values)\n",
+                alpha_vec[1], alpha_vec[2]-alpha_vec[1], alpha_vec[end], n_alpha)
+    else
+        @printf("  α grid: %.2f  (single value)\n", alpha_vec[1])
+    end
     @printf("  T grid: %.4f : %.4f  (%d points)\n", T_vec[1], T_vec[end], n_T)
     @printf("  MC: %d eq + %d samp\n", N_EQ, N_SAMP)
     println("="^76)
