@@ -56,21 +56,26 @@ function load_csv(path::String; phi_a_col::Int, phi_b_col::Int)
     return MCData(alpha, T, pa, pb)
 end
 
-honest_path    = joinpath(@__DIR__, "basin_stab_LSE_honest_AAAI_N25.csv")
-semismart_path = joinpath(@__DIR__, "basin_stab_LSE_semismart_AAAI_N25_phikeep0.40.csv")
+honest_path        = joinpath(@__DIR__, "basin_stab_LSE_honest_AAAI_N25.csv")
+semismart_path     = joinpath(@__DIR__, "basin_stab_LSE_semismart_AAAI_N25_phikeep0.40.csv")
+nramp_path         = joinpath(@__DIR__, "basin_stab_LSE_semismart_AAAI_Nramp.csv")
+honest_nramp_path  = joinpath(@__DIR__, "basin_stab_LSE_honest_AAAI_Nramp.csv")
 
 # Column layouts:
-# honest:    alpha,T,N_used,disorder,phi_a,phi_b,q12,phi_max_other        → phi_a col 5, phi_b col 6
-# semismart: alpha,T,N_used,K_retained,disorder,phi_a,phi_b,q12,phi_max  → phi_a col 6, phi_b col 7
-honest_data    = load_csv(honest_path;    phi_a_col=5, phi_b_col=6)
-semismart_data = load_csv(semismart_path; phi_a_col=6, phi_b_col=7)
+# honest / honest_nramp: alpha,T,N_used,disorder,phi_a,phi_b,q12,phi_max_other      → phi_a col 5, phi_b col 6
+# semismart / nramp:     alpha,T,N_used,K_retained,disorder,phi_a,phi_b,q12,phi_max → phi_a col 6, phi_b col 7
+honest_data        = load_csv(honest_path;       phi_a_col=5, phi_b_col=6)
+semismart_data     = load_csv(semismart_path;    phi_a_col=6, phi_b_col=7)
+nramp_data         = load_csv(nramp_path;        phi_a_col=6, phi_b_col=7)
+honest_nramp_data  = load_csv(honest_nramp_path; phi_a_col=5, phi_b_col=6)
 
-honest_data === nothing && semismart_data === nothing &&
-    error("Both CSVs missing — nothing to plot.")
+all(x -> x === nothing,
+    (honest_data, semismart_data, nramp_data, honest_nramp_data)) &&
+    error("All CSVs missing — nothing to plot.")
 
-# ─── Build common (α, T) grid by combining the two ───
+# ─── Build common (α, T) grid ───
 all_alphas = Float64[]; all_Ts = Float64[]
-for d in (honest_data, semismart_data)
+for d in (honest_data, semismart_data, nramp_data, honest_nramp_data)
     d === nothing && continue
     append!(all_alphas, d.alpha); append!(all_Ts, d.T)
 end
@@ -92,19 +97,32 @@ function build_phi_grid(d::Union{MCData,Nothing})
     end
     return g
 end
-phi_honest    = build_phi_grid(honest_data)
-phi_semismart = build_phi_grid(semismart_data)
+phi_honest        = build_phi_grid(honest_data)
+phi_semismart     = build_phi_grid(semismart_data)
+phi_nramp         = build_phi_grid(nramp_data)
+phi_honest_nramp  = build_phi_grid(honest_nramp_data)
 
-# Combined: honest takes precedence (ground truth); fall back to semismart only where honest is absent.
-# Honest and semismart diverge by up to ~0.5 in the high-T region — averaging them would muddy the boundary.
+# Priority: honest_Nramp > semismart_Nramp > honest_N25 > semismart_N25.
+# Highest priority is the honest ground truth at the largest feasible N
+# (per α); falls back to the semismart Nramp where honest_Nramp is absent;
+# then to honest N=25; finally to the semismart_AAAI N=25 baseline.
 phi_combined = fill(NaN, nT, na)
+src_combined = fill(0,   nT, na)   # 4=honest_Nramp, 3=nramp, 2=honest_N25, 1=semismart_N25
 for i in eachindex(phi_combined)
-    if isfinite(phi_honest[i])
-        phi_combined[i] = phi_honest[i]
+    if isfinite(phi_honest_nramp[i])
+        phi_combined[i] = phi_honest_nramp[i]; src_combined[i] = 4
+    elseif isfinite(phi_nramp[i])
+        phi_combined[i] = phi_nramp[i];        src_combined[i] = 3
+    elseif isfinite(phi_honest[i])
+        phi_combined[i] = phi_honest[i];       src_combined[i] = 2
     elseif isfinite(phi_semismart[i])
-        phi_combined[i] = phi_semismart[i]
+        phi_combined[i] = phi_semismart[i];    src_combined[i] = 1
     end
 end
+n4 = count(==(4), src_combined); n3 = count(==(3), src_combined)
+n2 = count(==(2), src_combined); n1 = count(==(1), src_combined)
+@printf("Source split: honest_Nramp=%d  semismart_Nramp=%d  honest_N25=%d  semismart_N25=%d  (none=%d)\n",
+        n4, n3, n2, n1, length(src_combined) - n4 - n3 - n2 - n1)
 
 # Residual ⟨φ⟩ − φ_eq(T)
 φ_eq(t) = 0.5 * (-t + sqrt(t^2 + 4))
