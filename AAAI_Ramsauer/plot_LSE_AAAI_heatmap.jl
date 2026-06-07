@@ -95,12 +95,11 @@ end
 phi_honest    = build_phi_grid(honest_data)
 phi_semismart = build_phi_grid(semismart_data)
 
-# Combined: honest where finite; else semismart; else NaN
+# Combined: honest takes precedence (ground truth); fall back to semismart only where honest is absent.
+# Honest and semismart diverge by up to ~0.5 in the high-T region — averaging them would muddy the boundary.
 phi_combined = fill(NaN, nT, na)
 for i in eachindex(phi_combined)
-    if isfinite(phi_honest[i]) && isfinite(phi_semismart[i])
-        phi_combined[i] = 0.5 * (phi_honest[i] + phi_semismart[i])
-    elseif isfinite(phi_honest[i])
+    if isfinite(phi_honest[i])
         phi_combined[i] = phi_honest[i]
     elseif isfinite(phi_semismart[i])
         phi_combined[i] = phi_semismart[i]
