@@ -50,17 +50,16 @@ function group_by_aNi(rows)
     return result
 end
 
-# Find T at which cold-chain residual crosses a threshold (φ < threshold * φ_eq).
-function find_T_boundary(curve::Vector{Tuple{Float64,Float64}}, thresh::Float64=0.5)
-    # curve is (T, phi) sorted by T
-    # Find first T where phi/phi_eq(T) < thresh (basin loss).
+# Find T at which the cold chain first departs from φ_eq(T) — i.e.
+# φ falls below a tight fraction of φ_eq. "0.90·φ_eq" captures the
+# leading edge of basin loss rather than the half-way point.
+function find_T_boundary(curve::Vector{Tuple{Float64,Float64}}, thresh::Float64=0.90)
     for i in 1:length(curve)-1
         T, phi = curve[i]
         T2, phi2 = curve[i+1]
         r1 = phi / phi_eq(T)
         r2 = phi2 / phi_eq(T2)
         if r1 > thresh && r2 < thresh
-            # linear interpolate
             return T + (T2 - T) * (r1 - thresh) / (r1 - r2)
         end
     end
@@ -128,28 +127,27 @@ mkpath(out_dir)
 
 pl = []
 for α in αs
+    Tmax_curve = if α ≤ 0.32; 0.95 elseif α ≤ 0.45; 0.70 elseif α ≤ 0.52; 0.40 else 0.35 end
     p = plot(xlabel="T", ylabel="⟨φ⟩", title=@sprintf("α=%.2f", α),
-             ylims=(-0.1, 1.0), legend=:bottomleft, titlefontsize=8)
+             xlims=(0, Tmax_curve), ylims=(-0.1, 1.0),
+             legend=:bottomleft, titlefontsize=8)
     for (j, N) in enumerate(Ns)
         cold = get(g, (α, N, :cold), nothing)
-        hot  = get(g, (α, N, :hot),  nothing)
-        col_cold = palette(:viridis, length(Ns))[j]
+        col_cold = palette(:viridis, max(length(Ns), 2))[j]
         if cold !== nothing
             T = [t for (t,_) in cold]; φ = [p for (_,p) in cold]
-            plot!(p, T, φ, color=col_cold, lw=2, ls=:solid, label="cold N=$N")
-        end
-        if hot !== nothing
-            T = [t for (t,_) in hot];  φ = [p for (_,p) in hot]
-            plot!(p, T, φ, color=col_cold, lw=2, ls=:dash, label="hot N=$N")
+            plot!(p, T, φ, color=col_cold, lw=2, ls=:solid,
+                  marker=:circle, ms=3, label="cold N=$N")
         end
     end
-    # phi_eq for reference
-    Ts = 0.0:0.01:0.55
+    # phi_eq reference
+    Ts = 0.0:0.005:Tmax_curve
     plot!(p, Ts, phi_eq.(Ts), color=:gray, lw=1, ls=:dot, label="φ_eq(T)")
     # leading-order spinodal vertical line
     Tsp = T_sp_LO(α)
-    if 0 < Tsp < 0.55
-        vline!(p, [Tsp], color=:purple, ls=:dot, lw=1, label="T_sp^LO=$(round(Tsp,digits=3))")
+    if 0 < Tsp ≤ Tmax_curve
+        vline!(p, [Tsp], color=:purple, ls=:dot, lw=1.5,
+               label="T_sp^LO=$(round(Tsp,digits=3))")
     end
     push!(pl, p)
 end

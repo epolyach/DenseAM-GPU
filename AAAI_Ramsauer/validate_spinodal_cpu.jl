@@ -215,8 +215,15 @@ end
 
 # ──────────────── Experiment ────────────────
 const ALPHAS    = [0.30, 0.40, 0.50, 0.55]
-const N_LIST    = [200, 500, 1000]
-const T_GRID    = collect(0.05:0.025:0.55)   # 21 T values
+const N_LIST    = [100, 1000]
+# Per-α fine T grid focused on the spinodal departure region.
+# Chosen so the cold curve's first deviation from φ_eq(T) is captured.
+const T_GRIDS   = Dict{Float64,Vector{Float64}}(
+    0.30 => collect(0.500:0.025:0.950),
+    0.40 => collect(0.300:0.020:0.660),
+    0.50 => collect(0.100:0.010:0.400),
+    0.55 => collect(0.050:0.010:0.300),
+)
 const N_DIS     = 4
 const K_TARGET  = 10_000
 const N_EQ      = 8_000
@@ -228,9 +235,13 @@ function main()
     @printf("Spinodal CPU MC: %d threads\n", nthreads())
     @printf("α = %s\n", ALPHAS)
     @printf("N = %s\n", N_LIST)
-    @printf("T grid: %d points from %.3f to %.3f\n",
-            length(T_GRID), first(T_GRID), last(T_GRID))
-    @printf("Disorders per (α,N,T,init): %d\n", N_DIS)
+    println("Per-α T grids (fine resolution focused on spinodal departure):")
+    for α in ALPHAS
+        Ts = T_GRIDS[α]
+        @printf("  α=%.2f: %d points from %.3f to %.3f (step %.3f)\n",
+                α, length(Ts), first(Ts), last(Ts), length(Ts)>1 ? Ts[2]-Ts[1] : 0)
+    end
+    @printf("Disorders per (α,N,T): %d  (cold init only)\n", N_DIS)
     @printf("K_TARGET = %d   N_EQ = %d   N_SAMP = %d\n",
             K_TARGET, N_EQ, N_SAMP)
     println("="^76)
@@ -247,11 +258,10 @@ function main()
                 α, N, Float64(M_full), phi_keep, Float64(log_C_bulk_total))
     end
 
-    # Build run list
-    Init = Symbol
+    # Build run list (cold init only — hot is dropped per user request)
     runs = Tuple{Float64,Int,Float64,Int,Symbol}[]
-    for α in ALPHAS, N in N_LIST, T in T_GRID, d in 1:N_DIS, init in (:cold, :hot)
-        push!(runs, (α, N, T, d, init))
+    for α in ALPHAS, N in N_LIST, T in T_GRIDS[α], d in 1:N_DIS
+        push!(runs, (α, N, T, d, :cold))
     end
     @printf("\nTotal chains: %d\n", length(runs))
 
