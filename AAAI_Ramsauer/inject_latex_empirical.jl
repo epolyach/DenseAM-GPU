@@ -119,11 +119,11 @@ write(TEX, new_src)
 println("Injected empirical T_sp values into ", TEX)
 
 # Also save anchor points to a small CSV for the heatmap script to use.
+# Include EVERY (α, N) with a finite cold-chain boundary, not just the largest N.
 open(joinpath(@__DIR__, "spinodal_empirical_anchors.csv"), "w") do f
     write(f, "alpha,N,T_sp\n")
-    for α in α_order
-        haskey(best, α) || continue
-        N, Tc, _, _ = best[α]
+    for row in rows
+        α, N, Tc, _, _ = row
         isnan(Tc) && continue
         @printf(f, "%.3f,%d,%.4f\n", α, N, Tc)
     end
