@@ -190,20 +190,27 @@ plot!(p, α_b[m_b],   T_range[m_b],  color=:darkorange, lw=2.0, ls=:dash,  label
 plot!(p, α_s[m_s],   T_range[m_s],  color=:red,        lw=2.0, ls=:solid, label="α_c^sd  saddle (this work)")
 plot!(p, α_sp[m_sp], T_range[m_sp], color=:purple,     lw=2.0, ls=:dot,   label="α_c^sp  single-pattern spinodal")
 
-# Empirical spinodal anchors from spinodal_empirical_anchors.csv (if present)
+# Empirical spinodal anchors from spinodal_empirical_anchors.csv (if present),
+# stratified by N: small N → open marker, largest N → filled star.
 anchors_path = joinpath(@__DIR__, "spinodal_empirical_anchors.csv")
 if isfile(anchors_path)
-    α_emp = Float64[]; T_emp = Float64[]
+    rows_e = Tuple{Float64,Int,Float64}[]
     for line in eachline(anchors_path)
         (isempty(line) || startswith(line, "alpha") || startswith(line, "#")) && continue
         f = split(line, ",")
-        push!(α_emp, parse(Float64, f[1]))
-        push!(T_emp, parse(Float64, f[3]))
+        push!(rows_e, (parse(Float64, f[1]), parse(Int, f[2]), parse(Float64, f[3])))
     end
-    if !isempty(α_emp)
-        scatter!(p, α_emp, T_emp, marker=:star5, ms=8, color=:purple,
-                 markerstrokecolor=:black, markerstrokewidth=1,
-                 label="α_c^sp  empirical MC")
+    if !isempty(rows_e)
+        Ns_e = sort(unique([r[2] for r in rows_e]))
+        for (i, N) in enumerate(Ns_e)
+            αs_N = [r[1] for r in rows_e if r[2] == N]
+            Ts_N = [r[3] for r in rows_e if r[2] == N]
+            marker = (i == length(Ns_e)) ? :star5 : :star4
+            ms     = (i == length(Ns_e)) ? 8 : 6
+            scatter!(p, αs_N, Ts_N, marker=marker, ms=ms, color=:purple,
+                     markerstrokecolor=:black, markerstrokewidth=1,
+                     label="α_c^sp  empirical N=$N")
+        end
     end
 end
 
