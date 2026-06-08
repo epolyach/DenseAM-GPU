@@ -66,10 +66,20 @@ function build_new_src(src, best, α_order)
     for α in α_order
         haskey(best, α) || continue
         N, Tc, Th, Tlo = best[α]
-        repl = isnan(Tc) ? "\$\\mathrm{n/a}\$" :
-               @sprintf("\$%.3f\$ {\\small(N=%d)}", Tc, N)
-        new_src = replace(new_src, "\\texttt{[pending]}" => repl, count=1)
+        target_cell = isnan(Tc) ? "\$\\mathrm{n/a}\$" :
+                        @sprintf("\$%.3f\$ {\\small(N=%d)}", Tc, N)
+        αstr = @sprintf("%.2f", α)
+        prefix = "(\\\$" * αstr * "\\\$ & [^&\\n]*& [^&\\n]*& )"
+        cell   = "([^&\\n]+?)"
+        suffix = "( \\\\\\\\)"
+        line_re = Regex(prefix * cell * suffix)
+        # Two-step replace: keep SubstitutionString clean of any \-escapes
+        # from target_cell (e.g. \small triggers invalid \s).
+        sentinel = "__INJECT_CELL_$(replace(αstr, "." => "_"))__"
+        new_src = replace(new_src, line_re => SubstitutionString("\\1" * sentinel * "\\3"))
+        new_src = replace(new_src, sentinel => target_cell)
     end
+    new_src = replace(new_src, "\\texttt{[pending]}" => "\$\\mathrm{n/a}\$")
     return new_src
 end
 new_src = build_new_src(src, best, α_order)
@@ -92,12 +102,18 @@ for α in α_order
 end
 empirical_note *= join(α_strs, "; ") * "."
 
-# Append the note before "We do not validate either hypothesis"
-new_src = replace(new_src,
-    "We do not validate either hypothesis numerically in this paper." =>
-    empirical_note * "\n\n" *
-    "We do not validate either hypothesis numerically in this paper.",
-    count=1)
+# Replace any existing "Spinodal slope from data." paragraph; if none, insert
+# before "We do not validate either hypothesis ...".
+prev_para_re = r"\\paragraph\{Spinodal slope from data\.\}.*?\n\n"s
+if occursin(prev_para_re, new_src)
+    new_src = replace(new_src, prev_para_re => empirical_note * "\n\n", count=1)
+else
+    new_src = replace(new_src,
+        "We do not validate either hypothesis numerically in this paper." =>
+        empirical_note * "\n\n" *
+        "We do not validate either hypothesis numerically in this paper.",
+        count=1)
+end
 
 write(TEX, new_src)
 println("Injected empirical T_sp values into ", TEX)
