@@ -214,17 +214,26 @@ function run_chain(N::Int, T::Float64, init::Symbol,
 end
 
 # ──────────────── Experiment ────────────────
-const ALPHAS    = [0.60]
+const ALPHAS    = collect(0.20:0.05:0.60)         # 9 values
 const N_LIST    = [50, 100, 1000]
-# T_sp_LO(0.60) ≈ 0.046 — fine grid concentrates at very small T.
+# Per-α T grids. Hard ceiling at T=0.50 (per user instruction: if cold curve
+# does not fall off φ_eq by T=0.50, the boundary is reported as NaN).
 const T_GRIDS   = Dict{Float64,Vector{Float64}}(
-    0.60 => collect(0.005:0.005:0.100),
+    0.20 => collect(0.100:0.020:0.500),           # T_sp_LO ≈ 1.15  → likely NaN at N≤1000
+    0.25 => collect(0.100:0.020:0.500),           # T_sp_LO ≈ 0.97
+    0.30 => collect(0.100:0.020:0.500),           # T_sp_LO ≈ 0.80
+    0.35 => collect(0.050:0.020:0.500),           # T_sp_LO ≈ 0.65
+    0.40 => collect(0.050:0.010:0.500),           # T_sp_LO ≈ 0.51
+    0.45 => collect(0.050:0.010:0.450),           # T_sp_LO ≈ 0.38
+    0.50 => collect(0.050:0.010:0.400),           # T_sp_LO ≈ 0.26
+    0.55 => collect(0.020:0.005:0.300),           # T_sp_LO ≈ 0.15
+    0.60 => collect(0.005:0.005:0.200),           # T_sp_LO ≈ 0.05
 )
-const N_DIS     = 4
+const N_DIS     = 8                                # doubled for tighter error bars
 const K_TARGET  = 10_000
 const N_EQ      = 8_000
 const N_SAMP    = 2_000
-const CSV_OUT   = "spinodal_probe_cpu_a060.csv"
+const CSV_OUT   = "spinodal_probe_cpu.csv"          # fresh master CSV (overwritten)
 
 function main()
     println("="^76)
