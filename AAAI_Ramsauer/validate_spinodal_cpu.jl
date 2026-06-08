@@ -215,20 +215,21 @@ end
 
 # ──────────────── Experiment ────────────────
 const ALPHAS    = [0.30, 0.40, 0.50, 0.55]
-const N_LIST    = [100, 1000]
+const N_LIST    = [50]
 # Per-α fine T grid focused on the spinodal departure region.
-# Chosen so the cold curve's first deviation from φ_eq(T) is captured.
+# N=50 boundaries are LOWER than N=100 (more Kramers escape), so extend T-grids
+# downward to capture the departure point.
 const T_GRIDS   = Dict{Float64,Vector{Float64}}(
-    0.30 => collect(0.500:0.025:0.950),
-    0.40 => collect(0.300:0.020:0.660),
-    0.50 => collect(0.100:0.010:0.400),
-    0.55 => collect(0.050:0.010:0.300),
+    0.30 => collect(0.200:0.025:0.700),
+    0.40 => collect(0.150:0.020:0.500),
+    0.50 => collect(0.050:0.010:0.250),
+    0.55 => collect(0.030:0.010:0.180),
 )
 const N_DIS     = 4
 const K_TARGET  = 10_000
 const N_EQ      = 8_000
 const N_SAMP    = 2_000
-const CSV_OUT   = "spinodal_probe_cpu.csv"
+const CSV_OUT   = "spinodal_probe_cpu_N50.csv"
 
 function main()
     println("="^76)
