@@ -56,26 +56,28 @@ function load_csv(path::String; phi_a_col::Int, phi_b_col::Int)
     return MCData(alpha, T, pa, pb)
 end
 
-honest_path        = joinpath(@__DIR__, "basin_stab_LSE_honest_AAAI_N25.csv")
-semismart_path     = joinpath(@__DIR__, "basin_stab_LSE_semismart_AAAI_N25_phikeep0.40.csv")
-nramp_path         = joinpath(@__DIR__, "basin_stab_LSE_semismart_AAAI_Nramp.csv")
-honest_nramp_path  = joinpath(@__DIR__, "basin_stab_LSE_honest_AAAI_Nramp.csv")
+honest_path             = joinpath(@__DIR__, "basin_stab_LSE_honest_AAAI_N25.csv")
+semismart_path          = joinpath(@__DIR__, "basin_stab_LSE_semismart_AAAI_N25_phikeep0.40.csv")
+nramp_path              = joinpath(@__DIR__, "basin_stab_LSE_semismart_AAAI_Nramp.csv")
+honest_nramp_path       = joinpath(@__DIR__, "basin_stab_LSE_honest_AAAI_Nramp.csv")
+nramp_m44e6_path        = joinpath(@__DIR__, "basin_stab_LSE_semismart_AAAI_Nramp_M4.4e6.csv")
 
 # Column layouts:
-# honest / honest_nramp: alpha,T,N_used,disorder,phi_a,phi_b,q12,phi_max_other      → phi_a col 5, phi_b col 6
-# semismart / nramp:     alpha,T,N_used,K_retained,disorder,phi_a,phi_b,q12,phi_max → phi_a col 6, phi_b col 7
-honest_data        = load_csv(honest_path;       phi_a_col=5, phi_b_col=6)
-semismart_data     = load_csv(semismart_path;    phi_a_col=6, phi_b_col=7)
-nramp_data         = load_csv(nramp_path;        phi_a_col=6, phi_b_col=7)
-honest_nramp_data  = load_csv(honest_nramp_path; phi_a_col=5, phi_b_col=6)
+# honest / honest_nramp:  alpha,T,N_used,disorder,phi_a,phi_b,q12,phi_max_other      → phi_a col 5, phi_b col 6
+# semismart / nramp / *:  alpha,T,N_used,K_retained,disorder,phi_a,phi_b,q12,phi_max → phi_a col 6, phi_b col 7
+honest_data             = load_csv(honest_path;        phi_a_col=5, phi_b_col=6)
+semismart_data          = load_csv(semismart_path;     phi_a_col=6, phi_b_col=7)
+nramp_data              = load_csv(nramp_path;         phi_a_col=6, phi_b_col=7)
+honest_nramp_data       = load_csv(honest_nramp_path;  phi_a_col=5, phi_b_col=6)
+nramp_m44e6_data        = load_csv(nramp_m44e6_path;   phi_a_col=6, phi_b_col=7)
 
 all(x -> x === nothing,
-    (honest_data, semismart_data, nramp_data, honest_nramp_data)) &&
+    (honest_data, semismart_data, nramp_data, honest_nramp_data, nramp_m44e6_data)) &&
     error("All CSVs missing — nothing to plot.")
 
 # ─── Build common (α, T) grid ───
 all_alphas = Float64[]; all_Ts = Float64[]
-for d in (honest_data, semismart_data, nramp_data, honest_nramp_data)
+for d in (honest_data, semismart_data, nramp_data, honest_nramp_data, nramp_m44e6_data)
     d === nothing && continue
     append!(all_alphas, d.alpha); append!(all_Ts, d.T)
 end
@@ -97,20 +99,25 @@ function build_phi_grid(d::Union{MCData,Nothing})
     end
     return g
 end
-phi_honest        = build_phi_grid(honest_data)
-phi_semismart     = build_phi_grid(semismart_data)
-phi_nramp         = build_phi_grid(nramp_data)
-phi_honest_nramp  = build_phi_grid(honest_nramp_data)
+phi_honest            = build_phi_grid(honest_data)
+phi_semismart         = build_phi_grid(semismart_data)
+phi_nramp             = build_phi_grid(nramp_data)
+phi_honest_nramp      = build_phi_grid(honest_nramp_data)
+phi_nramp_m44e6       = build_phi_grid(nramp_m44e6_data)
 
-# Priority: honest_Nramp > semismart_Nramp > honest_N25 > semismart_N25.
-# Highest priority is the honest ground truth at the largest feasible N
-# (per α); falls back to the semismart Nramp where honest_Nramp is absent;
-# then to honest N=25; finally to the semismart_AAAI N=25 baseline.
+# Priority (highest → lowest):
+#   5 = honest_Nramp           (matched-N ground truth, M_TARGET=4.4e6)
+#   4 = semismart_Nramp_M4.4e6 (matched N as honest_Nramp, with truncation)
+#   3 = semismart_Nramp        (M_TARGET=4.4e7, larger N at small α)
+#   2 = honest_N25             (N=25 ground truth)
+#   1 = semismart_N25          (N=25, PHI_KEEP=0.40 baseline)
 phi_combined = fill(NaN, nT, na)
-src_combined = fill(0,   nT, na)   # 4=honest_Nramp, 3=nramp, 2=honest_N25, 1=semismart_N25
+src_combined = fill(0,   nT, na)
 for i in eachindex(phi_combined)
     if isfinite(phi_honest_nramp[i])
-        phi_combined[i] = phi_honest_nramp[i]; src_combined[i] = 4
+        phi_combined[i] = phi_honest_nramp[i]; src_combined[i] = 5
+    elseif isfinite(phi_nramp_m44e6[i])
+        phi_combined[i] = phi_nramp_m44e6[i];  src_combined[i] = 4
     elseif isfinite(phi_nramp[i])
         phi_combined[i] = phi_nramp[i];        src_combined[i] = 3
     elseif isfinite(phi_honest[i])
@@ -119,10 +126,10 @@ for i in eachindex(phi_combined)
         phi_combined[i] = phi_semismart[i];    src_combined[i] = 1
     end
 end
-n4 = count(==(4), src_combined); n3 = count(==(3), src_combined)
-n2 = count(==(2), src_combined); n1 = count(==(1), src_combined)
-@printf("Source split: honest_Nramp=%d  semismart_Nramp=%d  honest_N25=%d  semismart_N25=%d  (none=%d)\n",
-        n4, n3, n2, n1, length(src_combined) - n4 - n3 - n2 - n1)
+n5 = count(==(5), src_combined); n4 = count(==(4), src_combined)
+n3 = count(==(3), src_combined); n2 = count(==(2), src_combined); n1 = count(==(1), src_combined)
+@printf("Source split: honest_Nramp=%d  smart_Nramp_M4.4e6=%d  smart_Nramp=%d  honest_N25=%d  smart_N25=%d  (none=%d)\n",
+        n5, n4, n3, n2, n1, length(src_combined) - n5 - n4 - n3 - n2 - n1)
 
 # Residual ⟨φ⟩ − φ_eq(T)
 φ_eq(t) = 0.5 * (-t + sqrt(t^2 + 4))
@@ -149,9 +156,11 @@ function α_c_bd(t)
     arg = 1 - (1 - fr)^2
     arg <= 0 ? Inf : -0.5*log(arg)
 end
-const φ_star = (sqrt(5.0) - 1)/2                              # golden ratio
-const G_MAX  = 0.5*log(φ_star) - φ_star^2                     # = -0.6226 (using 1-φ*² = φ*)
-α_c_sd(t)    = -G_MAX - f_ret(t)
+const φ_star  = (sqrt(5.0) - 1)/2                             # golden ratio
+const G_MAX   = 0.5*log(φ_star) - φ_star^2                    # = -0.6226 (paper notation)
+const g_max_p = 0.5*log(φ_star) + φ_star                      # ≈ +0.3774 (saddle value g_max)
+α_c_sd(t)     = -G_MAX - f_ret(t)
+α_c_sp(t)     = φ_eq(t) - g_max_p                             # single-pattern spinodal
 
 # ─── Plot ───
 xmin, xmax = 0.20, 0.70
@@ -162,21 +171,41 @@ p = heatmap(alphas, Ts, res,
     xlabel="α  =  ln M / N", ylabel="T",
     xlims=(xmin, xmax), ylims=(ymin, ymax),
     colorbar_title="⟨φ⟩ − φ_eq(T)",
-    title="LSE basin stability  +  3 analytical α_c(T)  (honest ⊕ semismart, N=25)",
+    title="LSE basin stability  +  4 analytical α_c(T)  (Nramp ⊕ N=25, multi-source)",
     titlefontsize=FONT_GUIDE,
     size=(FIG_W, FIG_H), dpi=FIG_DPI,
     left_margin=2Plots.mm, bottom_margin=2Plots.mm)
 
 T_range = collect(range(max(ymin, 1e-4), ymax, length=600))
-α_g = [α_c_gauss(t) for t in T_range]
-α_b = [α_c_bd(t)    for t in T_range]
-α_s = [α_c_sd(t)    for t in T_range]
-m_g = isfinite.(α_g) .& (α_g .>= xmin) .& (α_g .<= xmax)
-m_b = isfinite.(α_b) .& (α_b .>= xmin) .& (α_b .<= xmax)
-m_s = isfinite.(α_s) .& (α_s .>= xmin) .& (α_s .<= xmax)
-plot!(p, α_g[m_g], T_range[m_g], color=:blue,       lw=2.0, ls=:solid, label="α_c^Gauss (Ramsauer)")
-plot!(p, α_b[m_b], T_range[m_b], color=:darkorange, lw=2.0, ls=:dash,  label="α_c^bd  boundary form")
-plot!(p, α_s[m_s], T_range[m_s], color=:red,        lw=2.0, ls=:solid, label="α_c^sd  saddle (this work)")
+α_g  = [α_c_gauss(t) for t in T_range]
+α_b  = [α_c_bd(t)    for t in T_range]
+α_s  = [α_c_sd(t)    for t in T_range]
+α_sp = [α_c_sp(t)    for t in T_range]
+m_g  = isfinite.(α_g)  .& (α_g  .>= xmin) .& (α_g  .<= xmax)
+m_b  = isfinite.(α_b)  .& (α_b  .>= xmin) .& (α_b  .<= xmax)
+m_s  = isfinite.(α_s)  .& (α_s  .>= xmin) .& (α_s  .<= xmax)
+m_sp = isfinite.(α_sp) .& (α_sp .>= xmin) .& (α_sp .<= xmax)
+plot!(p, α_g[m_g],   T_range[m_g],  color=:blue,       lw=2.0, ls=:solid, label="α_c^Gauss (Ramsauer)")
+plot!(p, α_b[m_b],   T_range[m_b],  color=:darkorange, lw=2.0, ls=:dash,  label="α_c^bd  boundary form")
+plot!(p, α_s[m_s],   T_range[m_s],  color=:red,        lw=2.0, ls=:solid, label="α_c^sd  saddle (this work)")
+plot!(p, α_sp[m_sp], T_range[m_sp], color=:purple,     lw=2.0, ls=:dot,   label="α_c^sp  single-pattern spinodal")
+
+# Empirical spinodal anchors from spinodal_empirical_anchors.csv (if present)
+anchors_path = joinpath(@__DIR__, "spinodal_empirical_anchors.csv")
+if isfile(anchors_path)
+    α_emp = Float64[]; T_emp = Float64[]
+    for line in eachline(anchors_path)
+        (isempty(line) || startswith(line, "alpha") || startswith(line, "#")) && continue
+        f = split(line, ",")
+        push!(α_emp, parse(Float64, f[1]))
+        push!(T_emp, parse(Float64, f[3]))
+    end
+    if !isempty(α_emp)
+        scatter!(p, α_emp, T_emp, marker=:star5, ms=8, color=:purple,
+                 markerstrokecolor=:black, markerstrokewidth=1,
+                 label="α_c^sp  empirical MC")
+    end
+end
 
 for ext in ("png", "pdf")
     savefig(p, joinpath(out_dir, @sprintf("heatmap_LSE_AAAI_residual_3boundaries.%s", ext)))
