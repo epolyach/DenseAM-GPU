@@ -185,10 +185,10 @@ m_g  = isfinite.(α_g)  .& (α_g  .>= xmin) .& (α_g  .<= xmax)
 m_b  = isfinite.(α_b)  .& (α_b  .>= xmin) .& (α_b  .<= xmax)
 m_s  = isfinite.(α_s)  .& (α_s  .>= xmin) .& (α_s  .<= xmax)
 m_sp = isfinite.(α_sp) .& (α_sp .>= xmin) .& (α_sp .<= xmax)
-plot!(p, α_g[m_g],   T_range[m_g],  color=:blue,       lw=2.0, ls=:solid, label="α_c^Gauss (Ramsauer)")
-plot!(p, α_b[m_b],   T_range[m_b],  color=:darkorange, lw=2.0, ls=:dash,  label="α_c^bd  boundary form")
-plot!(p, α_s[m_s],   T_range[m_s],  color=:red,        lw=2.0, ls=:solid, label="α_c^sd  saddle (this work)")
-plot!(p, α_sp[m_sp], T_range[m_sp], color=:purple,     lw=2.0, ls=:dot,   label="α_c^sp  single-pattern spinodal")
+plot!(p, α_g[m_g],   T_range[m_g],  color=:blue,       lw=2.0, ls=:solid, label="Gauss")
+plot!(p, α_b[m_b],   T_range[m_b],  color=:darkorange, lw=2.0, ls=:dash,  label="exact")
+plot!(p, α_s[m_s],   T_range[m_s],  color=:red,        lw=2.0, ls=:solid, label="saddle")
+plot!(p, α_sp[m_sp], T_range[m_sp], color=:purple,     lw=2.0, ls=:dot,   label="spinodal")
 
 # Empirical spinodal anchors per N: filled circles in a light-blue → blue →
 # dark-blue progression, connected by lines of the same colour.
@@ -223,7 +223,7 @@ if isfile(anchors_path)
                   marker=:circle, ms=6,
                   markercolor=col,
                   markerstrokecolor=col, markerstrokewidth=1,
-                  label="α_c^sp  empirical N=$N")
+                  label="N=$N")
         end
     end
 end
