@@ -190,8 +190,8 @@ plot!(p, α_b[m_b],   T_range[m_b],  color=:darkorange, lw=2.0, ls=:dash,  label
 plot!(p, α_s[m_s],   T_range[m_s],  color=:red,        lw=2.0, ls=:solid, label="α_c^sd  saddle (this work)")
 plot!(p, α_sp[m_sp], T_range[m_sp], color=:purple,     lw=2.0, ls=:dot,   label="α_c^sp  single-pattern spinodal")
 
-# Empirical spinodal anchors per N: distinct marker per N, points connected
-# by dotted lines.
+# Empirical spinodal anchors per N: filled circles in a light-blue → blue →
+# dark-blue progression, connected by lines of the same colour.
 anchors_path = joinpath(@__DIR__, "spinodal_empirical_anchors.csv")
 if isfile(anchors_path)
     rows_e = Tuple{Float64,Int,Float64}[]
@@ -202,18 +202,27 @@ if isfile(anchors_path)
     end
     if !isempty(rows_e)
         Ns_e = sort(unique([r[2] for r in rows_e]))
-        marker_for(i, n) = (n == maximum(Ns_e)) ? :star5 :
-                           (i == 1) ? :utriangle : :rect
-        size_for(n)      = (n == maximum(Ns_e)) ? 8 : 6
+        # Blue ramp: small N → light, large N → dark.
+        function color_for(i)
+            n_total = length(Ns_e)
+            if n_total == 1; return RGB(0.10, 0.30, 0.65); end
+            t = (i - 1) / (n_total - 1)
+            # interpolate from light sky-blue to navy
+            r = 0.55 * (1 - t) + 0.05 * t
+            g = 0.75 * (1 - t) + 0.10 * t
+            b = 0.95 * (1 - t) + 0.45 * t
+            return RGB(r, g, b)
+        end
         for (i, N) in enumerate(Ns_e)
             pts = sort([(r[1], r[3]) for r in rows_e if r[2] == N])
             αs_N = [p[1] for p in pts]
             Ts_N = [p[2] for p in pts]
+            col = color_for(i)
             plot!(p, αs_N, Ts_N,
-                  color=:purple, lw=1.0, ls=:dot,
-                  marker=marker_for(i, N), ms=size_for(N),
-                  markerstrokecolor=:black, markerstrokewidth=1,
-                  markercolor=:purple,
+                  color=col, lw=1.0, ls=:solid,
+                  marker=:circle, ms=6,
+                  markercolor=col,
+                  markerstrokecolor=col, markerstrokewidth=1,
                   label="α_c^sp  empirical N=$N")
         end
     end
