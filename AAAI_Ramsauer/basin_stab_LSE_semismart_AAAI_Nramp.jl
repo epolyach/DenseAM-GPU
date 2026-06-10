@@ -54,8 +54,8 @@ const N_SAMP        = 2^13
 const N_DIS_TARGET  = 64                  # disorder samples per α (chunked if needed)
 const MEM_BUDGET_GB = 40.0
 
-# const alpha_vec = collect(F(0.20):F(0.01):F(0.70))
-const alpha_vec = collect(F(0.20):F(0.1):F(0.60))
+const alpha_vec = collect(F(0.20):F(0.01):F(0.70))
+# const alpha_vec = collect(F(0.20):F(0.1):F(0.60))
 const T_vec     = collect(F(0.005):F(0.01):F(0.495))
 const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
