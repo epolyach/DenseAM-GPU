@@ -38,16 +38,18 @@ using Dates: now
 const F = Float32
 
 # ──────────────── N(α) ramp ────────────────
-const M_TARGET      = 4.4e6
-const N_FLOOR       = 12
-const betanet       = F(1.0)
-const N_EQ          = 2^14
-const N_SAMP        = 2^12
-const N_DIS_TARGET  = 8           # disorder samples per α — honest is expensive at large N
-const MEM_BUDGET_GB = 40.0
+const M_TARGET       = 4.4e6
+const N_FLOOR        = 12
+const betanet        = F(1.0)
+const N_EQ           = 2^15      # 32768
+const N_SAMP         = 2^13      # 8192
+const N_DIS_TARGET   = 32        # disorder samples per α
+const MEM_BUDGET_GB  = 45.0      # cap close to GPU physical (~48 GB) with 3 GB headroom
+const MEM_SAFETY     = 0.75      # planned ≤ 33.75 GB; with ~33% CUDA overhead actual
+                                  # ≈ 45 GB, leaving ~3 GB free on a 48 GB GPU.
+                                  # (Empirical: previous run OOMed at planned 36 GB.)
 
-# const alpha_vec = collect(F(0.20):F(0.01):F(0.70))
-const alpha_vec = F[0.30]
+const alpha_vec = collect(F(0.20):F(0.01):F(0.70))
 const T_vec     = collect(F(0.005):F(0.01):F(0.495))
 const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
@@ -62,7 +64,8 @@ end
 
 function pick_chunk_size(N::Int, M::Int)
     per = mem_per_disorder_bytes(N, M)
-    by_mem = floor(Int, MEM_BUDGET_GB * 1e9 / per)
+    usable = MEM_BUDGET_GB * 1e9 * MEM_SAFETY     # leave headroom for CUDA overhead
+    by_mem = floor(Int, usable / per)
     return clamp(by_mem, 1, N_DIS_TARGET)
 end
 
@@ -274,9 +277,9 @@ function main()
 
     println("="^76)
     println("HONEST LSE Basin Stability — AAAI 2027  ·  N(α)-RAMP")
-    @printf("  M_TARGET = %.1e   N(α) = round(log(M)/α)   anchor: α=0.70 → N=25\n", M_TARGET)
-    @printf("  N_FLOOR = %d   N_DIS_TARGET = %d   MEM_BUDGET = %.1f GB\n",
-            N_FLOOR, N_DIS_TARGET, MEM_BUDGET_GB)
+    @printf("  M_TARGET = %.1e   N(α) = round(log(M)/α)\n", M_TARGET)
+    @printf("  N_FLOOR = %d   N_DIS_TARGET = %d   MEM_BUDGET = %.1f GB × %.0f%% safety\n",
+            N_FLOOR, N_DIS_TARGET, MEM_BUDGET_GB, 100*MEM_SAFETY)
     if n_alpha > 1
         @printf("  α grid: %.2f : %.2f : %.2f  (%d values)\n",
                 alpha_vec[1], alpha_vec[2]-alpha_vec[1], alpha_vec[end], n_alpha)
