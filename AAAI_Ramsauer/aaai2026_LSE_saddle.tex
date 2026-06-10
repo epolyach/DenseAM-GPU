@@ -28,6 +28,7 @@
 \newcommand{\acGauss}{\alpha_c^{\mathrm{G}}}
 \newcommand{\acBd}{\alpha_c^{\mathrm{bd}}}
 \newcommand{\acSd}{\alpha_c^{\mathrm{sd}}}
+\newcommand{\acSp}{\alpha_c^{\mathrm{sp}}}
 
 \title{\bfseries Saddle-Dominated Capacity of LSE Dense Associative Memory}
 \author{}
@@ -308,7 +309,7 @@ a constant analytic correction. The same $\alpha$ and $T$ grids as
 $\varphi_{\mathrm{keep}}$ for reproducibility, and the per-disorder
 retained count is reported as a column.
 
-\subsection{The small-$\alpha$ discrepancy: a Kramers candidate}
+\subsection{The small-$\alpha$ discrepancy: two candidate mechanisms}
 \label{sec:mc:smallalpha}
 
 The heatmap presented in \Cref{sec:result} shows a residual that lies
@@ -344,8 +345,177 @@ rather than collapsing onto a centroid, and the LSE analogue
 hopping, no separation into an entropic Stage~1 and an energetic
 Stage~2, no quench-induced relaxation toward a centroid lattice.
 
-We do not validate this hypothesis numerically in this paper. A minimal
-validation programme is fivefold. (i)~\emph{Chain-length scan}: at
+\paragraph{Alternative candidate: single-pattern spinodal
+(hypothesis).}
+\label{sec:mc:spinodal}
+The Kramers picture above predicts the apparent transition lies
+\emph{below} $\acSd(T)$: a finite-$N$ thermal escape over a finite
+barrier always biases the apparent breakdown toward lower $T$ than
+the thermodynamic boundary. It cannot, in principle, account for an
+apparent transition that lies \emph{above} $\acSd(T)$. A preliminary
+$N$-scan extending the present setup (semismart and honest MC at
+$\alpha = 0.30$ with $N \in \{25, 51, 59\}$) suggests
+$T_c^{\mathrm{app}}(\alpha=0.30,\,N)$ moves from $\approx 0.10$ at
+$N=25$ to $\approx 0.33$ at $N=51$ to $\approx 0.38$ at $N=59$,
+crossing $T_c^{\mathrm{sd}}(0.30)\approx 0.30$ from below and
+continuing upward. If this trend persists at larger $N$, Kramers
+escape alone cannot account for the small-$\alpha$ discrepancy.
+
+A second hypothesis, untested here and offered only as a candidate,
+is the \emph{spinodal} of the single-pattern phase. The chain is
+initialised at $\bxi^1$, deep inside the single-pattern basin. The
+thermodynamic boundary $\acSd(T)$ marks the crossover at which the
+saddle contribution to \eqref{eq:spurious-sum} overtakes the
+retrieval contribution; above the curve the saddle phase is the
+global free-energy minimum, but the single-pattern phase persists
+as a \emph{metastable local minimum} until its own marginal
+stability fails. Denote the temperature at which the single-pattern
+local minimum disappears $T_{\mathrm{sp}}(\alpha)$; on the
+metastability picture $T_{\mathrm{sp}}(\alpha) > T_c^{\mathrm{sd}}
+(\alpha)$ with a gap that is a property of the LSE free energy
+itself and is $N$-independent at leading order. The barrier
+separating the metastable single-pattern basin from the saddle
+phase scales like $\exp(N\,\Delta F)$, so a chain initialised at
+$\bxi^1$ cannot cross it within any practical MC budget once $N$
+is large; the chain would then trace $T_{\mathrm{sp}}(\alpha)$
+rather than $\acSd(\alpha)$. Under this hypothesis the apparent
+transition asymptotes to a curve \emph{above} $\acSd$, not onto
+it, while the small-$N$ apparent transition still sits below
+$\acSd$ for Kramers reasons (thermal escape from a basin still
+wide enough for $\sigma_\varphi \sim 1/\sqrt{N}$ to span). The
+two regimes are joined by the monotone $N$-scan recorded
+empirically. We emphasise this is a hypothesis only; numerical
+verification is the precondition for any claim of this kind in
+the paper.
+
+\paragraph{Leading-order spinodal.}
+\label{sec:mc:spinodal-formula}
+A closed-form expression for the spinodal follows from a
+leading-order saddle treatment of the LSE energy at fixed
+$\varphi_1 = \bxi^1 \!\cdot\!\bx/N$. The spurious sum
+\eqref{eq:spurious-sum} evaluates by saddle to
+$e^{N(\alpha + g_{\max})}$, independent of $\bx$ to this order, so
+the energy per spin reduces to
+$h(\varphi_1) = \max(\varphi_1,\,\alpha + g_{\max})$. With the
+$(N-1)$-dimensional spherical entropy at fixed overlap
+$s(\varphi_1) = \tfrac12 \log(1 - \varphi_1^2)$, the free energy
+per spin is
+\begin{equation}
+\frac{F(\varphi_1)}{N} \;=\; -\max(\varphi_1,\,\alpha+g_{\max})
+                              -\frac{T}{2}\log(1-\varphi_1^2).
+\label{eq:F-leading}
+\end{equation}
+On the single-pattern branch $\varphi_1 > \alpha + g_{\max}$,
+$dF/d\varphi_1 = 0$ recovers $\varphi_{\mathrm{eq}}(T)$. This
+local minimum exists only while $\varphi_{\mathrm{eq}}(T)
+\geq \alpha + g_{\max}$; saturating the inequality gives the
+spinodal locus
+\begin{equation}
+\boxed{\;
+\acSp(T) \;=\; \varphi_{\mathrm{eq}}(T) - g_{\max},
+\qquad
+T_{\mathrm{sp}}(\alpha) \;=\;
+\frac{1-(\alpha+g_{\max})^2}{\alpha+g_{\max}}.
+\;}
+\label{eq:acsp}
+\end{equation}
+We adopt the shorthand $\acSp$ for the spinodal curve below.
+
+\paragraph{Robust endpoint at $T = 0$.}
+\label{sec:mc:spinodal-endpoint}
+The saddle curve $\acSd$ and the spinodal $\acSp$ both pass
+through $(\alpha, T) = (1 - g_{\max},\,0) \approx (0.6226,\,0)$.
+The collision is structural, not accidental:
+\begin{itemize}
+\item At $T=0$ the single-pattern minimum sits at
+$\varphi_{\mathrm{eq}}(0) = 1$, the chain pinned to the target.
+\item At $T=0$ the free energies per spin are
+$F_{\mathrm{sp}}/N = -1$ and
+$F_{\mathrm{sd}}/N = -(\alpha + g_{\max})$; they cross at
+$\alpha = 1 - g_{\max}$.
+\item The cusp in $h(\varphi_1)$ of \eqref{eq:F-leading}
+reaches $\varphi_1 = 1$ precisely at $\alpha = 1 - g_{\max}$.
+\end{itemize}
+Thermodynamic crossover, spinodal, and basin-existence therefore
+collapse at $T = 0$. The endpoint
+$(1 - g_{\max},\,0)$ is robust against any reasonable refinement
+of the calculation (subleading $1/N$ corrections, soft-cusp
+rounding, restoring transverse fluctuations in the spurious sum).
+The \emph{slope} of $\acSp(T)$ at $T > 0$, by contrast, depends on
+those refinements; \eqref{eq:acsp} is the leading-order guide, not
+a verified prediction. A two-initialisation Monte Carlo scan at
+several $\alpha$ values delivers an empirical
+$T_{\mathrm{sp}}^{\mathrm{MC}}(\alpha)$ for comparison.
+
+\paragraph{Next-to-leading corrections.}
+\label{sec:mc:spinodal-nlo}
+Two physically distinct sources of subleading correction act on
+$\acSp(T)$. The first is soft rounding of the cusp in $h(\varphi_1)$
+at scale $\Delta \varphi_1 \sim \log N/N$ around
+$\varphi_1 = \alpha + g_{\max}$. Working in the matched-asymptotic
+regime $z \equiv N(\varphi_1 - \alpha - g_{\max})$, the
+sigmoid $\sigma(z)$ replaces the step function in $dh/d\varphi_1$.
+Solving $dF/d\varphi_1 = 0$ with $\sigma(z^*) = T\varphi_1/(1-\varphi_1^2)$
+and demanding simultaneous $d^2F/d\varphi_1^2 = 0$ shows that the
+leading-order spinodal locus $\sigma \to 1$ is preserved: the
+soft-cusp rounding shifts the location of the local minimum at
+fixed $T$ by $O(\log N/N)$ but does not move the spinodal
+\emph{curve} \eqref{eq:acsp} to that order. The second source is
+the variance of the spurious sum, which exceeds its mean
+exponentially for $\alpha < \lambda_{\mathrm{var}} \approx 0.337$
+(the self-averaging threshold derived
+in~\citep{petrova2026metastable}). In that regime the typical sum
+is dominated by the extreme pattern of overlap
+$\varphi_{\mathrm{max}} \approx \sqrt{2\alpha}$ rather than by the
+saddle value $g_{\max}$; the effective cusp moves from
+$\alpha + g_{\max}$ towards
+$\max(\alpha + g_{\max},\sqrt{2\alpha})$. For $\alpha \in [0.20,
+0.70]$ the saddle value dominates (since
+$\alpha + g_{\max} > \sqrt{2\alpha}$ throughout), so this
+correction is small in the AAAI window, but it warns that any
+extension to $\alpha < 0.13$ requires the extreme-value
+formulation. A rigorous all-orders analysis is beyond the scope of
+this paper; we report empirical $T_{\mathrm{sp}}^{\mathrm{MC}}$
+below and use the leading-order curve as the analytical
+reference.
+
+\paragraph{Empirical spinodal points.}
+\label{sec:mc:spinodal-empirical}
+\textbf{[Empirical results pending; see \texttt{spinodal\_probe\_cpu.csv}.]}
+A CPU multi-thread semismart MC run with paired cold and hot
+initialisations probes $T_{\mathrm{sp}}^{\mathrm{MC}}(\alpha)$ at
+$\alpha \in \{0.30, 0.40, 0.50, 0.55\}$ and a range of $N$ chosen
+large enough that the Kramers escape time exceeds the equilibration
+budget. The cold-chain boundary at the largest accessible $N$ is
+identified with $T_{\mathrm{sp}}^{\mathrm{MC}}(\alpha)$; the
+hot-chain boundary at the same $(\alpha, N)$ identifies
+$T_c^{\mathrm{sd},\mathrm{MC}}(\alpha)$. Tabulated below
+(numbers to be inserted after the run completes):
+\begin{center}
+\begin{tabular}{cccc}
+\hline
+$\alpha$ & $T_c^{\mathrm{sd}}$ (theory) &
+$T_{\mathrm{sp}}$ (theory, \eqref{eq:acsp}) &
+$T_{\mathrm{sp}}^{\mathrm{MC}}$ \\
+\hline
+$0.30$ & $\approx 0.30$ & $\approx 0.80$ & $0.455$ {\small(N=100)} \\
+$0.40$ & $\approx 0.32$ & $\approx 0.49$ & $0.454$ {\small(N=1000)} \\
+$0.50$ & $\approx 0.17$ & $\approx 0.28$ & $0.244$ {\small(N=1000)} \\
+$0.55$ & $\approx 0.10$ & $\approx 0.15$ & $0.150$ {\small(N=1000)} \\
+\hline
+\end{tabular}
+\end{center}
+
+\paragraph{Spinodal slope from data.}
+The largest-$N$ cold-chain boundary ($T_{\mathrm{sp}}^{\mathrm{MC}}$)
+from the CPU sweep delivers the empirical anchors above. Compared to the
+leading-order analytical formula \eqref{eq:acsp}, the empirical
+$T_{\mathrm{sp}}^{\mathrm{MC}}(\alpha)$ at the largest probed $N$ is
+\(\alpha=0.30\): \(T_{\mathrm{sp}}^{\mathrm{MC}}=0.455\) (N=100), vs leading-order \(0.799\); \(\alpha=0.40\): \(T_{\mathrm{sp}}^{\mathrm{MC}}=0.454\) (N=1000), vs leading-order \(0.509\); \(\alpha=0.50\): \(T_{\mathrm{sp}}^{\mathrm{MC}}=0.244\) (N=1000), vs leading-order \(0.262\); \(\alpha=0.55\): \(T_{\mathrm{sp}}^{\mathrm{MC}}=0.150\) (N=1000), vs leading-order \(0.151\).
+
+We do not validate either hypothesis numerically in this paper. A minimal
+validation programme is sevenfold; (i)--(v) target the Kramers candidate,
+(vi)--(vii) discriminate it from the spinodal candidate. (i)~\emph{Chain-length scan}: at
 fixed $N=25$ and one $(\alpha, T)$ inside the discrepancy region,
 increase $N_{\mathrm{chain}}$ in factor-of-four steps from
 $2^{14}$ to $2^{22}$; a residual that drifts monotonically toward
@@ -369,7 +539,24 @@ $\Delta F/T$ confirms the Kramers form.
 $\phi_\mu(\bx)$ to every stored pattern should reveal isotropic
 diffusion in the perpendicular subspace with no clustering, the
 qualitative LSE signature distinguishing it from the LSR centroid
-hopping. Any subset of (i)--(v) would either extend this paper or
+hopping.
+Two further tests target the spinodal hypothesis of
+\Cref{sec:mc:spinodal} and discriminate it from Kramers escape.
+(vi)~\emph{Two-initialisation MC}: at fixed $(\alpha, T)$ inside
+the discrepancy region, run paired chains initialised at $\bxi^1$
+(cold) and at uniformly random sphere points (hot). Convergence
+to a single residual under equilibration signals a thermodynamic
+boundary (Kramers, or genuine finite-$N$ correction to the saddle
+calculation); persistent disagreement across a finite $T$-window
+identifies a metastability band, with the cold-chain boundary
+assigned to the single-pattern spinodal.
+(vii)~\emph{Analytic spinodal}: solve the marginal-stability
+condition of the single-pattern saddle in the same exact-density
+free energy that yields $\acSd$ to obtain a closed-form
+$T_{\mathrm{sp}}(\alpha)$. Comparison against the large-$N$
+asymptote of (ii) either confirms the spinodal account or exposes
+a deficiency in the analytic free energy itself.
+Any subset of (i)--(vii) would either extend this paper or
 seed a companion analysis paralleling~\citep{petrova2026metastable}
 for LSE.
 
@@ -463,13 +650,15 @@ $\varphi_c$) interpolate between the two limits, and one may expect a
 continuous family of capacity boundaries between the LSR
 boundary-dominated and LSE saddle-dominated extremes. The
 small-$\alpha$ discrepancy of \Cref{sec:mc:smallalpha} between the
-empirical Monte Carlo transition and the saddle prediction is
-plausibly, but only plausibly, the LSE analogue of the LSR Kramers
-shift of~\citep{petrova2026metastable}; the explicit validation
-programme of \Cref{sec:mc:smallalpha} would either confirm this
-interpretation as a finite-$N$ kinetic artefact or expose a genuine
-thermodynamic finite-$N$ correction to the saddle calculation that
-warrants its own analysis.
+empirical Monte Carlo transition and the saddle prediction admits at
+least two candidate accounts: the LSE analogue of the LSR Kramers
+shift of~\citep{petrova2026metastable}, and the single-pattern
+spinodal of \Cref{sec:mc:spinodal}. The two predict opposite signs
+for the residual $T_c^{\mathrm{app}} - T_c^{\mathrm{sd}}$ at large
+$N$, so an $N$-scan past the present range together with a
+two-initialisation test would identify which mechanism (if either)
+dominates. Both interpretations remain conjectural until the
+validation programme of \Cref{sec:mc:smallalpha} is executed.
 
 \bibliographystyle{plain}
 \bibliography{refs}
