@@ -41,8 +41,7 @@ p = plot(size=(820, 520),
          legend = :topleft,
          framestyle = :box,
          grid = :on, gridalpha = 0.25,
-         titlefontsize = 12, guidefontsize = 11, tickfontsize = 10,
-         title = "Cusp of the LO free energy (α = $(α), g_max ≈ 0.3774)")
+         guidefontsize = 11, tickfontsize = 10)
 
 for (T, lab, col) in zip(Ts, labels, cols)
     Fs = [F_per_N(φ, T) for φ in φ_grid]
