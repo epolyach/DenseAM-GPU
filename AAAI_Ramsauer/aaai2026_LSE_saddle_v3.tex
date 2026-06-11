@@ -305,21 +305,61 @@ for the basin physics, not silently dropped.  We use truncated for the
 wide heatmap.
 
 \paragraph{Hybrid.}
-Same kept-tail + analytic-bulk decomposition as truncated, but the
-chain is reduced to its scalar overlap $\varphi_1$ and the bulk constant
-is set by the saddle of~\eqref{eq:Sint}.  Concretely: patterns with
-overlap $\varphi_{1\mu} > \varphi_c = [\alpha + \gmax(\Bnet)]/\Bnet$ are sampled
-from the spherical Beta tail and kept fixed per disorder (count
-$K_{\mathrm{cusp}} \sim M \cdot \Pr(\varphi > \varphi_c)$; in our $N = 100$,
-$\Bnet = 1$ runs, between $\sim 4500$ at $\alpha = 0.50$ and $\sim 8500$
-at $\alpha = 0.62$).  The contribution of the bulk ($\varphi_{1\mu} < \varphi_c$)
-is replaced by the $\varphi_1$-independent constant
-$M\,\e^{N \gmax(\Bnet)}$ from~\eqref{eq:gmax}.  Metropolis runs in 1D on
-$\varphi_1$ with the $(N\!-\!1)$-sphere entropy $\tfrac12 \ln(1 -
-\varphi_1^2)$ as the prior.  The physics is the same as truncated; the
-gain is one scalar update per MC step instead of an $N$-dimensional spin
-update, which makes the scheme cheap enough to push to $N = 100$ near
-$\alpha_c$ where truncated MC at the full spin becomes slow.
+Same kept-tail + analytic-bulk decomposition as truncated, with two
+changes: the cutoff is fixed \emph{at the cusp position} $\varphi_c(\alpha,
+\Bnet) = [\alpha + \gmax(\Bnet)]/\Bnet$ from~\eqref{eq:F-LO} rather than
+chosen by budget, and the bulk integral is evaluated by its
+saddle~\eqref{eq:gmax} instead of numerically.  Patterns with
+$\varphi_{1\mu} > \varphi_c$ are kept live; the contribution of those
+with $\varphi_{1\mu} < \varphi_c$ enters the LSE log-sum as the
+$\bx$-independent number $M\,\e^{N \gmax(\Bnet)}$ (state-independent by
+rotational symmetry of random patterns, after averaging over their
+orthogonal directions to $\bxi^1$).
+
+The live count $K_{\mathrm{cusp}}$ is drawn from a Poisson with mean
+$M \cdot \Pr_f(\varphi > \varphi_c)$.  Live overlap values are sampled
+from the spherical density~\eqref{eq:exact-density} restricted to
+$\varphi > \varphi_c$.  In the rescaled variable $y = (1 + \varphi)/2$
+on $[0, 1]$, \eqref{eq:exact-density} becomes
+$\mathrm{Beta}((N\!-\!1)/2,\,(N\!-\!1)/2)$ — the change of variable
+$(1 - \varphi^2)^{(N-3)/2}\dd\varphi \propto
+[y(1-y)]^{(N-3)/2}\dd y$ — so we sample
+\begin{equation}
+y \sim \mathrm{Beta}\!\Bigl(\tfrac{N\!-\!1}{2},\,\tfrac{N\!-\!1}{2}\Bigr)
+   \;\text{truncated to}\; y \in [(1 + \varphi_c)/2,\,1],
+\qquad
+\varphi_{1\mu} = 2y - 1,
+\label{eq:beta-tail}
+\end{equation}
+which standard libraries provide directly.  Each live pattern is
+constructed from $\varphi_{1\mu}$ and a uniform direction $u_\mu$ on the
+$(N\!-\!2)$-sphere perpendicular to $\bxi^1$:
+$\bxi^\mu = \sqrt N\,\bigl(\varphi_{1\mu},\,\sqrt{1 - \varphi_{1\mu}^2}\,
+u_\mu\bigr)$ in the basis where $\bxi^1 = (\sqrt N, 0, \ldots, 0)$.
+The live set is fixed once per disorder.
+
+Metropolis runs on the full spin $\bx \in \sqrt N \cdot S^{N-1}$:
+Gaussian proposal $\bx' = \bx + \sigma \boldsymbol\eta$ projected back
+to $|\bx'| = \sqrt N$; energy
+$H(\bx) = -\Bnet^{-1} \ln\!\bigl[\e^{\Bnet\,\bxi^1\!\cdot\!\bx}
++ \sum_{\mu=2}^{K_{\mathrm{cusp}}+1}\!\e^{\Bnet\,\bxi^\mu\!\cdot\!\bx}
++ M\,\e^{N \gmax(\Bnet)}\bigr]$.  Cost per step
+$O(K_{\mathrm{cusp}} \cdot N)$.
+
+Crucially the bulk being a constant in $\bx$ does not make the free
+energy constant in $\varphi_1$: the chain still feels the sphere
+geometry, and below the cusp~\eqref{eq:F-LO} gives
+$F(\varphi_1)/N = -\varphi_c - (T/2) \ln(1 - \varphi_1^2)$, which is
+minimised at $\varphi_1 = 0$.  Once the chain crosses the cusp it slides
+toward $\varphi_1 = 0$ under this entropic attraction; that slide is
+what we use to detect basin escape (Sec.~\ref{sec:results}).
+
+At $N = 100$ the spherical density falls fast enough that the expected
+$K_{\mathrm{cusp}}$ at the cusp is below $1$ for every $\alpha \in [0.5,
+0.62]$ we measure.  The algorithm therefore keeps only $\bxi^1$ explicit
+and the bulk constant carries the rest — the chain samples the
+leading-order partition function~\eqref{eq:F-LO} directly, with no
+$1/N$ subleading corrections.
 
 \paragraph{Why naive ``smart'' fails.}
 A faster variant — ``smart'' — refreshes its $K$ kept patterns every
