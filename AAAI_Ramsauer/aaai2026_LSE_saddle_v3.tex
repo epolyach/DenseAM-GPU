@@ -24,6 +24,7 @@
 \newcommand{\fret}{f_{\mathrm{ret}}}
 \newcommand{\gmax}{g_{\max}}
 \newcommand{\acGauss}{\alpha_c^{\mathrm{G}}}
+\newcommand{\acBd}{\alpha_c^{\mathrm{bd}}}
 \newcommand{\acSd}{\alpha_c^{\mathrm{sd}}}
 \newcommand{\acSp}{\alpha_c^{\mathrm{sp}}}
 
@@ -40,15 +41,19 @@ Dense Associative Memory}
 \noindent
 [Placeholder.]  The log-sum-exp Dense Associative
 Memory~\citep{ramsauer2021hopfield} stores $M$ unit vectors $\bxi^\mu$ on
-the $N$-sphere.  Ramsauer et al.\ proved $\alpha_c = 1/2$ at $T = 0$ by
-modelling the inter-pattern overlaps as Gaussian.  Replacing the Gaussian
-by the exact spherical density opens an interior saddle in the partition
-sum at the golden ratio $\varphi^{*} = (\sqrt 5 - 1)/2$ with value
-$\gmax = \tfrac12 \ln \varphi^{*} + \varphi^{*} \approx 0.3774$.  The
-boundary becomes $\alpha_c(T) = 1 - \gmax - \fret(T)$, so
-$\alpha_c(0) \approx 0.6226$, not $0.5$ — a factor $1.25$ in capacity.
-We confirm the bound with three Monte Carlo variants (direct, semismart,
-hybrid) at $N$ up to $100$.
+the $N$-sphere with kernel sharpness $\Bnet$.  Ramsauer et al.\ proved
+$\alpha_c = 1/2$ at $T = 0$ by modelling the inter-pattern overlaps as
+Gaussian.  Replacing the Gaussian by the exact spherical density opens
+an interior saddle in the partition sum at $\varphi^{*}(\Bnet)$, with
+value $\gmax(\Bnet)$.  The boundary becomes
+$\alpha_c(\Bnet, T) = \Bnet[1 - \fret(T)] - \gmax(\Bnet)$.  At
+$\Bnet = 1$ — the value we use in the Monte Carlo — the saddle is the
+golden ratio $\varphi^{*} = (\sqrt 5 - 1)/2$ and
+$\gmax \approx 0.3774$, giving $\alpha_c(0) \approx 0.6226$, not $0.5$.
+Ramsauer's $1/2$ is $\Bnet$-independent (an extreme-value cancellation),
+the exact-density boundary is not.  We confirm the corrected value with
+three Monte Carlo variants (direct, truncated, hybrid) at $N$ up to
+$100$.
 \end{abstract}
 
 % =========================================================================
@@ -87,15 +92,16 @@ saddle of the partition sum.
 
 This paper does three things.  First, we re-derive the boundary using
 the exact density~\eqref{eq:exact-density}.  An interior saddle of the
-integrand appears at the golden ratio
-$\varphi^{*} = (\sqrt 5 - 1)/2$, with value
-$\gmax = \tfrac12 \ln \varphi^{*} + \varphi^{*} \approx 0.3774$, and the
-boundary shifts to $\alpha_c(0) = 1 - \gmax \approx 0.6226$.  Second, we
-describe three Monte Carlo schemes (direct, semismart, hybrid) and
-explain why a naive ``smart'' variant that refreshes its pattern cache
-fails near $\alpha_c$.  Third, we confirm the corrected boundary
-numerically at $N = 100$ by an escape-time measurement and by a $\phi$
-residual heatmap.
+integrand appears at a point $\varphi^{*}(\Bnet)$ that depends on the
+kernel sharpness; at $\Bnet = 1$ — the value we use throughout — it is
+the golden ratio $\varphi^{*} = (\sqrt 5 - 1)/2$, with saddle value
+$\gmax \approx 0.3774$, and the boundary shifts to
+$\alpha_c(0) = 1 - \gmax \approx 0.6226$.  Second, we describe three
+Monte Carlo schemes (direct, truncated, hybrid) and explain why a naive
+``smart'' variant that refreshes its pattern cache fails near
+$\alpha_c$.  Third, we confirm the corrected boundary numerically at
+$N = 100$ by an escape-time measurement and by a $\phi$ residual
+heatmap.
 
 % =========================================================================
 \section{Theory}
@@ -118,75 +124,153 @@ $f(\varphi_1, T) = u - T s$:
 
 For a chain uncorrelated with $\bxi^1$ ($\varphi_1 \approx 0$) the sum
 in~\eqref{eq:lse} is dominated by the $M-1$ spurious terms
-$S = \sum_{\mu \neq 1} \exp(N \varphi_{1\mu})$.  Replacing the sum by an
-integral with density~\eqref{eq:exact-density} and using
+$S = \sum_{\mu \neq 1} \exp(\Bnet N \varphi_{1\mu})$.  Replacing the sum
+by an integral with density~\eqref{eq:exact-density} and using
 $M = \e^{\alpha N}$:
 \begin{equation}
 S \;\approx\; \e^{\alpha N} \int_{-1}^{1}
-   \exp\!\Bigl[N\,\bigl(\tfrac12 \ln(1 - \varphi^2) + \varphi\bigr)\Bigr] \dd\varphi
-\;\equiv\; \e^{\alpha N} \int \e^{N g(\varphi)} \dd\varphi.
+   \exp\!\Bigl[N\,\bigl(\tfrac12 \ln(1 - \varphi^2)
+                        + \Bnet\,\varphi\bigr)\Bigr] \dd\varphi
+\;\equiv\; \e^{\alpha N} \int \e^{N g(\varphi;\Bnet)} \dd\varphi.
 \label{eq:Sint}
 \end{equation}
-$g(\varphi) = \tfrac12 \ln(1 - \varphi^2) + \varphi$ has an interior
-saddle at $g'(\varphi^{*}) = 0$, i.e.\
-$\varphi^{*\,2} + \varphi^{*} - 1 = 0$, giving the golden ratio
-$\varphi^{*} = (\sqrt 5 - 1)/2 \approx 0.618$.  Using the identity
-$1 - \varphi^{*\,2} = \varphi^{*}$ the saddle value is
+$g(\varphi; \Bnet) = \tfrac12 \ln(1 - \varphi^2) + \Bnet\,\varphi$ has
+an interior saddle at $g'(\varphi^{*}) = 0$, i.e.\ $\Bnet(1 -
+\varphi^{*\,2}) = \varphi^{*}$, with positive root
 \begin{equation}
-\gmax \;=\; g(\varphi^{*}) \;=\; \tfrac12 \ln \varphi^{*} + \varphi^{*}
-        \;\approx\; 0.3774.
+\varphi^{*}(\Bnet) \;=\; \frac{-1 + \sqrt{1 + 4 \Bnet^2}}{2 \Bnet}.
+\label{eq:phistar}
+\end{equation}
+The saddle value is
+\begin{equation}
+\gmax(\Bnet) \;=\; g(\varphi^{*}; \Bnet)
+   \;=\; \tfrac12 \ln(1 - \varphi^{*\,2}) + \Bnet\,\varphi^{*}.
 \label{eq:gmax}
 \end{equation}
-Hence $N^{-1} \ln S \to \alpha + \gmax$ and the noise-floor energy per
-spin is $u_{\mathrm{noise}}(\alpha) = 1 - (\alpha + \gmax)$.
-
-\paragraph{Boundary.}
-Retrieval and noise floor cross at the boundary $\alpha_c(T)$:
+Hence $N^{-1} \ln S \to \alpha + \gmax(\Bnet)$, the noise-floor energy
+per spin is $u_{\mathrm{noise}} = 1 - [\alpha + \gmax(\Bnet)]/\Bnet$,
+and the boundary at the crossover $u_{\mathrm{noise}} = \fret(T)$ is
 \begin{equation}
 \boxed{\;
-\alpha_c(T) \;=\; 1 - \gmax - \fret(T),
-\qquad
-\alpha_c(0) \;=\; 1 - \gmax \;\approx\; 0.6226.
+\alpha_c(\Bnet, T) \;=\; \Bnet\,[1 - \fret(T)] - \gmax(\Bnet).
 \;}
 \label{eq:acsd}
 \end{equation}
-Compare with the Ramsauer Gaussian prediction
-$\acGauss(0) = 1/2$.  The two values differ by $\gmax - (1 - 1/\sqrt 2)
-\approx 0.12$ per spin — a factor $1.25$ in capacity.
+
+\paragraph{Gaussian and support-edge variants.}
+Two well-known prior formulas come from substituting different objects
+into~\eqref{eq:Sint} and using its \emph{support edge} instead of the
+interior saddle.
+
+\textit{Gaussian density.}
+Replace $f(\varphi)$ by the moment-matched Gaussian
+$\sqrt{N/2\pi}\,\exp(-N\varphi^2/2)$.  The integrand exponent becomes
+$g_G(\varphi; \Bnet) = -\tfrac12 \varphi^2 + \Bnet\varphi$, monotone on
+$[-1,1]$ for $\Bnet \le 1$.  The integral is dominated by the typical
+maximum of $M$ Gaussian samples
+$\varphi_{\max}^{(G)}(\alpha) = \sqrt{2\alpha}$; at this edge
+$g_G(\varphi_{\max}^{(G)}) = \Bnet\sqrt{2\alpha} - \alpha$, so
+$N^{-1}\ln S \to \Bnet\sqrt{2\alpha}$ and
+$u_{\mathrm{noise}}^{(G)} = 1 - \sqrt{2\alpha}$.  Solving
+$u_{\mathrm{noise}}^{(G)} = \fret(T)$:
+\begin{equation}
+\acGauss(T) \;=\; \tfrac12 \bigl[1 - \fret(T)\bigr]^2,
+\qquad \acGauss(0) = \tfrac12.
+\label{eq:acgauss}
+\end{equation}
+$\Bnet$ cancels — both retrieval and spurious-extreme energies are
+$N\!\cdot\!\Bnet$ times an overlap, and the $\Bnet^{-1}$ prefactor in
+$H$ removes it.  This is Ramsauer's threshold.
+
+\textit{Exact density, support edge.}
+Keep $f(\varphi)$ but use the support edge of the exact density
+$\varphi_{\max}(\alpha) = \sqrt{1 - \e^{-2\alpha}}$ (from
+$M \cdot \Pr_f(\varphi > \varphi_{\max}) = 1$).  At this edge
+$\tfrac12 \ln(1 - \varphi_{\max}^2) = -\alpha$, so
+$g(\varphi_{\max}) = -\alpha + \Bnet\,\varphi_{\max}$,
+$N^{-1}\ln S \to \Bnet\,\varphi_{\max}(\alpha)$ and
+$u_{\mathrm{noise}}^{(\mathrm{ex})} = 1 - \varphi_{\max}(\alpha)$.
+Solving $1 - \varphi_{\max}(\acBd) = \fret(T)$:
+\begin{equation}
+\acBd(T) \;=\; -\tfrac12 \ln\!\bigl[1 - (1 - \fret(T))^2\bigr],
+\qquad \acBd(0) = +\infty.
+\label{eq:acbd}
+\end{equation}
+This is the formula that works for the LSR kernel where $g$ is monotone
+on the support~\citep{petrova2026metastable}; for LSE it is correct only
+when the interior saddle $\varphi^{*}$ lies outside the support
+$[0, \varphi_{\max}(\alpha)]$, i.e.\ for
+$\alpha < -\tfrac12 \ln(1 - \varphi^{*\,2}) \approx 0.241$ at
+$\Bnet = 1$.  Above this threshold the interior saddle~\eqref{eq:acsd}
+takes over.  Both~\eqref{eq:acgauss} and~\eqref{eq:acbd} are
+$\Bnet$-independent for the same reason: the support edge replaces the
+$\Bnet$-dependent saddle.
 
 \paragraph{Cusp picture.}
 At fixed $\varphi_1$ the spurious sum evaluates to
-$\e^{N(\alpha + \gmax)}$ to leading order, independent of $\varphi_1$.
-The leading-order free energy per spin reads
+$\e^{N(\alpha + \gmax(\Bnet))}$ to leading order, independent of
+$\varphi_1$.  Inside the LSE log-sum,
+$\Bnet^{-1} \ln[\e^{\Bnet N \varphi_1} + S] \to
+\max\!\bigl(\varphi_1,\,[\alpha + \gmax(\Bnet)]/\Bnet\bigr)$ at large
+$N$, so the leading-order free energy per spin reads
 \begin{equation}
-\frac{F(\varphi_1)}{N} \;=\; -\max\!\bigl(\varphi_1,\,\alpha + \gmax\bigr)
+\frac{F(\varphi_1)}{N} \;=\;
+   -\max\!\Bigl(\varphi_1,\,\frac{\alpha + \gmax(\Bnet)}{\Bnet}\Bigr)
    \;-\; \tfrac{T}{2} \ln(1 - \varphi_1^2),
 \label{eq:F-LO}
 \end{equation}
-with a kink (``cusp'') at $\varphi_1 = \alpha + \gmax$.  As $T$ rises the
-basin minimum $\phieq(T)$ slides toward the cusp; at
-$\phieq(T) = \alpha + \gmax$ the local minimum disappears, defining the
-single-pattern spinodal
+with a kink (``cusp'') at $\varphi_c(\alpha, \Bnet) = [\alpha +
+\gmax(\Bnet)] / \Bnet$.  As $T$ rises the basin minimum $\phieq(T)$
+slides toward the cusp; at $\phieq(T) = \varphi_c$ the local minimum
+disappears, defining the single-pattern spinodal
 \begin{equation}
-\acSp(T) \;=\; \phieq(T) - \gmax,
+\acSp(\Bnet, T) \;=\; \Bnet\,\phieq(T) - \gmax(\Bnet),
 \qquad
-T_{\mathrm{sp}}(\alpha) \;=\; \frac{1 - (\alpha + \gmax)^2}{\alpha + \gmax}.
+T_{\mathrm{sp}}(\alpha, \Bnet)
+   \;=\; \frac{\Bnet^2 - (\alpha + \gmax(\Bnet))^2}
+              {\Bnet\,(\alpha + \gmax(\Bnet))}.
 \label{eq:acsp}
 \end{equation}
-Both $\acSd$ and $\acSp$ end at the same point $(1 - \gmax, 0)
-\approx (0.6226, 0)$.  \Cref{fig:cusp} shows the free energy at
-$\alpha = 0.50$ for several $T$.
+$\acSd(\Bnet, T)$ and $\acSp(\Bnet, T)$ meet at the endpoint
+$(\Bnet - \gmax(\Bnet),\,0)$.
+
+\paragraph{Examples and the $\Bnet \to \infty$ limit.}
+Four cases of~\eqref{eq:phistar},~\eqref{eq:gmax}, and~\eqref{eq:acsd}
+at $T = 0$:
+\begin{center}
+\begin{tabular}{c|cccc}
+\hline
+$\Bnet$ & $\varphi^{*}(\Bnet)$ & $\gmax(\Bnet)$ & $\alpha_c(\Bnet, 0)$ & note \\
+\hline
+$0.5$ & $\sqrt 2 - 1 \approx 0.414$ & $\approx 0.113$ & $\approx 0.387$ & — \\
+$1$   & $(\sqrt 5 - 1)/2 \approx 0.618$ (golden ratio) & $\approx 0.3774$ & $\approx 0.6226$ & MC value \\
+$2$   & $(\sqrt{17} - 1)/4 \approx 0.781$ & $\approx 1.091$ & $\approx 0.909$ & — \\
+$\to \infty$ & $\to 1 - 1/(2\Bnet)$ & $\Bnet - \tfrac12(\ln \Bnet + 1)$
+              & $\tfrac12 (\ln \Bnet + 1)$ & log growth \\
+\hline
+\end{tabular}
+\end{center}
+Capacity grows logarithmically with $\Bnet$.  The Ramsauer prediction
+$\acGauss = 1/2$ is $\Bnet$-independent: its derivation replaces the
+integrand in~\eqref{eq:Sint} by its support edge $\sqrt{2\alpha}$, and
+the factor $\Bnet$ then cancels between retrieval and spurious terms.
+The interior saddle restores the $\Bnet$ dependence; the
+$\Bnet$-independence of the Gaussian-edge answer is itself the signature
+of the support-edge replacement.  The MC numerics in
+\Cref{sec:mc,sec:results} fix $\Bnet = 1$, where
+$\alpha_c(1,0) \approx 0.6226$ is the value we verify.  \Cref{fig:cusp}
+illustrates~\eqref{eq:F-LO} at $\alpha = 0.50$, $\Bnet = 1$.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.82\linewidth]{panels_paper/cusp_illustration.pdf}
 \caption{Leading-order free energy per spin $F(\varphi_1)/N$
-from~\eqref{eq:F-LO} at $\alpha = 0.50$ for several $T$.  The cusp at
-$\varphi_1 = \alpha + \gmax \approx 0.877$ is the boundary between the
-retrieval branch (slope $-1$) and the noise-floor branch (slope $0$).
-Dots: basin minima $\phieq(T)$.  At $T = T_{\mathrm{sp}}(0.50)
-\approx 0.262$ the minimum reaches the cusp; above this $T$ the basin
-no longer exists.}
+from~\eqref{eq:F-LO} at $\alpha = 0.50$, $\Bnet = 1$, for several $T$.
+The cusp at $\varphi_c = \alpha + \gmax \approx 0.877$ is the boundary
+between the retrieval branch (slope $-1$) and the noise-floor branch
+(slope $0$).  Dots: basin minima $\phieq(T)$.  At
+$T = T_{\mathrm{sp}}(0.50, 1) \approx 0.262$ the minimum reaches the
+cusp; above this $T$ the basin no longer exists.}
 \label{fig:cusp}
 \end{figure}
 
@@ -204,28 +288,38 @@ of them at every step.  Memory and compute cost $\sim M N$.  Feasible up
 to $N \approx 25$ at $\alpha \approx 0.7$ ($M \approx 4 \times 10^7$);
 impossible at $N = 100$, $\alpha = 0.6$ ($M \approx 10^{26}$).
 
-\paragraph{Semismart.}
-Keep only the patterns with overlap $\varphi_{1\mu} > \varphi_{\mathrm{keep}}$
-to the target $\bxi^1$.  The cutoff is chosen so that the expected count
-above it equals a budget $K \sim 10^4$; the actual count is Poisson with
-parameter $M \cdot \Pr(\varphi > \varphi_{\mathrm{keep}})$, and the $K$
-overlap values are drawn from a Beta tail.  The discarded patterns enter
+\paragraph{Truncated.}
+Generate only the patterns with overlap $\varphi_{1\mu} > \varphi_{\mathrm{keep}}$
+to the target $\bxi^1$.  The cutoff is chosen so the expected count above
+it equals a budget $K \sim 10^4$; the actual count is Poisson with mean
+$M \cdot \Pr(\varphi > \varphi_{\mathrm{keep}})$, and the $K$ overlap
+values are drawn from the Beta tail.  The patterns below
+$\varphi_{\mathrm{keep}}$ are not generated; their contribution enters
 the LSE log-sum as the analytic constant
 $\ln C_{\mathrm{bulk}} = \alpha N + \ln \int_{-1}^{\varphi_{\mathrm{keep}}}
-f(\varphi)\,\e^{N \varphi}\,\dd\varphi$.  The retained set is quenched —
-fixed once per disorder.  We use semismart for the wide heatmap.
+f(\varphi)\,\e^{N \varphi}\,\dd\varphi$.  The retained set is fixed once
+per disorder.  Truncated MC at $N = 25$ matches direct MC on the basin
+boundary across the full $\alpha$ range we measure, so the
+$\varphi < \varphi_{\mathrm{keep}}$ patterns are genuinely unnecessary
+for the basin physics, not silently dropped.  We use truncated for the
+wide heatmap.
 
 \paragraph{Hybrid.}
-A 1D Metropolis on the scalar $\varphi_1$.  Patterns with overlap
-$c_\mu > \varphi_c = \alpha + \gmax$ are sampled from the spherical
-Beta tail and kept fixed per disorder (count $K_{\mathrm{cusp}}$, of order
-$M \cdot \Pr(\varphi > \varphi_c)$, in our $N = 100$ runs between $\sim
-4500$ at $\alpha = 0.50$ and $\sim 8500$ at $\alpha = 0.62$).  The
-contribution of the bulk ($c_\mu < \varphi_c$) is replaced by the
-$\varphi_1$-independent constant $M\,\e^{N \gmax}$ from~\eqref{eq:gmax}.
-Hybrid is the right tool near $\alpha_c$ at $N = 100$, where direct is
-infeasible and the basin geometry is set by both the bulk floor and a
-small number of cusp-tail patterns.
+Same kept-tail + analytic-bulk decomposition as truncated, but the
+chain is reduced to its scalar overlap $\varphi_1$ and the bulk constant
+is set by the saddle of~\eqref{eq:Sint}.  Concretely: patterns with
+overlap $\varphi_{1\mu} > \varphi_c = [\alpha + \gmax(\Bnet)]/\Bnet$ are sampled
+from the spherical Beta tail and kept fixed per disorder (count
+$K_{\mathrm{cusp}} \sim M \cdot \Pr(\varphi > \varphi_c)$; in our $N = 100$,
+$\Bnet = 1$ runs, between $\sim 4500$ at $\alpha = 0.50$ and $\sim 8500$
+at $\alpha = 0.62$).  The contribution of the bulk ($\varphi_{1\mu} < \varphi_c$)
+is replaced by the $\varphi_1$-independent constant
+$M\,\e^{N \gmax(\Bnet)}$ from~\eqref{eq:gmax}.  Metropolis runs in 1D on
+$\varphi_1$ with the $(N\!-\!1)$-sphere entropy $\tfrac12 \ln(1 -
+\varphi_1^2)$ as the prior.  The physics is the same as truncated; the
+gain is one scalar update per MC step instead of an $N$-dimensional spin
+update, which makes the scheme cheap enough to push to $N = 100$ near
+$\alpha_c$ where truncated MC at the full spin becomes slow.
 
 \paragraph{Why naive ``smart'' fails.}
 A faster variant — ``smart'' — refreshes its $K$ kept patterns every
@@ -234,8 +328,8 @@ breaks the quenched-disorder assumption.  As the chain wanders, fresh
 patterns are minted at every refresh; the total set of distinct patterns
 seen along one trajectory exceeds $M$, and the chain effectively faces a
 larger pattern set than the model defines.  Near the retrieval basin the
-extra competitors destroy the basin.  Hybrid avoids the problem by
-fixing the cusp-tail set once per disorder and never refreshing it.
+extra competitors destroy the basin.  Both truncated and hybrid avoid
+the problem: the retained set is fixed once per disorder, no refresh.
 
 % =========================================================================
 \section{Results}
@@ -247,50 +341,53 @@ the steady-state $\avg{\varphi_1} - \phieq(T)$ residual.
 
 \paragraph{Escape time.}
 \Cref{fig:tau} reports $\log_{10} \avg{\tau}$ vs $T$ at $N = 100$ for
-five $\alpha$ values, averaged over $32$ disorders, with a budget cap at
-$10^5$ MC steps.  Each curve is a basin escape profile: at low $T$ the
-basin is stable for the full budget (upward triangles at the ceiling);
-above a critical $T_{\mathrm{esc}}(\alpha)$ the escape time drops by
-several orders of magnitude over a $T$ window of width $\sim 0.01$.
-
-$T_{\mathrm{esc}}$ moves to lower $T$ as $\alpha$ rises.  At $\alpha =
-0.50$ the basin survives to $T \approx 0.085$; at $\alpha = 0.62$ it
-survives only to $T \approx 0.005$.  Extrapolating to $\tau \to \infty$
-at $T = 0$ gives a critical load at the right edge of the plot, near
-$\alpha = 1 - \gmax \approx 0.6226$.
+five $\alpha$ values from the N-dim hybrid MC, averaged over $32$
+disorders, with a budget cap at $10^6$ MC steps.  Each curve is a basin
+escape profile: at low $T$ the basin is stable for the full budget
+(upward triangles at the ceiling); above a critical
+$T_{\mathrm{esc}}(\alpha)$ the escape time drops by several orders of
+magnitude over a $T$ window of width $\sim 0.01$.  $T_{\mathrm{esc}}$
+moves to lower $T$ as $\alpha$ rises; extrapolating to $\tau \to \infty$
+at $T = 0$ gives a critical load near $\alpha = 1 - \gmax \approx
+0.6226$.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.82\linewidth]{panels_paper/log_tau_vs_T_N100.pdf}
+\includegraphics[width=0.82\linewidth]{panels_paper/log_tau_vs_T_N100_Ndim.pdf}
 \caption{Mean basin escape time $\avg{\tau}$ vs $T$ at $N = 100$ from
-hybrid MC, $32$ disorders.  Five $\alpha$ values: $0.50, 0.55, 0.58, 0.60,
-0.62$.  Filled circles: mean over disorders that escaped within $10^5$
-MC steps.  Upward triangles at $\log_{10} \tau = 5$: cells where no
-disorder escaped (lower bound only).  The escape curve slides toward
-$T = 0$ as $\alpha \to 1 - \gmax \approx 0.6226$.}
+N-dim hybrid MC, $32$ disorders, $\Bnet = 1$.  Five $\alpha$ values:
+$0.50, 0.55, 0.58, 0.60, 0.62$.  Filled circles: mean over disorders
+that escaped within $10^6$ MC steps.  Upward triangles at
+$\log_{10} \tau = 6$: cells where no disorder escaped (lower bound
+only).  The escape curve slides toward $T = 0$ as
+$\alpha \to 1 - \gmax \approx 0.6226$.}
 \label{fig:tau}
 \end{figure}
 
 \paragraph{Residual heatmap.}
 \Cref{fig:heatmap} shows $\avg{\varphi_1} - \phieq(T)$ over the
-$(\alpha, T)$ plane at $N = 100$ from the hybrid MC inside the grey
-rectangle, with honest MC at $N = 25$ and semismart MC at varying $N$
-outside.  The basin (white) is bounded by a sharp transition (dark
-red) that follows the saddle line~\eqref{eq:acsd} and pinches at $\alpha
-\approx 0.6226$, $T = 0$.
+$(\alpha, T)$ plane.  Background: truncated MC at varying $N$ over
+$\alpha \in [0.20, 0.70]$.  Grey rectangle: N-dim hybrid MC at $N = 100$
+on a fine $T$ grid in $\alpha \in [0.50, 0.62]$, $T \in [0, 0.10]$.
+The basin (white) is bounded by a sharp transition (dark red) that
+follows the saddle line $\acSd(T)$ and pinches at $\alpha \approx
+0.6226$, $T = 0$.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.98\linewidth]{panels_paper/heatmap_honest_over_Nramp_N100.pdf}
+\includegraphics[width=0.98\linewidth]{panels_paper/heatmap_honest_over_Nramp_N100_Ndim.pdf}
 \caption{$\avg{\varphi_1} - \phieq(T)$ from Monte Carlo over the
-$(\alpha, T)$ plane.  Curves: $\acGauss$ (blue, Ramsauer Gaussian),
-$\acSd$ (red, this work, exact density saddle), $\acSp$ (purple, spinodal).
-Inside the grey rectangle: hybrid MC at $N = 100$ on a fine $T$ grid;
-outside: honest MC at $N = 25$ ($\alpha \leq 0.56$) and semismart MC at
-varying $N$ ($\alpha \leq 0.70$), linearly interpolated to the same fine
-$T$ grid.  The basin pinches at $\alpha \approx 0.6226$, not $0.5$.  A
-later revision will replace this composite with a single honest +
-semismart + hybrid-insert build.}
+$(\alpha, T)$ plane.  Curves: $\acGauss(T)$ (blue solid,
+Eq.~\ref{eq:acgauss}, Gaussian density + support edge); $\acBd(T)$
+(orange dashed, Eq.~\ref{eq:acbd}, exact density + support edge);
+$\acSd(T)$ (red solid, Eq.~\ref{eq:acsd}, exact density + interior
+saddle, this work); $\acSp(T)$ (purple dotted, Eq.~\ref{eq:acsp},
+single-pattern spinodal).  Background: truncated MC at varying $N$
+over the full $\alpha$ range, linearly interpolated to the fine $T$
+grid.  Grey rectangle: N-dim hybrid MC at $N = 100$ on the fine $T$
+grid.  The basin pinches at $\alpha \approx 0.6226$ — Ramsauer's
+$\acGauss(0) = 1/2$ undershoots by $0.12$ in $\alpha$, a factor $1.25$
+in capacity.}
 \label{fig:heatmap}
 \end{figure}
 
@@ -299,11 +396,16 @@ semismart + hybrid-insert build.}
 \label{sec:discussion}
 
 The Ramsauer threshold $\alpha_c = 1/2$ is a Gaussian artefact.  The
-Gaussian density misses the integrand saddle at the golden ratio that
-the exact spherical density places at $\varphi^{*} = (\sqrt 5 - 1)/2$.
-Including it gives $\alpha_c = 1 - \gmax \approx 0.6226$, a factor
-$1.25$ larger.  The shift is per spin, not asymptotic: it appears at
-leading order in $N$ and is visible already at $N = 100$.
+Gaussian density misses the interior saddle of the partition-sum
+integrand~\eqref{eq:Sint} that the exact spherical density places at
+$\varphi^{*}(\Bnet)$.  Including it gives
+$\alpha_c(\Bnet, 0) = \Bnet - \gmax(\Bnet)$; at the value $\Bnet = 1$
+used in our MC, $\alpha_c \approx 0.6226$, a factor $1.25$ larger than
+Ramsauer's $1/2$.  The shift is per spin, not asymptotic: it appears at
+leading order in $N$ and is visible already at $N = 100$.  A second
+signature of the artefact is that Ramsauer's $1/2$ is
+$\Bnet$-independent, while the exact-density~\eqref{eq:acsd}
+boundary is not.
 
 Open items.
 (i) Hot init.  All present runs start the chain at $\bxi^1$ (cold).  The
@@ -316,7 +418,7 @@ endpoint $(0.6226, 0)$ the basin offset $\phieq(T) - (\alpha + \gmax)$
 falls inside the rounding window, and the leading-order spinodal slope
 needs an NLO correction.
 (iii) Heatmap consolidation.  \Cref{fig:heatmap} stitches three data
-sources.  A clean version would use a single MC variant — semismart with
+sources.  A clean version would use a single MC variant — truncated with
 a hybrid insert near the cusp — across the entire $(\alpha, T)$ plane.
 
 % =========================================================================
