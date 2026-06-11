@@ -69,13 +69,13 @@ the patterns and the chain live on the $N$-sphere of radius $\sqrt N$.
 The log-sum-exp (LSE) variant of Ramsauer et al.\ uses
 \begin{equation}
 H(\bx) = -\Bnet^{-1} \ln \sum_{\mu=1}^{M} \exp(\Bnet\,\bx \cdot \bxi^\mu),
-\qquad \Bnet = 1
-\;\text{throughout},
 \label{eq:lse}
 \end{equation}
-and stores $M = \e^{\alpha N}$ patterns at load
-$\alpha = \ln M / N$.  The question is: what is the largest $\alpha$ at
-which the chain initialised at $\bxi^1$ stays close to $\bxi^1$?
+with $\Bnet$ the kernel sharpness (inverse variance, unrelated to the
+external temperature $T$), and stores $M = \e^{\alpha N}$ patterns at
+load $\alpha = \ln M / N$.  The question is: what is the largest
+$\alpha$ at which the chain initialised at $\bxi^1$ stays close to
+$\bxi^1$?
 
 Ramsauer et al.\ answered $\alpha_c = 1/2$ at $T = 0$.  The proof
 modelled the inter-pattern overlap
@@ -93,8 +93,9 @@ saddle of the partition sum.
 This paper does three things.  First, we re-derive the boundary using
 the exact density~\eqref{eq:exact-density}.  An interior saddle of the
 integrand appears at a point $\varphi^{*}(\Bnet)$ that depends on the
-kernel sharpness; at $\Bnet = 1$ — the value we use throughout — it is
-the golden ratio $\varphi^{*} = (\sqrt 5 - 1)/2$, with saddle value
+kernel sharpness, with saddle value $\gmax(\Bnet)$.  At $\Bnet = 1$ —
+the value used in the Monte Carlo of \Cref{sec:mc,sec:results} — the
+saddle is the golden ratio $\varphi^{*} = (\sqrt 5 - 1)/2$,
 $\gmax \approx 0.3774$, and the boundary shifts to
 $\alpha_c(0) = 1 - \gmax \approx 0.6226$.  Second, we describe three
 Monte Carlo schemes (direct, truncated, hybrid) and explain why a naive
@@ -109,12 +110,15 @@ heatmap.
 
 \paragraph{Free energy split.}
 For a chain in the basin of $\bxi^1$, the LSE sum is dominated by the
-$\mu = 1$ term, $H(\bx)/N \approx -\varphi_1$ with
-$\varphi_1 = \bxi^1 \cdot \bx / N$.  Define the energy per spin relative
-to the retrieval baseline, $u(\varphi_1) = 1 - \varphi_1$, and the
+$\mu = 1$ term, $H(\bx)/N \approx -\Bnet^{-1} \ln \e^{\Bnet N \varphi_1}
+= -\varphi_1$ with $\varphi_1 = \bxi^1 \cdot \bx / N$ — the $\Bnet$
+factor cancels for a single-pattern dominant term, so $H/N$ at retrieval
+is $\Bnet$-independent.  Define the energy per spin relative to the
+retrieval baseline, $u(\varphi_1) = 1 - \varphi_1$, and the
 $(N\!-\!1)$-sphere entropy per spin $s(\varphi_1) = \tfrac12 \ln(1 -
 \varphi_1^2)$.  The retrieval free energy is the minimum of
-$f(\varphi_1, T) = u - T s$:
+$f(\varphi_1, T) = u - T s$ (also $\Bnet$-independent for the same
+reason):
 \begin{equation}
 \fret(T) = (1 - \phieq) - \tfrac{T}{2} \ln(1 - \phieq^2),
 \qquad
@@ -134,20 +138,33 @@ S \;\approx\; \e^{\alpha N} \int_{-1}^{1}
 \;\equiv\; \e^{\alpha N} \int \e^{N g(\varphi;\Bnet)} \dd\varphi.
 \label{eq:Sint}
 \end{equation}
-$g(\varphi; \Bnet) = \tfrac12 \ln(1 - \varphi^2) + \Bnet\,\varphi$ has
-an interior saddle at $g'(\varphi^{*}) = 0$, i.e.\ $\Bnet(1 -
-\varphi^{*\,2}) = \varphi^{*}$, with positive root
+We evaluate~\eqref{eq:Sint} by the saddle-point method in the large-$N$
+limit (Laplace's method): the integrand concentrates at the maximiser
+$\varphi^{*}(\Bnet)$ of the exponent
+$g(\varphi; \Bnet) = \tfrac12 \ln(1 - \varphi^2) + \Bnet\,\varphi$, and
+\begin{equation}
+\int \e^{N g(\varphi; \Bnet)} \dd\varphi
+   \;\sim\; \sqrt{\frac{2\pi}{N\,|g''(\varphi^{*})|}}\,
+            \e^{N\,g(\varphi^{*}; \Bnet)}
+\;\Longrightarrow\;
+\frac{1}{N} \ln S \;\to\; \alpha + \gmax(\Bnet)
+\;\;(N \to \infty),
+\label{eq:saddle-method}
+\end{equation}
+with subleading $\log N / N$ corrections.  The saddle condition
+$g'(\varphi^{*}) = 0$ gives $\Bnet(1 - \varphi^{*\,2}) = \varphi^{*}$,
+with positive root
 \begin{equation}
 \varphi^{*}(\Bnet) \;=\; \frac{-1 + \sqrt{1 + 4 \Bnet^2}}{2 \Bnet}.
 \label{eq:phistar}
 \end{equation}
 The saddle value is
 \begin{equation}
-\gmax(\Bnet) \;=\; g(\varphi^{*}; \Bnet)
+\gmax(\Bnet) \;\equiv\; g(\varphi^{*}; \Bnet)
    \;=\; \tfrac12 \ln(1 - \varphi^{*\,2}) + \Bnet\,\varphi^{*}.
 \label{eq:gmax}
 \end{equation}
-Hence $N^{-1} \ln S \to \alpha + \gmax(\Bnet)$, the noise-floor energy
+The noise-floor energy
 per spin is $u_{\mathrm{noise}} = 1 - [\alpha + \gmax(\Bnet)]/\Bnet$,
 and the boundary at the crossover $u_{\mathrm{noise}} = \fret(T)$ is
 \begin{equation}
