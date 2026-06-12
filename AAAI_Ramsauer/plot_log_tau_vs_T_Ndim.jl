@@ -70,10 +70,6 @@ for α in ALPHA_LIST
               markersize=5, markerstrokewidth=0,
               label=@sprintf("α = %.2f", α))
     end
-    if !isempty(T_cap)
-        scatter!(p, T_cap, log10.(τ_cap); marker=:utriangle, color=col,
-                 markerstrokewidth=0, markersize=5, label="")
-    end
 end
 
 hline!(p, [log10(max_steps)], color=:gray, ls=:dash, lw=1.2,
