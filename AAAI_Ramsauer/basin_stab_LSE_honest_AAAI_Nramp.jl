@@ -44,10 +44,12 @@ const betanet        = F(1.0)
 const N_EQ           = 2^15      # 32768
 const N_SAMP         = 2^13      # 8192
 const N_DIS_TARGET   = 32        # disorder samples per α
-const MEM_BUDGET_GB  = 45.0      # cap close to GPU physical (~48 GB) with 3 GB headroom
-const MEM_SAFETY     = 0.75      # planned ≤ 33.75 GB; with ~33% CUDA overhead actual
-                                  # ≈ 45 GB, leaving ~3 GB free on a 48 GB GPU.
-                                  # (Empirical: previous run OOMed at planned 36 GB.)
+const MEM_BUDGET_GB  = 45.0      # cap close to GPU physical (~48 GB)
+const MEM_SAFETY     = 0.62      # planned ≤ 27.9 GB per chunk; CUDA overhead +
+                                  # pool fragmentation push actual to ~40 GB on a
+                                  # 47 GB card. Tightened from 0.75 after the
+                                  # chunk-2 OOM at α=0.21 (the prior pool kept
+                                  # ~31 GB reserved into the next chunk).
 
 const alpha_vec = collect(F(0.20):F(0.01):F(0.70))
 const T_vec     = collect(F(0.005):F(0.01):F(0.495))
@@ -260,6 +262,15 @@ function run_alpha!(α::Float64, N::Int, M::Int, dis_start::Int, dis_target::Int
             end
         end
 
+        # Explicit release: unsafe_free! returns blocks to the pool immediately,
+        # bypassing Julia GC scheduling. Required between chunks on a near-full
+        # card; without it the pool keeps the chunk-1 blocks live and chunk 2
+        # OOMs on its first big alloc.
+        for a in (pats_g, tgts_g, xa_g, xb_g, xp_g, ov_g,
+                  Ea_g, Eb_g, Ep_g, phia_g, phib_g, qs_g, phimax_g,
+                  β_g, ra_g, ss_g)
+            CUDA.unsafe_free!(a)
+        end
         pats_g = nothing; tgts_g = nothing
         xa_g = nothing; xb_g = nothing; xp_g = nothing
         ov_g = nothing; Ea_g = nothing; Eb_g = nothing; Ep_g = nothing
