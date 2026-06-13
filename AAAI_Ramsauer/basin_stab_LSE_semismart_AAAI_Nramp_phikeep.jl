@@ -5,11 +5,10 @@ Original semismart design: PHI_KEEP and M are inputs, N(α) is the load-anchored
 ramp, K is derived per (α, N) as K = M · P(φ ≥ PHI_KEEP).
 
 Inputs (constants below):
-  • M_TARGET   = 4.4e6
+  • M_TARGET   = 3.0e8        (gives N=30 at α=0.65; N=22 at α=0.20 floor enforced)
   • PHI_KEEP   = 0.40
-  • N(α)       = max(N_FLOOR, round(log(M_TARGET) / α))   (matches honest Nramp)
-  • All MC and grid params match basin_stab_LSE_honest_AAAI_Nramp.jl
-    (N_EQ, N_SAMP, N_DIS_TARGET, MEM_BUDGET_GB, MEM_SAFETY, α grid, T grid).
+  • N(α)       = max(N_FLOOR, round(log(M_TARGET) / α))
+  • α grid     = 0.20:0.01:0.65 (capacity α_c ≈ 0.6226 at β=1)
 
 Derived per (α, N):
   • p_above = P(φ ≥ PHI_KEEP)   under spherical Beta((N-1)/2, (N-1)/2)
@@ -17,14 +16,17 @@ Derived per (α, N):
   • K_alloc    = clamp(ceil(K_expected · 1.5 + 16), 8, K_HARD_CAP)
   • bulk constant = α·N + log ∫_{-1}^{PHI_KEEP} f(φ) e^{N β φ} dφ
 
-Same energy / MC step as basin_stab_LSE_semismart_AAAI.jl. CSV schema matches
-the existing semismart files; plot_LSE_AAAI_heatmap.jl reads it unchanged.
+GPU chunking:
+  • pick_chunk_size uses min(MEM_BUDGET_GB, CUDA.available_memory()) × MEM_SAFETY.
+  • Each chunk physically probes the worst-case alloc via probe_max_chunk and
+    halves n_dis on OOM until it fits.
 
 Usage
   julia basin_stab_LSE_semismart_AAAI_Nramp_phikeep.jl            # resume
   julia basin_stab_LSE_semismart_AAAI_Nramp_phikeep.jl --fresh    # overwrite
+  julia basin_stab_LSE_semismart_AAAI_Nramp_phikeep.jl --probe    # bind-test only
 
-Output: basin_stab_LSE_semismart_AAAI_Nramp_M4.4e6_phikeep0.40.csv
+Output: basin_stab_LSE_semismart_AAAI_Nramp_M3.0e+08_phikeep0.40.csv
 ────────────────────────────────────────────────────────────────────────────────
 =#
 
@@ -42,19 +44,19 @@ using Distributions
 const F = Float32
 
 # ──────────────── Inputs: PHI_KEEP and M; N(α) and K are derived ────────────────
-const M_TARGET     = 4.4e6
+const M_TARGET     = 3.0e8
 const PHI_KEEP     = 0.40
 const N_FLOOR      = 12
-const K_HARD_CAP   = 500_000          # safety cap on K_alloc
+const K_HARD_CAP   = 8_000_000        # safety cap on K_alloc (was 500_000 for M=4.4e6)
 
 const betanet       = F(1.0)
 const N_EQ          = 2^15            # match honest Nramp
 const N_SAMP        = 2^13            # match honest Nramp
 const N_DIS_TARGET  = 32              # match honest Nramp
-const MEM_BUDGET_GB = 45.0            # match honest Nramp
-const MEM_SAFETY    = 0.62            # match honest Nramp (≈ 27.9 GB usable)
+const MEM_BUDGET_GB = 45.0            # upper bound; runtime uses CUDA.available_memory()
+const MEM_SAFETY    = 0.62            # ≈ 27.9 GB usable at full 45 GB budget
 
-const alpha_vec = collect(F(0.20):F(0.01):F(0.70))
+const alpha_vec = collect(F(0.20):F(0.01):F(0.65))
 const T_vec     = collect(F(0.005):F(0.01):F(0.495))
 const n_alpha   = length(alpha_vec)
 const n_T       = length(T_vec)
@@ -152,9 +154,57 @@ end
 
 function pick_chunk_size(N::Int, K::Int)
     per = mem_per_disorder_bytes(N, K)
-    usable = MEM_BUDGET_GB * MEM_SAFETY * 1e9
+    gpu_free = CUDA.functional() ? Float64(CUDA.available_memory()) : MEM_BUDGET_GB * 1e9
+    usable = min(MEM_BUDGET_GB * 1e9, gpu_free) * MEM_SAFETY
     by_mem = floor(Int, usable / per)
     return clamp(by_mem, 1, N_DIS_TARGET)
+end
+
+# ──────────────── Physical OOM probe ────────────────
+# probe_one: allocate the worst-case GPU arrays at (N, K, n_dis). Returns true if
+# they fit on the live GPU, false on OutOfGPUMemoryError. Frees everything before
+# returning.
+function probe_one(N::Int, K::Int, n_dis::Int)
+    arrays = Any[]
+    ok = false
+    try
+        push!(arrays, CUDA.zeros(F, N, K, n_dis))         # pats_g
+        push!(arrays, CUDA.zeros(F, N, 1, n_dis))         # tgts_g
+        push!(arrays, CUDA.zeros(F, N, n_T, n_dis))       # xa_g
+        push!(arrays, CUDA.zeros(F, N, n_T, n_dis))       # xb_g
+        push!(arrays, CUDA.zeros(F, N, n_T, n_dis))       # xp_g
+        push!(arrays, CUDA.zeros(F, K, n_T, n_dis))       # ov_g
+        n_chains = n_T * n_dis
+        for _ in 1:9                                       # Ea Eb Ep phia phib qs phimax β ra
+            push!(arrays, CUDA.zeros(F, n_chains))
+        end
+        CUDA.synchronize()
+        ok = true
+    catch e
+        e isa CUDA.OutOfGPUMemoryError || rethrow()
+        ok = false
+    finally
+        for a in arrays
+            CUDA.unsafe_free!(a)
+        end
+        GC.gc()
+        CUDA.reclaim()
+    end
+    return ok
+end
+
+# probe_max_chunk: halve until the probe fits or we drop below 1.
+# Returns the largest n_dis that fits, or 0 if even n_dis=1 fails.
+function probe_max_chunk(N::Int, K::Int, start_chunk::Int)
+    chunk = start_chunk
+    while chunk >= 1
+        if probe_one(N, K, chunk)
+            return chunk
+        end
+        chunk == 1 && return 0
+        chunk = max(1, chunk ÷ 2)
+    end
+    return 0
 end
 
 # ──────────────── Energy + MC step ────────────────
@@ -211,6 +261,7 @@ end
 
 # ──────────────── CLI & Resume ────────────────
 const FRESH_START = "--fresh" in ARGS
+const PROBE_MODE  = "--probe" in ARGS
 const csv_out     = @sprintf("basin_stab_LSE_semismart_AAAI_Nramp_M%.1e_phikeep%.2f.csv",
                              M_TARGET, PHI_KEEP)
 
@@ -274,7 +325,21 @@ function run_alpha!(α::Float64, N::Int, phi_keep::Float64, K_alloc::Int,
     chunk_idx = 0
     while dis_done < dis_target
         chunk_idx += 1
-        n_dis = min(n_dis_chunk, dis_target - dis_done)
+        n_dis_req = min(n_dis_chunk, dis_target - dis_done)
+        # Physically probe the GPU before committing CPU-side sampling buffers.
+        # Probe is cheap (alloc + free + reclaim, ~a few hundred ms at worst).
+        print("  Probing n_dis=$n_dis_req ... "); t_probe = time()
+        n_dis = probe_max_chunk(N, K_alloc, n_dis_req)
+        @printf("safe n_dis=%d   %.2f s\n", n_dis, time()-t_probe)
+        if n_dis == 0
+            @warn @sprintf("OOM at α=%.3f N=%d K=%d even at n_dis=1; aborting this α",
+                           α, N, K_alloc)
+            break
+        end
+        if n_dis < n_dis_req
+            @warn @sprintf("OOM-probe reduced chunk: %d → %d (α=%.3f, N=%d, K=%d)",
+                           n_dis_req, n_dis, α, N, K_alloc)
+        end
         println("─"^76)
         @printf("α=%.3f  N=%d  M=%d  φ_keep=%+.3f  K_alloc=%d  chunk %d  n_dis=%d  (disorders %d..%d / %d)\n",
                 α, N, M_full, phi_keep, K_alloc, chunk_idx, n_dis,
@@ -428,6 +493,30 @@ function main()
         end
     end
     println("Plan written to: ", plan_file, "\n")
+
+    if PROBE_MODE
+        println("─"^76)
+        println("PROBE MODE: physically allocating worst-case arrays per α…")
+        @printf("  %-6s %-4s %-12s %-10s %-10s %-7s\n",
+                "α", "N", "K_alloc", "analytic", "probe", "Δ")
+        n_skip = 0
+        for p in plan
+            if p.status == :infeasible
+                @printf("  %-6.3f %-4d %-12d %-10s %-10s %-7s\n",
+                        p.α, p.N, p.K_alloc, "—", "INFEASIBLE", "—")
+                n_skip += 1
+                continue
+            end
+            chunk_pr = probe_max_chunk(p.N, p.K_alloc, p.chunk)
+            mark = chunk_pr == 0 ? "FAIL" : string(chunk_pr)
+            delta = chunk_pr == 0 ? "" : @sprintf("%+d", chunk_pr - p.chunk)
+            @printf("  %-6.3f %-4d %-12d %-10d %-10s %-7s\n",
+                    p.α, p.N, p.K_alloc, p.chunk, mark, delta)
+        end
+        println("─"^76)
+        println("PROBE MODE: exiting without running MC. Drop --probe to run.")
+        return
+    end
 
     if FRESH_START || !isfile(csv_out)
         open(csv_out, "w") do f
