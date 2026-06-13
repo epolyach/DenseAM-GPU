@@ -53,7 +53,7 @@ At $T = 0$ the corrected capacity is $\Bnet - \gmax(\Bnet)$, the load
 at which the cusp of the leading-order free energy reaches the unit
 sphere and the retrieval basin disappears.  It is finite, depends on
 $\Bnet$, sits below Ramsauer's bound at moderate $\Bnet$, and exceeds
-it at large $\Bnet$.  Hybrid Monte Carlo at $N = 100$ places the
+it at large $\Bnet$.  Saddle-bulk Monte Carlo at $N = 100$ places the
 empirical basin boundary on the corrected curve, consistent with the
 analytical prediction.
 \end{abstract}
@@ -88,14 +88,14 @@ For continuous LSE, \citet{ramsauer2021hopfield} derived a limiting
 load $\alpha_c = 1/2$ at $T = 0$.  Label $\mu = 1$ the retrieving
 target and $\mu \geq 2$ the spurious patterns.  The argument treats the
 inter-pattern alignment $\varphi_{1\mu} = \bxi^1 \cdot \bxi^\mu / N$
-(hereafter, $\varphi$) as a Gaussian with mean $0$ and variance $1/N$, and asks at
+(hereafter, $\phi$) as a Gaussian with mean $0$ and variance $1/N$, and asks at
 what load the typical maximum of $M$ such alignments first reaches $1$.  The Gaussian extreme value
-satisfies $\varphi_{\max}^{(G)} = \sqrt{2\alpha}$, so the condition
-$\varphi_{\max}^{(G)} = 1$ gives $\alpha = 1/2$.  The bound does not
+satisfies $\phi_{\max}^{(G)} = \sqrt{2\alpha}$, so the condition
+$\phi_{\max}^{(G)} = 1$ gives $\alpha = 1/2$.  The bound does not
 involve $\Bnet$.
 
 The Gaussian is the leading term of the exact spherical alignment density
-near $\varphi = 0$, but the densities diverge near $\varphi = 1$.
+near $\phi = 0$, but the densities diverge near $\phi = 1$.
 Whether the corrected density alters the capacity was raised by
 \citet{icml2026theory}, who derived the finite-temperature retrieval
 boundary $T_c(\alpha)$ for LSE and LSR under the Gaussian approximation
@@ -134,13 +134,15 @@ sum is governed by an interior saddle, not by the edge of the alignment
 distribution.  Second, the local-refresh Monte Carlo schemes used to
 accelerate large-$N$ studies fail near the capacity boundary by
 introducing unquenched disorder; the simulations in this paper rely on a
-hybrid scheme that keeps the cusp-tail patterns explicit while treating
-the bulk analytically.
+saddle-bulk scheme in which the spurious sum is replaced by its analytic
+saddle value (the cusp $\phi_c(\alpha, \Bnet)$ lies above the typical
+sample extreme $\phi_{\max}(\alpha) = \sqrt{1 - \e^{-2\alpha}}$ at every
+load below capacity, so no spurious pattern is retained explicitly).
 
 \Cref{sec:theory} develops the theory: the Gaussian baseline, the naive
 exact-density variant, the interior saddle, the cusp picture, the
 spinodal, and the two-protocol picture.  \Cref{sec:mc} describes the
-three Monte Carlo schemes (direct, truncated, hybrid) used here, with a
+three Monte Carlo schemes (direct, truncated, saddle-bulk) used here, with a
 paragraph on why local refresh fails.  \Cref{sec:results} shows the
 empirical $N = 100$ heatmap together with the four boundary curves.
 \Cref{sec:discussion} closes with the Ramsauer claim and the
@@ -158,13 +160,13 @@ pattern and a random spurious one is the projection of one uniform
 direction onto another; its density on $[-1, 1]$ is the spherical
 density
 \begin{equation}
-h(\varphi) = C_N\,(1 - \varphi^2)^{(N-3)/2},
+h(\phi) = C_N\,(1 - \phi^2)^{(N-3)/2},
 \qquad
 C_N = \frac{\Gamma(N/2)}{\Gamma((N-1)/2)\sqrt\pi}\,.
 \label{eq:hphi}
 \end{equation}
-At large $N$, $h$ concentrates near $\varphi = 0$ with variance $1/N$,
-but its right tail near $\varphi = 1$ decays as $(1-\varphi^2)^{N/2}$,
+At large $N$, $h$ concentrates near $\phi = 0$ with variance $1/N$,
+but its right tail near $\phi = 1$ decays as $(1-\phi^2)^{N/2}$,
 lighter than any Gaussian of matched variance.  The chain-pattern
 alignment $\phi_\mu(\bx) = \bxi^\mu \cdot \bx / N$ measures the chain's
 overlap with pattern $\mu$; $\phi_1$ measures retrieval.
@@ -190,21 +192,21 @@ Away from the basin the noise floor comes from the $M-1$ spurious sum
 S(\bx) \;=\; \sum_{\mu \neq 1} \e^{\Bnet N \phi_\mu(\bx)},
 \qquad
 \frac{1}{N}\ln S
-\;\approx\; \alpha + \frac{1}{N}\ln\!\int_{-1}^{1} h(\varphi)\,
-            \e^{N \Bnet \varphi}\,\dd\varphi,
+\;\approx\; \alpha + \frac{1}{N}\ln\!\int_{-1}^{1} h(\phi)\,
+            \e^{N \Bnet \phi}\,\dd\phi,
 \label{eq:S}
 \end{equation}
 where we used $M = \e^{\alpha N}$ and replaced the sum over patterns by
 an integral with density $h$, valid in the bulk of $\bx$ because the
 $\phi_\mu$ are independent draws from $h$.  The integrand exponent is
-$g(\varphi; \Bnet) = \tfrac12 \ln(1 - \varphi^2) + \Bnet\,\varphi$.
+$g(\phi; \Bnet) = \tfrac12 \ln(1 - \phi^2) + \Bnet\,\phi$.
 
 \paragraph{Gaussian baseline.}
 Replacing $h$ by the moment-matched Gaussian
-$\sqrt{N/2\pi}\,\e^{-N\varphi^2/2}$ makes the exponent
-$-\tfrac12 \varphi^2 + \Bnet\varphi$ monotone in $\varphi$ on $[-1,1]$
+$\sqrt{N/2\pi}\,\e^{-N\phi^2/2}$ makes the exponent
+$-\tfrac12 \phi^2 + \Bnet\phi$ monotone in $\phi$ on $[-1,1]$
 for $\Bnet \le 1$, so the integral~\eqref{eq:S} is set by the typical
-extreme of $M$ Gaussian samples, $\varphi_{\max}^{(G)} = \sqrt{2\alpha}$.
+extreme of $M$ Gaussian samples, $\phi_{\max}^{(G)} = \sqrt{2\alpha}$.
 Substituting gives $N^{-1}\ln S \to \Bnet \sqrt{2\alpha}$ and a
 noise-floor energy per spin
 $u_{\mathrm{noise}}^{(G)} = 1 - \sqrt{2\alpha}$.  The boundary
@@ -221,12 +223,12 @@ $\Bnet$-independent.  This is Ramsauer's bound.
 \paragraph{Naive correction: exact density at the edge.}
 Keep the exact density $h$ but apply the same edge logic.  The typical
 maximum of $M$ samples from $h$ satisfies
-$M\int_{\varphi_{\max}}^{1} h(\varphi)\,\dd\varphi = 1$, which after computing the right
+$M\int_{\phi_{\max}}^{1} h(\phi)\,\dd\phi = 1$, which after computing the right
 tail of~\eqref{eq:hphi} gives
-$\varphi_{\max}(\alpha) = \sqrt{1 - \e^{-2\alpha}}$.  The exponent at
-the edge is $g(\varphi_{\max}) = -\alpha + \Bnet\,\varphi_{\max}$, so
-$N^{-1}\ln S \to \Bnet\,\varphi_{\max}(\alpha)$ and
-$u_{\mathrm{noise}}^{(\mathrm{ex})} = 1 - \varphi_{\max}(\alpha)$.
+$\phi_{\max}(\alpha) = \sqrt{1 - \e^{-2\alpha}}$.  The exponent at
+the edge is $g(\phi_{\max}) = -\alpha + \Bnet\,\phi_{\max}$, so
+$N^{-1}\ln S \to \Bnet\,\phi_{\max}(\alpha)$ and
+$u_{\mathrm{noise}}^{(\mathrm{ex})} = 1 - \phi_{\max}(\alpha)$.
 Solving $u_{\mathrm{noise}}^{(\mathrm{ex})} = \fret(T)$ yields
 \begin{equation}
 \acBd(T) \;=\; -\tfrac12 \ln\!\bigl[1 - (1 - \fret(T))^2\bigr],
@@ -241,22 +243,22 @@ the edge logic is wrong whenever the integrand has an interior maximum
 inside $[0, 1)$.
 
 \paragraph{Interior saddle: the correct boundary.}
-The exponent $g(\varphi; \Bnet)$ has derivative
-$g'(\varphi) = \Bnet - \varphi/(1 - \varphi^2)$, which vanishes at the
+The exponent $g(\phi; \Bnet)$ has derivative
+$g'(\phi) = \Bnet - \phi/(1 - \phi^2)$, which vanishes at the
 positive root
 \begin{equation}
-\varphi^{*}(\Bnet) = \frac{-1 + \sqrt{1 + 4\Bnet^2}}{2\Bnet}\,.
+\phi^{*}(\Bnet) = \frac{-1 + \sqrt{1 + 4\Bnet^2}}{2\Bnet}\,.
 \label{eq:phistar}
 \end{equation}
 The saddle is inside $(0, 1)$ for every $\Bnet > 0$.  By Laplace's
 method,
 \begin{equation}
-\int_{-1}^{1} h(\varphi)\,\e^{N\Bnet\varphi}\,\dd\varphi
-\;\sim\; \sqrt{\frac{2\pi}{N\,|g''(\varphi^{*})|}}\,
+\int_{-1}^{1} h(\phi)\,\e^{N\Bnet\phi}\,\dd\phi
+\;\sim\; \sqrt{\frac{2\pi}{N\,|g''(\phi^{*})|}}\,
         \e^{N\,\gmax(\Bnet)},
 \qquad
-\gmax(\Bnet) \;\equiv\; g(\varphi^{*}; \Bnet)
-   \;=\; \tfrac12 \ln(1 - \varphi^{*\,2}) + \Bnet\,\varphi^{*},
+\gmax(\Bnet) \;\equiv\; g(\phi^{*}; \Bnet)
+   \;=\; \tfrac12 \ln(1 - \phi^{*\,2}) + \Bnet\,\phi^{*},
 \label{eq:gmax}
 \end{equation}
 so $N^{-1}\ln S \to \alpha + \gmax(\Bnet)$ and the noise-floor energy
@@ -272,14 +274,14 @@ the saddle-dominated boundary
 The dependence on $\Bnet$ is real.  At the right edge, the same $\Bnet$
 factor appears in retrieval and noise floor and cancels; that is why
 Ramsauer's bound is $\Bnet$-independent.  At the interior saddle the
-location $\varphi^{*}(\Bnet)$ itself shifts with $\Bnet$, and the
+location $\phi^{*}(\Bnet)$ itself shifts with $\Bnet$, and the
 cancellation breaks.  \Cref{fig:beta-curve} shows
 $\acSd(\Bnet, 0) = \Bnet - \gmax(\Bnet)$ together with Ramsauer's
 $\acGauss = 1/2$.  $\acSd(\Bnet, 0)$ crosses Ramsauer's flat line at
 $\Bnet \approx 0.7$: below this value the corrected capacity is more
 restrictive than Ramsauer's, above it more permissive.  The endpoints are explicit: as $\Bnet \to 0$,
-$\varphi^{*} \to \Bnet$ and $\gmax \to \Bnet^2/2$, giving the linear
-$\acSd(\Bnet, 0) \to \Bnet$; as $\Bnet \to \infty$, $\varphi^{*} \to
+$\phi^{*} \to \Bnet$ and $\gmax \to \Bnet^2/2$, giving the linear
+$\acSd(\Bnet, 0) \to \Bnet$; as $\Bnet \to \infty$, $\phi^{*} \to
 1 - 1/(2\Bnet)$ and $\gmax \to \Bnet - \tfrac12(\ln \Bnet + 1)$, giving
 the logarithmic growth $\acSd(\Bnet, 0) \to \tfrac12(1 + \ln \Bnet)$.
 The Monte Carlo simulations of \Cref{sec:mc,sec:results} fix $\Bnet = 1$
@@ -305,27 +307,27 @@ $\bx$-independent bulk $S \sim \e^{N[\alpha + \gmax(\Bnet)]}$.  At large
 $N$,
 \begin{equation}
 \Bnet^{-1} \ln\!\bigl[\e^{\Bnet N \phi_1} + S\bigr]
-\;\to\; \max\!\bigl(\phi_1,\;\varphi_c(\alpha, \Bnet)\bigr),
+\;\to\; \max\!\bigl(\phi_1,\;\phi_c(\alpha, \Bnet)\bigr),
 \qquad
-\varphi_c(\alpha, \Bnet) \;=\; \frac{\alpha + \gmax(\Bnet)}{\Bnet}\,,
+\phi_c(\alpha, \Bnet) \;=\; \frac{\alpha + \gmax(\Bnet)}{\Bnet}\,,
 \label{eq:cusp}
 \end{equation}
 and the leading-order free energy per spin is
 \begin{equation}
 \frac{F(\phi_1; T, \alpha, \Bnet)}{N}
-\;=\; -\max\!\bigl(\phi_1, \varphi_c\bigr)
+\;=\; -\max\!\bigl(\phi_1, \phi_c\bigr)
    \;-\; \tfrac{T}{2}\ln(1 - \phi_1^2).
 \label{eq:F-LO}
 \end{equation}
-The two branches meet in a cusp at $\phi_1 = \varphi_c$.  We call the
+The two branches meet in a cusp at $\phi_1 = \phi_c$.  We call the
 right branch (slope $-1$) the \emph{retrieval basin}: for $\phi_1 >
-\varphi_c$ the retrieval term dominates the log-sum and the chain feels
+\phi_c$ the retrieval term dominates the log-sum and the chain feels
 the linear pull of $\bxi^1$.  We call the left branch (zero energy
-slope) the \emph{saddle valley}: for $\phi_1 < \varphi_c$ the bulk
+slope) the \emph{saddle valley}: for $\phi_1 < \phi_c$ the bulk
 saddle dominates the log-sum, the energy in $\phi_1$ is flat, and the
 sphere entropy $-(T/2)\ln(1-\phi_1^2)$ alone pulls the chain toward
 $\phi_1 = 0$.  \Cref{fig:cusp} plots~\eqref{eq:F-LO} at $\alpha =
-0.5$, $\Bnet = 1$, $\varphi_c \approx 0.877$.
+0.5$, $\Bnet = 1$, $\phi_c \approx 0.877$.
 
 \begin{figure}[t]
 \centering
@@ -333,7 +335,7 @@ $\phi_1 = 0$.  \Cref{fig:cusp} plots~\eqref{eq:F-LO} at $\alpha =
 \caption{Leading-order free energy per spin $F(\phi_1)/N$
 from~\eqref{eq:F-LO} at $\alpha = 0.5$, $\Bnet = 1$, for five
 temperatures.  The dashed vertical line marks the cusp
-$\varphi_c = \alpha + \gmax \approx 0.877$ separating the saddle valley
+$\phi_c = \alpha + \gmax \approx 0.877$ separating the saddle valley
 on the left from the retrieval basin on the right.  Dots: basin minima
 $\phieq(T)$.  At the spinodal temperature
 $T_{\mathrm{sp}}(0.5, 1) \approx 0.262$ (defined in~\eqref{eq:acsp})
@@ -344,10 +346,10 @@ the basin no longer exists (grey curve).}
 
 \paragraph{Single-pattern spinodal.}
 The retrieval branch has a local minimum at $\phieq(T)$ from
-$\eqref{eq:fret}$, valid only while $\phieq(T) > \varphi_c$.  As $T$
-rises, $\phieq(T)$ drops; when it reaches $\varphi_c$ the local minimum
+$\eqref{eq:fret}$, valid only while $\phieq(T) > \phi_c$.  As $T$
+rises, $\phieq(T)$ drops; when it reaches $\phi_c$ the local minimum
 disappears and the chain slides to $\phi_1 = 0$.  The condition
-$\phieq(T) = \varphi_c$ defines the single-pattern spinodal
+$\phieq(T) = \phi_c$ defines the single-pattern spinodal
 \begin{equation}
 \acSp(\Bnet, T) \;=\; \Bnet\,\phieq(T) - \gmax(\Bnet),
 \qquad
@@ -368,8 +370,8 @@ $\acSd(\Bnet, T) < \alpha < \acSp(\Bnet, T)$ the basin still exists and
 lies above the cusp, but the bulk noise floor is lower in free energy.
 The escape barrier the chain must cross to leave the basin,
 $\Delta F_{\mathrm{esc}}/N
-   = (\phieq - \varphi_c) + (T/2) \ln[(1 - \phieq^2)/(1 - \varphi_c^2)]$,
-depends only on $\phieq - \varphi_c$ and vanishes at $\acSp$, not at
+   = (\phieq - \phi_c) + (T/2) \ln[(1 - \phieq^2)/(1 - \phi_c^2)]$,
+depends only on $\phieq - \phi_c$ and vanishes at $\acSp$, not at
 $\acSd$.  The Kramers escape time
 $\tau \sim \exp(N\,\Delta F_{\mathrm{esc}}/T)$ therefore grows
 exponentially with $N$ throughout $\alpha < \acSp$, regardless of which
@@ -400,7 +402,7 @@ $c \in (0, 1]$ a barrier-reduction factor, predicts that the product
 $T \log\avg\tau$ reads off the effective barrier $c\Delta F$; in our
 data this product traces a shallow $U$ in $T$ at each $\alpha$, with a
 finite high-$T$ prefactor on one side and a $T$-dependent barrier on
-the other ($\phieq(T) - \varphi_c$ shrinks as $T$ rises).  The minimum
+the other ($\phieq(T) - \phi_c$ shrinks as $T$ rises).  The minimum
 value of $T \log_{10}\avg\tau$ drops monotonically from
 $\approx 0.56$ at $\alpha = 0.50$ to $\approx 0.16$ at $\alpha = 0.58$
 and below the measurement floor at $\alpha = 0.60$, consistent with the
@@ -410,7 +412,7 @@ effective barrier vanishing as the spinodal is approached.
 \centering
 \includegraphics[width=0.82\linewidth]{panels_paper/log_tau_vs_T_N100_Ndim.pdf}
 \caption{Mean basin escape time $\avg\tau$ versus $T$ at $N = 100$ from
-N-dim hybrid MC, $32$ disorder samples per cell, $\Bnet = 1$.  Five
+N-dim saddle-bulk MC, $32$ disorder samples per cell, $\Bnet = 1$.  Five
 values of $\alpha$ approaching $\acSd(1, 0) \approx 0.6226$.  Cells in
 which no disorder escaped within $10^6$ MC steps are not shown; the grey
 dashed line marks that budget ceiling.  The escape window narrows and
@@ -436,30 +438,30 @@ orders of magnitude.
 
 \paragraph{Truncated.}
 For each disorder draw we sample the $K \sim 10^4$ patterns whose
-alignment with $\bxi^1$ exceeds a cutoff $\varphi_{\mathrm{keep}}$.  The
+alignment with $\bxi^1$ exceeds a cutoff $\phi_{\mathrm{keep}}$.  The
 cutoff is chosen so that the expected count above it equals the budget
 $K$.  The remaining $M - K$ patterns below the cutoff enter the LSE
 log-sum through an analytic constant
-$\ln C_{\mathrm{bulk}} = \alpha N + \ln \int_{-1}^{\varphi_{\mathrm{keep}}}
-h(\varphi)\,\e^{N\varphi}\,\dd\varphi$.  The retained set is fixed once
+$\ln C_{\mathrm{bulk}} = \alpha N + \ln \int_{-1}^{\phi_{\mathrm{keep}}}
+h(\phi)\,\e^{N\phi}\,\dd\phi$.  The retained set is fixed once
 per disorder.  At $N = 25$ truncated and direct produce the same basin
 boundary across the full $\alpha$ range we measure, so the discarded
 patterns are genuinely outside the basin physics rather than silently
 dropped.  Truncated is the workhorse for the wide heatmap in
 \Cref{sec:results}.
 
-\paragraph{Hybrid.}
+\paragraph{Saddle-bulk.}
 Same decomposition as truncated, with two changes: the cutoff is set at
-the cusp position $\varphi_c(\alpha, \Bnet)$ from~\eqref{eq:cusp} rather
+the cusp position $\phi_c(\alpha, \Bnet)$ from~\eqref{eq:cusp} rather
 than chosen by budget, and the bulk integral is replaced by its
 saddle-point value $M\,\e^{N\gmax(\Bnet)}$, an $\bx$-independent
-constant inside the log-sum.  Patterns above $\varphi_c$ are drawn from
-the spherical density~\eqref{eq:hphi} restricted to $\varphi > \varphi_c$.
-In the rescaled variable $y = (1 + \varphi)/2 \in [0, 1]$, the spherical
+constant inside the log-sum.  Patterns above $\phi_c$ are drawn from
+the spherical density~\eqref{eq:hphi} restricted to $\phi > \phi_c$.
+In the rescaled variable $y = (1 + \phi)/2 \in [0, 1]$, the spherical
 density becomes a symmetric Beta:
 \begin{equation}
 y \sim \mathrm{Beta}\!\Bigl(\tfrac{N-1}{2}, \tfrac{N-1}{2}\Bigr)
-   \;\;\text{truncated to}\;\; y \in \bigl[(1 + \varphi_c)/2,\,1\bigr],
+   \;\;\text{truncated to}\;\; y \in \bigl[(1 + \phi_c)/2,\,1\bigr],
 \qquad \varphi_{1\mu} = 2y - 1.
 \label{eq:beta-tail}
 \end{equation}
@@ -467,14 +469,45 @@ Each retained pattern is then assembled from its $\varphi_{1\mu}$ and a
 uniform direction $u_\mu$ on the $(N-2)$-sphere perpendicular to
 $\bxi^1$.  At the loads and dimension studied here ($N = 100$,
 $\alpha \in [0.5, 0.62]$), the expected count of alignments above
-$\varphi_c$ is below unity for every $\alpha$, so the algorithm
+$\phi_c$ is below unity for every $\alpha$, so the algorithm
 typically retains only $\bxi^1$ explicitly and treats every other
 pattern through the bulk constant.  This is a faithful sampler of the
 leading-order free energy~\eqref{eq:F-LO}: below the cusp the bulk
 constant inside the log-sum collapses $\Bnet^{-1}\ln[\cdot]$ to the
-constant $\varphi_c$ (the noise-floor branch), but the chain still
+constant $\phi_c$ (the noise-floor branch), but the chain still
 feels the sphere geometry through the entropy term $-(T/2)\ln(1 -
 \phi_1^2)$, which is what drives the slide to $\phi_1 = 0$.
+
+\paragraph{$N$-reach and what each scheme tests.}
+Truncated at fixed $\phi_{\mathrm{keep}}$ keeps
+$K = M\,\Pr(\phi \ge \phi_{\mathrm{keep}}) \sim
+\e^{N[\alpha - I(\phi_{\mathrm{keep}})]}$ patterns, with
+$I(\phi) \equiv -\tfrac12 \ln(1 - \phi^2)$ the large-$N$ rate of
+the spherical tail.  At $\phi_{\mathrm{keep}} = 0.4$,
+$I \approx 0.087$; for any $\alpha > 0.087$ the retained count grows
+exponentially in $N$ and the GPU budget is exhausted by $N \sim 30$.
+Saddle-bulk sets $\phi_{\mathrm{keep}} = \phi_c(\alpha, \Bnet)$, which
+lies above the typical extreme
+$\phi_{\max}(\alpha) = \sqrt{1 - \e^{-2\alpha}}$ of $M$ inter-pattern
+alignments at every load below capacity, so the expected count
+$K = M\,\Pr(\phi \ge \phi_c) \to 0$ exponentially in $N$.  With
+only $\bxi^1$ in the explicit sum, the spurious sum~\eqref{eq:S}
+collapses to $\max(\e^{\Bnet N \phi_1}, M\,\e^{N\gmax(\Bnet)})$ and the
+chain energy reduces to $H(\bx)/N \to -\max(\phi_1, \phi_c)$;
+together with the sphere entropy $-(T/2)\ln(1 - \phi_1^2)$ this
+reproduces the leading-order free energy~\eqref{eq:F-LO} on the
+$N$-sphere.
+
+The two schemes therefore probe different physics.  Saddle-bulk realises
+the Kramers kinetics of~\eqref{eq:F-LO} at large $N$, but the analytic
+bulk $M\,\e^{N\gmax(\Bnet)}$ is taken on faith and any correction to
+$\gmax$ would be invisible.  Truncated with $\phi_{\mathrm{keep}}$
+near or below the integrand saddle $\phi^{*}(\Bnet)$ retains the
+patterns that dominate the spurious-sum integral and audits the bulk
+directly; a subleading correction to $\gmax$ would appear as a
+mismatch between truncated and direct boundaries.  At $N = 25$ the two
+agree across our $\alpha$ range, so the leading-order analytic bulk
+captures the spurious physics to within MC noise at the boundary.
 
 \paragraph{Why local refresh fails.}
 A faster scheme (sometimes called ``smart'') refreshes the retained
@@ -486,7 +519,7 @@ patterns are minted at every refresh, so the cumulative set of patterns
 seen along a single trajectory exceeds $M$, and the chain effectively
 faces a denser pattern set than the model defines.  In the retrieval
 basin the spurious-recruitment rate alone destroys retrieval, for
-reasons unrelated to~\eqref{eq:acsd}.  Truncated and hybrid both fix the
+reasons unrelated to~\eqref{eq:acsd}.  Truncated and saddle-bulk both fix the
 retained set once per disorder and avoid the issue.
 
 % =========================================================================
@@ -497,7 +530,7 @@ retained set once per disorder and avoid the issue.
 $(\alpha, T)$ plane at $\Bnet = 1$.  The bulk of the plane,
 $\alpha \in [0.20, 0.70]$, uses truncated MC at varying $N$ (the load
 $M = \e^{\alpha N}$ is held fixed at $M \approx 4.4 \times 10^6$ by
-ramping $N$ with $\alpha$).  A fine $T$-grid hybrid MC at $N = 100$
+ramping $N$ with $\alpha$).  A fine $T$-grid saddle-bulk MC at $N = 100$
 fills in the rectangle $\alpha \in [0.5, 0.62]$, $T \in [0, 0.10]$.
 
 The basin region (white) is bounded by a sharp dark-red transition that
@@ -520,7 +553,7 @@ discussed in \S\ref{sec:theory}.
 \caption{$\avg{\phi_1} - \phieq(T)$ from Monte Carlo over the
 $(\alpha, T)$ plane at $\Bnet = 1$.  Background: truncated MC at
 varying $N$ ($\alpha \in [0.20, 0.70]$, $M \approx 4.4 \times 10^6$).
-Grey rectangle: N-dim hybrid MC at $N = 100$ on a fine $T$ grid.
+Grey rectangle: N-dim saddle-bulk MC at $N = 100$ on a fine $T$ grid.
 Curves: $\acGauss$~\eqref{eq:acgauss} (blue solid, Gaussian + support
 edge); $\acBd$~\eqref{eq:acbd} (orange dashed, exact density + support
 edge); $\acSd$~\eqref{eq:acsd} (red solid, thermodynamic F-crossover);
@@ -537,10 +570,10 @@ Kramers contour, drifting toward $\acSp$ as $N$ grows.}
 
 The Ramsauer threshold $\alpha_c = 1/2$ is a Gaussian artefact.  The
 Gaussian density misses the interior saddle that the exact spherical
-density places at $\varphi^{*}(\Bnet)$ in the partition-sum integrand;
+density places at $\phi^{*}(\Bnet)$ in the partition-sum integrand;
 restoring it gives a finite $\Bnet$-dependent capacity
 $\acSd(\Bnet, 0) = \acSp(\Bnet, 0) = \Bnet - \gmax(\Bnet)$, the load
-at which the cusp $\varphi_c = (\alpha + \gmax)/\Bnet$ reaches the
+at which the cusp $\phi_c = (\alpha + \gmax)/\Bnet$ reaches the
 unit sphere and the retrieval basin disappears.  The capacity sits
 below Ramsauer's bound at moderate $\Bnet$, crosses it at
 $\Bnet \approx 0.7$, and grows logarithmically beyond.  The
@@ -548,20 +581,59 @@ $\Bnet$-independence of Ramsauer's $1/2$ is itself the signature of the
 right-edge replacement: at the edge the $\Bnet^{-1}$ prefactor of $H$
 and the $\Bnet$ inside the exponent cancel, while at the interior
 saddle the cancellation breaks through the $\Bnet$-dependence of
-$\varphi^{*}$.
+$\phi^{*}$.
 
 At $T > 0$ the saddle line $\acSd$ and the spinodal $\acSp$ separate.
 $\acSd$ is the thermodynamic boundary at which the basin and the saddle
 valley exchange order in free energy; $\acSp$ is the geometric boundary
 at which the cusp catches the basin minimum and the retrieval branch
 disappears.  For a cold-initialised chain the cusp is the only escape
-route, with barrier $(\phieq - \varphi_c) + (T/2)\ln[(1 - \phieq^2)/
-(1 - \varphi_c^2)]$ vanishing only at $\acSp$.  The Kramers escape time
+route, with barrier $(\phieq - \phi_c) + (T/2)\ln[(1 - \phieq^2)/
+(1 - \phi_c^2)]$ vanishing only at $\acSp$.  The Kramers escape time
 grows exponentially in $N$ throughout $\alpha < \acSp$, irrespective of
 which side of $\acSd$ the chain sits on; at $N \to \infty$ the empirical
 boundary is therefore the spinodal.  At finite $N$ it is the Kramers
 contour inside the strip $\acSd < \alpha < \acSp$, which is what our
-hybrid MC at $N = 100$ measures.
+saddle-bulk MC at $N = 100$ measures.
+
+\paragraph{Smoothed bulk and the LSR resemblance.}
+By spherical isotropy and at large $N$ the bulk smoothed field
+$\avg{S(\bx)} = M\,\e^{N\gmax(\Bnet)}$ is $\bx$-independent on the unit
+sphere: there is no softening length to insert because there is no
+$\bx$-dependence to regularize.  Inside the log-sum-exp this collapses
+the spurious branch of $H(\bx)/N$ to the constant $-\phi_c$, and only the
+spherical Jacobian $-(T/2)\ln(1 - \phi_1^2)$ drives the chain below the
+cusp.  The same flat-bulk dynamics appears in the compactly supported LSR
+kernel of \citet{petrova2026metastable}: below its support cutoff at
+$\phi_{\mathrm{cut}} = 1 - 1/b$ the kernel returns no force on the chain.
+Two consequences are shared between the models: (i) the spurious-phase
+one-point distribution below the threshold is the bare spherical density
+$\propto (1 - \phi_1^2)^{(N-3)/2}$, $T$-independent, because the potential
+is flat there and only the sphere Jacobian sets $P(\phi_1)$; (ii) the
+spurious-side contribution to the Kramers barrier has the same
+entropy-only form $(T/2)[\ln(1 - \phi_{\mathrm{threshold}}^2) -
+\ln(1 - \phi_{\mathrm{eq}}^2)]$.  The two models differ on the
+$\alpha$-dependence of the threshold: $\phi_c(\alpha, \Bnet)$ slides
+upward with $\alpha$ in LSE, while $\phi_{\mathrm{cut}}(b)$ is
+$\alpha$-independent in LSR.  Capacity in LSE is set by the cusp reaching
+the unit sphere; in LSR capacity comes from a kernel-specific mechanism.
+The stability maps therefore share bulk-side dynamics but not level
+curves in the $(\alpha, T)$ plane.
+
+\paragraph{What the saddle-bulk run validates.}
+The truncated scheme at $N = 25$ audits the LO bulk replacement directly:
+patterns retained above $\phi_{\mathrm{keep}}$ overlap with the spurious
+saddle, and agreement with the direct simulator across the $\alpha$ range
+is a positive test of the analytic bulk.  At $N = 100$ no individual
+pattern survives above the cusp, so the saddle-bulk scheme retains only
+$\bxi^1$ and integrates the leading-order Kramers kinetics
+on~\eqref{eq:F-LO} directly.  Agreement with the analytic boundary at
+$N = 100$ confirms the LO kinetics in the regime where direct sampling
+is infeasible, but a subleading correction to $\gmax(\Bnet)$ would shift
+all four boundary curves uniformly and remain invisible to a
+saddle-bulk-only check.  The LO bulk replacement therefore rests on the
+$N = 25$ truncated--vs--direct comparison; the saddle-bulk extends the
+verification to the Kramers regime at large $N$.
 
 % =========================================================================
 \bibliographystyle{plainnat}
