@@ -1,21 +1,25 @@
 #=
-LO free energy F(φ_1)/N at α = 0.5, β_net = 1, for several T.
+LO free energy f(φ) at α = 0.5, β_net = 1, for several T.
 
-Output: panels_paper/cusp_illustration.{png,pdf,eps}
+Output: panels_paper/cusp_illustration.{png,pdf}
+Styling matches plot_cusp_vs_extreme.jl: dpi 450, source 266×177 pt,
+pdfcrop to ≈226×144 pt = 3.139×2.00 in (= 0.95×3.3 in).
 =#
 
 using Plots
 using LaTeXStrings
 using Printf
 
+default(dpi = 450)
+
 const φ_star = (sqrt(5) - 1)/2
-const g_max  = 0.5*log(φ_star) + φ_star
+const g_max  = 0.5*log(1 - φ_star^2) + φ_star          # g_max(β=1)
 const α      = 0.50
 const cusp   = α + g_max
 
-phi_eq(T) = 0.5*(-T + sqrt(T^2 + 4))
+phi_eq(T)  = 0.5*(-T + sqrt(T^2 + 4))
 T_sp_LO(α) = (1 - (α + g_max)^2)/(α + g_max)
-F_per_N(φ, T) = -max(φ, cusp) - 0.5*T*log(1 - φ^2)
+f_LO(φ, T) = -max(φ, cusp) - 0.5*T*log(1 - φ^2)
 
 const Tsp = T_sp_LO(α)
 
@@ -33,9 +37,9 @@ const cols   = [RGB(0.10, 0.20, 0.55),
 
 φ_grid = collect(0.55:0.001:0.999)
 
-p = plot(size = (255, 170),
-         xlabel = L"\varphi_1",
-         ylabel = L"F(\varphi_1)/N",
+p = plot(size = (259, 177),
+         xlabel = L"\varphi",
+         ylabel = L"f(\varphi)",
          legend = :topleft,
          legendfontsize = 5,
          foreground_color_legend = nothing,
@@ -47,30 +51,29 @@ p = plot(size = (255, 170),
          right_margin = 2Plots.mm, top_margin = 1Plots.mm)
 
 for (T, lab, col) in zip(Ts, labels, cols)
-    Fs = [F_per_N(φ, T) for φ in φ_grid]
-    plot!(p, φ_grid, Fs; lw = 1.4, color = col, label = lab)
+    fs = [f_LO(φ, T) for φ in φ_grid]
+    plot!(p, φ_grid, fs; lw = 1.4, color = col, label = lab)
     φe = phi_eq(T)
     if φe > cusp
-        scatter!(p, [φe], [F_per_N(φe, T)];
+        scatter!(p, [φe], [f_LO(φe, T)];
                  markershape = :circle, markersize = 3,
                  markercolor = col, markerstrokewidth = 0,
                  label = "")
     end
 end
 
-vline!(p, [cusp]; lw = 0.8, ls = :dash, color = :black, alpha = 0.55, label = "cusp")
+vline!(p, [cusp]; lw = 1.0, ls = :dash, color = :black, alpha = 0.55, label = "cusp")
 
 xlims!(p, (0.55, 1.0))
 ylims!(p, (-1.07, -0.45))
 
-annotate!(p, 0.715, -0.985, text("Saddle valley", 5, :center, :black))
-annotate!(p, 0.94, -1.005, text("Retrieval\nbasin", 5, :center, :black))
+annotate!(p, 0.71, -0.98, text("SV", 6, :center, :black))
+annotate!(p, 0.94, -0.98, text("RB", 6, :center, :black))
 
 outdir = joinpath(@__DIR__, "panels_paper")
 isdir(outdir) || mkpath(outdir)
 out_png = joinpath(outdir, "cusp_illustration.png")
 out_pdf = joinpath(outdir, "cusp_illustration.pdf")
-out_eps = joinpath(outdir, "cusp_illustration.eps")
 savefig(p, out_png); savefig(p, out_pdf)
-run(`pdftops -eps $out_pdf $out_eps`)
-println("Saved: ", out_png, "  ", out_pdf, "  ", out_eps)
+run(`pdfcrop $out_pdf $out_pdf`)
+println("Saved: ", out_png, "  ", out_pdf)
