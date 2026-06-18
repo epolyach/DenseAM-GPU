@@ -564,6 +564,74 @@ Kramers contour, drifting toward $\acSp$ as $N$ grows.}
 \label{fig:heatmap}
 \end{figure}
 
+\paragraph{Finite-$N$ residual basin above the LO boundary.}
+At $T \to 0$ the empirical boundary in \Cref{fig:heatmap} extends past
+$\acSd = \acSp(T=0) = 0.6226$ to $\alpha = 0.70$.  The $N(\alpha) =
+\lceil \log M / \alpha \rfloor$ ramp at $M = 4.4 \times 10^6$ gives
+$N = 25, 24, 22$ at $\alpha = 0.62, 0.65, 0.70$ respectively, where the LO
+limit is not yet reached.  The LO corner $\max(\phi_1, \phi_c)$
+in~\eqref{eq:F-LO} is the $N \to \infty$ limit of
+\begin{equation}
+\frac{V_N(\phi_1)}{N} = -\frac{1}{\Bnet N}\log\!\big(\e^{\Bnet N \phi_1} +
+   \e^{N(\alpha + \gmax)}\big) - \tfrac{T}{2}\log(1-\phi_1^2),
+\label{eq:V-finite-N}
+\end{equation}
+which rounds the corner over a $\phi_1$-width $1/(\Bnet N)$.  At the three
+loads the rounding width is $0.040, 0.042, 0.045$, and the gap $\phi_c - 1$
+is $-0.003, +0.028, +0.078$.  The rounding is therefore comparable to or
+larger than the gap.  \Cref{fig:Veff_finite_N} plots~\eqref{eq:V-finite-N}
+against the LO curve at $T = 0.005$.  Each panel shows a local minimum of
+$V_N$ at $\phi_1$ close to $1$ that the LO curve does not have.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=6.2in]{panels_paper/Veff_finite_N.pdf}
+\caption{Effective free energy $V_{\mathrm{eff}}(\phi_1)/N$ at $\Bnet = 1$,
+$T = 0.005$, against $u = \lg(1 - \phi_1)$ for three loads above $\acSd =
+0.6226$.  Black: leading order, $V_{\mathrm{LO}}/N = -\max(\phi_1, \phi_c)
+- (T/2)\log(1-\phi_1^2)$ from~\eqref{eq:F-LO}.  Red: the finite-$N$ form
+$V_N/N$ from~\eqref{eq:V-finite-N}, at the $N(\alpha)$ from the
+$M = 4.4 \times 10^6$ Nramp.  The smoothing of the LO corner over a width
+$1/(\Bnet N)$ generates a local minimum at $\phi_1$ close to $1$ that the LO
+curve does not have.  Grey dotted: LO cusp position $u_c = \lg(1 - \phi_c)$
+(only inside the window for $\alpha = 0.62$).}
+\label{fig:Veff_finite_N}
+\end{figure*}
+
+Numerically, the local minimum of $V_N$ sits at $\phi_1 = 0.995, 0.992,
+0.973$ at $\alpha = 0.62, 0.65, 0.70$, with $[V_N(\phi_1^{\mathrm{well}}) -
+V_N(0)]/N = -1.50 \times 10^{-2}, -4.50 \times 10^{-3}, +2.9 \times 10^{-3}$
+respectively.  The cold-initialised $\avg{\phi_1}$ at $T = 0.005$ in the
+same $\alpha$ columns of \Cref{fig:heatmap} reads $0.9946, 0.9910, 0.9753$,
+within $0.002$ of the predicted local-minimum position in each case.
+
+For $\alpha = 0.62$ and $\alpha = 0.65$ the local minimum is the global
+minimum of $V_N$; the residual basin survives thermodynamically and the
+chain settles in it independently of dynamics.  For $\alpha = 0.70$ the
+local minimum lies above the bulk floor; the residual basin is metastable.
+The barrier of $V_N$ traverses a saddle at $\phi_1 \approx 0.92$ with
+$V_N/N = -1.07415$, and the per-chain exponent
+$N[V_N(\phi_1^{\mathrm{saddle}}) - V_N(\phi_1^{\mathrm{well}})]/T = 22 \cdot
+3.0 \times 10^{-4} / 0.005 \approx 1.3$ is small in Boltzmann units.
+Empirically, no chain in the $32$-disorder $\times$ $2$-replica ensemble
+escapes the residual well within the $2^{15} + 2^{13}$ MC steps of the run.
+We do not claim a Kramers escape time from $V_N$ alone, because the
+disorder-averaged $V_N$ does not include the realisation-specific landscape
+roughness that may also contribute to trapping.
+
+The residual basin is a finite-$N$ artefact.  Solving $dV_N/d\phi_1 = 0$
+for the local minimum of $V_N$ in~\eqref{eq:V-finite-N}, the analytic
+minimum exists at $\alpha = 0.70$, $\Bnet = 1$, $T = 0.005$ for
+$N \le 23$ and disappears for $N \ge 24$.  The $M = 3 \times 10^8$ Nramp
+from \S\ref{sec:mc} gives $N(0.65) = 30$ and $N(0.70) = 28$, so $V_N$
+loses its local minimum at $\alpha = 0.70$ and the empirical boundary
+there should agree with the LO landscape.  At $\alpha = 0.65$ the local
+minimum persists at $N = 30$, at $\phi_1 = 0.990$ with
+$[V_N(\phi_1^{\mathrm{well}}) - V_N(0)]/N = +4.0 \times 10^{-4}$
+(metastable, per-chain exponent $2.4$ at $T = 0.005$); the residual basin
+shrinks but does not yet disappear.  The empirical boundary in that data
+is the planned diagnostic.
+
 % =========================================================================
 \section{Discussion}
 \label{sec:discussion}
