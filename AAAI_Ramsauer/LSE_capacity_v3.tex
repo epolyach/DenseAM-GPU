@@ -295,7 +295,7 @@ examines the finite-$N$ behavior. The Discussion section collects the
 implications and the relation to the literature.
 
 
-\section{Loss of the retrieval in the large-$N$ limit}
+\section{Retrieval at large $N$}
 
 Let the retrieval pattern $\bxi^1$ and a spurious pattern $\bxi$ be drawn independently
 and uniformly from the sphere of radius $\sqrt N$ in $\mathbb{R}^N$. The alignment
@@ -335,93 +335,170 @@ the Gaussian form is adequate only near the center.
 The density~\eqref{eq:exact_density} and its Gaussian limit are the spherical
 and Gaussian rate functions of \citet{lucibello2024exponential}.
 
-\citet{ramsauer2021hopfield} tie retrieval to the separation of a pattern from its
-nearest neighbour, $N(1-\varphi_{\max})$, with $\varphi_{\max}$ the highest alignment
-among the $M=\e^{\alpha N}$ patterns (their Theorem~4): retrieval fails when a
-spurious pattern reaches the target, $\varphi_{\max}\to1$. The load at which
-this happens is fixed by the alignment law $h(\varphi)$ near $\varphi=1$.
-Under the Gaussian approximation $h$ keeps weight at $\varphi=1$, and $\varphi_{\max}$
-reaches $1$ at the $\Bnet$-independent load $\acGauss=1/2$. Under the exact
-law~\eqref{eq:exact_density} $h$ vanishes at $\varphi=1$, since two distinct patterns
-cannot align perfectly on the sphere; then 
+\paragraph{Extreme-value attempts.}
+\citet{ramsauer2021hopfield} provide two related lower bounds on the storage
+capacity, both based on extreme-value statistics of the inter-pattern alignments.
+Their Theorem~4 ties retrieval to the separation of a pattern from its nearest
+neighbour, $N(1-\varphi_{\max})$, with $\varphi_{\max}$ the highest alignment among
+the $M = \e^{\alpha N}$ patterns: retrieval fails when a spurious pattern reaches
+the target, $\varphi_{\max} \to 1$. The load at which this happens is fixed by the
+alignment law $h(\varphi)$ near $\varphi = 1$. Under the Gaussian approximation
+$h$ keeps weight at $\varphi = 1$, and $\varphi_{\max}$ reaches $1$ at the
+$\Bnet$-independent load $\acGauss = 1/2$. Under the exact
+law~\eqref{eq:exact_density} $h$ vanishes at $\varphi = 1$, since two distinct
+patterns cannot align perfectly on the sphere; then
 \begin{equation}
-    \varphi_{\max}=\sqrt{1-\e^{-2\alpha}}<1\quad\text{for every $\alpha$},
+    \varphi_{\max} = \sqrt{1 - \e^{-2\alpha}} < 1 \quad \text{for every $\alpha$},
     \label{eq:varphi_max}
 \end{equation}
-and the capacity is infinite. Both predictions are unsatisfactory: 
-$\acGauss=1/2$ carries no dependence on
-the kernel sharpness $\Bnet$, and the exact nearest-pattern estimate gives no
-finite capacity. 
+and the capacity is infinite.
 
-We now analyse retrieval thermodynamically, through the free energy density profile.
-The free energy density is the internal energy density $u = H/N$ minus $T$ times the entropy.
-The softmax sum $S(\bx)$ from \eqref{eq:lse} splits into a retrieval term and a sum over spurious patterns,
-\begin{align} 
-S(\bx) \equiv \exp\!\big[\Bnet\,N (\varphi(\bx)-1) \big] + S_{\rm spur}(\bx)\,,\label{eq:softmax_sum}\\
-S_{\rm spur}(\bx) \equiv \sum_{\mu=2}^{M}\exp\!\big[\Bnet\,N (\varphi^\mu(\bx)-1) \big]\,. \label{eq:spur_sum}
+Their Theorem~3 acts directly on the softmax sum $S(\bx)$ from~\eqref{eq:lse},
+which splits into a retrieval term and a sum over spurious patterns,
+\begin{align}
+S(\bx) &\equiv \exp\!\big[\Bnet\,N (\varphi(\bx) - 1)\big] + S_{\rm spur}(\bx),
+\label{eq:softmax_sum}\\
+S_{\rm spur}(\bx) &\equiv \sum_{\mu=2}^{M} \exp\!\big[\Bnet\,N (\varphi^\mu(\bx) - 1)\big].
+\label{eq:spur_sum}
 \end{align}
-The spurious patterns are i.i.d. uniform on the sphere and independent of $\bx$, so for any $\bx$ with $|\bx|^2=N$ 
-the projections $\varphi^\mu(\bx)=\bx\cdot\bxi^\mu/N$ have marginal density~\eqref{eq:exact_density}. 
-The spurious sum therefore has the same distribution at every $\bx$ on the sphere; in particular
-at $\bx=\bxi^1$, where the projections become the inter-pattern alignments $\varphi_{1\mu}$. With $M=\e^{\alpha N}$, 
-the sum concentrates around its expectation, and 
-\begin{equation} 
-    S_{\rm spur} \approx M\int_{-1}^1 \dd\varphi\, h(\varphi)\exp[\Bnet N(\varphi-1)]\,.
+The bound replaces $S_{\rm spur}$ by $M$ times its largest term,
+\begin{equation}
+S_{\rm spur} \le M\,\e^{-\Bnet N(1-\varphi_{\max})} = \e^{N(\alpha - \Bnet(1-\varphi_{\max}))},
+\label{eq:ramsauer_bound}
+\end{equation}
+which exceeds the retrieval term once $\varphi_{\max} > 1 - \alpha/\Bnet$. With
+$\varphi_{\max}$ from~\eqref{eq:varphi_max}, \citeauthor{ramsauer2021hopfield}'s
+capacity solves
+\begin{equation}
+\sqrt{1 - \e^{-2\alpha}} = 1 - \frac{\alpha}{\Bnet},
+\label{eq:ramsauer_capacity}
+\end{equation}
+finite and $\Bnet$-dependent.
+
+Neither bound is tight. Theorem~4 with the Gaussian gives a $\Bnet$-independent
+$1/2$; with the exact density it gives infinity. Theorem~3 gives a finite
+$\Bnet$-dependent capacity but assumes $S_{\rm spur}$ is dominated by its largest
+term. The saddle-point analysis below evaluates $S_{\rm spur}$ without that
+approximation.
+
+\paragraph{Saddle-point evaluation.}
+The spurious patterns are i.i.d. uniform on the sphere and independent of $\bx$,
+so for any $\bx$ with $|\bx|^2 = N$ the projections
+$\varphi^\mu(\bx) = \bx \cdot \bxi^\mu / N$ have marginal
+density~\eqref{eq:exact_density}. The spurious sum therefore has the same
+distribution at every $\bx$ on the sphere; in particular at $\bx = \bxi^1$, where
+the projections become the inter-pattern alignments $\varphi_{1\mu}$. With
+$M = \e^{\alpha N}$, the sum concentrates around its expectation, and
+\begin{equation}
+    S_{\rm spur} \approx M \int_{-1}^{1} \dd\varphi\, h(\varphi) \exp[\Bnet N(\varphi - 1)].
     \label{eq:spur_integral}
 \end{equation}
-
-The large-$N$ limit of~\eqref{eq:spur_integral} is set by a saddle point.
-The saddle $\varphi^*$ solves $\p g(\varphi, \Bnet)/\p\varphi = 0$, with
+The large-$N$ limit of~\eqref{eq:spur_integral} is set by a saddle point. The
+saddle $\varphi^*$ solves $\p g(\varphi, \Bnet)/\p\varphi = 0$, with
 \begin{equation}
     g(\varphi, \Bnet) = \ln(1-\varphi^2)/2 + \Bnet\,\varphi\,.
 \end{equation}
 This gives the saddle point at
 \begin{equation}
-\varphi^*(\Bnet) = \frac{\sqrt{1+4\Bnet^2}-1}{2\Bnet}\,,
+\varphi^*(\Bnet) = \frac{\sqrt{1+4\Bnet^2} - 1}{2\Bnet}\,,
 \label{eq:saddle}
-\end{equation}  
+\end{equation}
 and the saddle value
 \begin{equation}
 g_{\max}(\Bnet) = g(\varphi^*, \Bnet) = \frac12 \ln(1 - \varphi^{*\,2}) + \Bnet\,\varphi^*\,.
 \label{eq:saddle_value}
-\end{equation} 
+\end{equation}
 The leading-order spurious sum is then
 \begin{equation}
     S_{\rm spur} \sim \exp[N(\alpha + g_{\max}(\Bnet) - \Bnet)]\,.
     \label{eq:spurious_saddle}
 \end{equation}
+Appendix~A derives the prefactor; it depends only on $\varphi^*(\Bnet)$ and equals
+$1.082$ at $\Bnet = 1$. In the large-$N$ limit only the leading term in the
+exponent (proportional to $N$) survives, so the prefactor is not needed at this
+stage.
 
-Appendix~A derives the prefactor; it depends only on $\varphi^*(\Bnet)$ and
-equals $1.082$ at $\Bnet=1$. In the thermodynamic limit only the leading term in the exponent (proportional to $N$)
-survives, so the prefactor is not needed at this stage. The internal energy density is
+\paragraph{Zero-temperature capacity.}
+The internal energy density $u = H/N$ from~\eqref{eq:lse} reads
 \begin{equation}
     u(\varphi) = \begin{cases}
         1 - \varphi & \text{retrieval term dominates}, \\
         1 - [\alpha + g_{\max}(\Bnet)]/\Bnet & \text{spurious term dominates}.
     \end{cases}
     \label{eq:u_piecewise}
-\end{equation} They meet in a cusp at $\varphi_c(\alpha, \Bnet) = (\alpha + g_{\max}(\Bnet))/\Bnet$,
-where dominance switches.
-
-The entropy density~\citep{icml2026theory}
+\end{equation}
+The two branches meet in a cusp at
 \begin{equation}
-    s(\varphi) = \tfrac{1}{2} \ln(1-\varphi^2),
+\varphi_c(\alpha, \Bnet) = (\alpha + g_{\max}(\Bnet))/\Bnet,
+\label{eq:cusp}
+\end{equation}
+where dominance switches. At zero temperature the retrieval minimum sits at
+$\varphi = 1$; it is the global minimum as long as $\varphi_c < 1$, giving the
+zero-temperature capacity
+\begin{equation}
+\alpha_c^{\rm sd}(\Bnet, 0) = \Bnet - g_{\max}(\Bnet).
+\label{eq:capacity_T0}
+\end{equation}
+This boundary matches the exact spherical threshold of
+\citet{lucibello2024exponential} at every $\Bnet$.
+
+\paragraph{Geometric picture.}
+Fig.~\ref{fig:varphi} summarises the different approaches at $\Bnet = 1$. The red
+straight line is the cusp position $\varphi_c(\alpha)$; the saddle-point
+capacity~\eqref{eq:capacity_T0} is the load at which it reaches $\varphi = 1$. The
+blue solid curve is the exact-density extreme~\eqref{eq:varphi_max} (no finite
+capacity); the blue dotted curve is its Gaussian approximation $\sqrt{2\alpha}$,
+which gives the $\Bnet$-independent $\acGauss = 1/2$. The grey dashed line
+$1 - \alpha/\Bnet$ is the \citeauthor{ramsauer2021hopfield}
+condition~\eqref{eq:ramsauer_capacity}; its intersection with the blue solid curve
+gives the \citeauthor{ramsauer2021hopfield} capacity, finite and $\Bnet$-dependent
+but below the saddle-point capacity at every $\Bnet$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.45\textwidth]{panels_paper/cusp_vs_extreme.pdf}
+\caption{Threshold curves at $\Bnet = 1$. Red straight line:
+$\varphi_c(\alpha) = \alpha + g_{\max}(\Bnet)$, tangent to the blue solid curve at the
+saddle $\varphi^*(\Bnet)$ (Appendix B). Blue solid:
+the exact-density extreme alignment~\eqref{eq:varphi_max}.
+Blue dotted: $\sqrt{2\alpha}$, its Gaussian approximation. Grey dashed:
+$1 - \alpha/\Bnet$, the \citeauthor{ramsauer2021hopfield} condition.}
+\label{fig:varphi}
+\end{figure}
+
+The red line is tangent to the blue solid curve at every $\Bnet$; as $\Bnet$
+varies, the tangency point sweeps the entire blue solid curve. This follows from
+the Legendre conjugacy between $g_{\max}(\Bnet)$ and $\varphi_{\max}(\alpha)$,
+derived in Appendix~B. The geometric consequence is that the cusp
+$\varphi_c(\alpha, \Bnet)$ lies above the maximum alignment $\varphi_{\max}(\alpha)$
+at every $\alpha$: no individual spurious pattern enters the retrieval basin
+$\varphi > \varphi_c$. Retrieval loss is therefore \textit{collective}, driven by
+the bulk saddle of the spurious sum and not by any single spurious pattern
+reaching the target. In the terminology of \citet{lucibello2024exponential}, the
+retrieval boundary lies in the \textit{uncondensed} phase of the auxiliary REM,
+where exponentially many patterns dominate the noise sum, as opposed to the
+\textit{condensed} phase where a single pattern dominates.
+
+\paragraph{Extension to finite temperature.}
+At $T > 0$ the entropy density~\citep{icml2026theory}
+\begin{equation}
+    s(\varphi) = \tfrac{1}{2} \ln(1 - \varphi^2),
     \label{eq:entropy}
 \end{equation}
-gives the free energy density $f(\varphi) = u(\varphi) - T\,s(\varphi)$, plotted in
-Fig.~\ref{fig:cusp} for $\alpha=0.5$, $\Bnet=1$ and several $T$. The profile has two minima: one at $\varphi\approx 0$ from the spurious sum, one at
-$\varphi\approx 1$ from the retrieval term. The retrieval minimum may be global or
-local; what matters for retrieval is whether it exists at all, and it disappears at
-the spinodal.
-The retrieval minimum is at
+adds to the internal energy, giving the free energy density
+$f(\varphi) = u(\varphi) - T\,s(\varphi)$, plotted in Fig.~\ref{fig:cusp} for
+$\alpha = 0.5$, $\Bnet = 1$ and several $T$. The profile has two minima: one at
+$\varphi \approx 0$ from the spurious sum, one at $\varphi \approx 1$ from the
+retrieval term. The retrieval minimum shifts from $\varphi = 1$ at $T = 0$ to
 \begin{equation}
-    \varphi_{\rm eq} = \tfrac{1}{2}(\sqrt{T^2+4} - T),
+    \varphi_{\rm eq}(T) = \tfrac{1}{2}(\sqrt{T^2 + 4} - T)
     \label{eq:phi_eq}
 \end{equation}
-so the spinodal condition $\varphi_{\rm eq} = \varphi_c(\alpha, \Bnet)$ yields
+at $T > 0$, and disappears at the spinodal
+$\varphi_{\rm eq}(T) = \varphi_c(\alpha, \Bnet)$, giving
 \begin{equation}
     T_{\mathrm{sp}}(\alpha, \Bnet) \;=\; \frac{\Bnet^2 - (\alpha + \gmax(\Bnet))^2}
-              {\Bnet\,(\alpha + \gmax(\Bnet))}\,.    
+              {\Bnet\,(\alpha + \gmax(\Bnet))}\,.
     \label{eq:spinodal}
 \end{equation}
 
@@ -436,71 +513,19 @@ $T_{\rm sp}(\alpha, \Bnet) \approx 0.262$.}
 \label{fig:cusp}
 \end{figure}
 
-
+\paragraph{Stability and Kramers escape.}
 For $T < T_{\mathrm{sp}}(\alpha, \Bnet)$ the retrieval minimum exists. It is
 thermodynamically stable when it is the global minimum of $f$ and metastable when
 the saddle-valley minimum is deeper. At equilibrium the deeper basin carries the
-larger weight, with the ratio between the two basins set by their depth difference;
-at finite $T$ and finite $N$ both basins can carry significant mass. The chain
-escapes the retrieval basin to the saddle valley by a Kramers process at the same
-rate $\sim \e^{-N \Delta f / T}$ in both regimes \citep{kramers1940, hanggi1990}, with $\Delta f$ the per-spin
-barrier from the basin minimum to the cusp; what differs is the return rate. A
-Monte Carlo ensemble initialised in the basin contains both populations at finite
-budget, in proportions set by the budget over the Kramers escape time. As
-$T \to 0$ the escape rate vanishes, so retrieval is retained whenever the basin
-exists.
-
-\citet{ramsauer2021hopfield} bound the spurious sum \eqref{eq:spur_sum} by $M$ times its largest term,
-\begin{equation}
-S_{\rm spur} \le M\,\e^{-\Bnet N(1-\varphi_{\max})} = \e^{N(\alpha - \Bnet(1-\varphi_{\max}))},
-\label{eq:ramsauer_bound}
-\end{equation}
-which exceeds the retrieval term once $\varphi_{\max} > 1 - \alpha/\Bnet$. The highest
-alignment present is \eqref{eq:varphi_max}, so
-\citeauthor{ramsauer2021hopfield}'s capacity solves
-\begin{equation}
-\sqrt{1-\e^{-2\alpha}} = 1 - \frac{\alpha}{\Bnet},
-\label{eq:ramsauer_capacity}
-\end{equation}
-finite and $\Bnet$-dependent.
-
-Fig.~\ref{fig:varphi} summarises the different approaches to the capacity. 
-The red curve is the zero-temperature capacity from the saddle-point evaluation
-of the spurious sum. It grows with $\Bnet$ and reproduces the exact spherical
-threshold of \citet{lucibello2024exponential}.
-
-The blue solid curve is the exact-density extreme \eqref{eq:varphi_max}
-(no finite capacity); the blue dotted curve is its Gaussian approximation $\sqrt{2\alpha}$,
-which gives the $\Bnet$-independent $\acGauss = 1/2$. The grey dashed line $1 - \alpha/\Bnet$
-is the \citeauthor{ramsauer2021hopfield} condition~\eqref{eq:ramsauer_capacity}; its intersection with the blue solid
-curve gives the \citeauthor{ramsauer2021hopfield} capacity, finite and $\Bnet$-dependent but below the red curve at
-every $\Bnet$.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.45\textwidth]{panels_paper/cusp_vs_extreme.pdf}
-\caption{Threshold curves at $\Bnet = 1$. Red straight line:
-$\varphi_c(\alpha) = \alpha + g_{\max}(\Bnet)$, tangent to the blue solid curve at the
-saddle $\varphi^*(\Bnet)$ (Appendix B). Blue solid:
-the exact-density extreme alignment \eqref{eq:varphi_max}.
-Blue dotted: $\sqrt{2\alpha}$, its Gaussian approximation. Grey dashed:
-$1 - \alpha/\Bnet$, the \citeauthor{ramsauer2021hopfield} condition.}
-\label{fig:varphi}
-\end{figure}
-
-The red line is tangent to the blue solid curve at every $\Bnet$; as $\Bnet$ varies,
-the tangency point sweeps the entire blue solid curve. This follows from the
-Legendre conjugacy between $g_{\max}(\Bnet)$ and $\varphi_{\max}(\alpha)$, derived in
-Appendix B.
-The geometric consequence is that the cusp $\varphi_c(\alpha, \Bnet)$ lies above the
-maximum alignment $\varphi_{\max}(\alpha)$ at every $\alpha$: no individual spurious
-pattern enters the retrieval basin $\varphi > \varphi_c$. Retrieval loss is therefore
-\textit{collective}, driven by the bulk saddle of the spurious sum and not by any
-single spurious pattern reaching the target. In the terminology of
-\citet{lucibello2024exponential}, the retrieval boundary lies in the
-\textit{uncondensed} phase of the auxiliary REM, where exponentially many patterns
-dominate the noise sum, as opposed to the \textit{condensed} phase where a single
-pattern dominates.
+larger weight, with the ratio between the two basins set by their depth
+difference; at finite $T$ and finite $N$ both basins can carry significant mass.
+The chain escapes the retrieval basin to the saddle valley by a Kramers process
+at the same rate $\sim \e^{-N \Delta f / T}$ in both
+regimes~\citep{kramers1940, hanggi1990}, with $\Delta f$ the per-spin barrier from
+the basin minimum to the cusp; what differs is the return rate. A Monte Carlo
+ensemble initialised in the basin contains both populations at finite budget, in
+proportions set by the budget over the Kramers escape time. As $T \to 0$ the
+escape rate vanishes, so retrieval is retained whenever the basin exists.
 
 \section{Monte Carlo schemes}
 
@@ -647,6 +672,124 @@ with tangency at $\varphi = \varphi^*(\Bnet)$. The geometry of
 Fig.~\ref{fig:varphi} is therefore a Legendre duality between the saddle value
 $g_{\max}$ on the kernel-sharpness side and the spherical extreme $\varphi_{\max}$
 on the alignment side.
+
+
+\section{Appendix C: Tangency of the cusp lines to the spherical extreme, in figure coordinates}
+
+This appendix shows that the cusp lines
+$\varphi_c(\alpha, \Bnet) = (\alpha + g_{\max}(\Bnet))/\Bnet$ are tangent to the
+spherical-extreme curve $\varphi_{\max}(\alpha) = \sqrt{1-\e^{-2\alpha}}$ at every
+$\Bnet$, that the tangency point sweeps the full curve as $\Bnet$ ranges over
+$(0, \infty)$, and that the spherical extreme is the lower envelope of the
+cusp-line family. The argument works directly in the $(\alpha, \varphi)$
+coordinates of Fig.~\ref{fig:varphi}: $\alpha$ on the x-axis, $\varphi$ on the
+y-axis. It splits into two steps: matching the slope of the tangent to the blue
+curve with the slope of the cusp line, which gives parallelism, and matching the
+y-intercept, which upgrades parallelism to coincidence. The slope step pulls out
+the saddle equation; the intercept step expresses the Legendre conjugacy of
+$g_{\max}$ and $\varphi_{\max}$.
+
+\paragraph{Concavity of the blue curve.}
+Differentiating $\varphi_{\max}(\alpha) = \sqrt{1-\e^{-2\alpha}}$ once gives
+\begin{equation}
+\varphi_{\max}'(\alpha) \;=\; \frac{1-\varphi_{\max}^2}{\varphi_{\max}},
+\label{eq:tangent_slope_C}
+\end{equation}
+and a second differentiation gives $\varphi_{\max}''(\alpha) < 0$ for $\alpha > 0$,
+so $\varphi_{\max}$ is strictly concave on $(0, \infty)$. For a concave function
+every tangent line lies above the function, with equality only at the tangency
+point. This will give the lower-envelope identity at the end.
+
+\paragraph{Step A: matching the slope (parallelism).}
+The cusp line at sharpness $\Bnet$,
+\begin{equation}
+\varphi \;=\; \alpha/\Bnet + g_{\max}(\Bnet)/\Bnet,
+\end{equation}
+has slope $1/\Bnet$ and y-intercept $g_{\max}(\Bnet)/\Bnet$. To find the point on
+the blue curve where the tangent has the same slope, set the right-hand side
+of~\eqref{eq:tangent_slope_C} equal to $1/\Bnet$:
+\begin{equation}
+\frac{1-\varphi^2}{\varphi} \;=\; \frac{1}{\Bnet}
+\quad\Longleftrightarrow\quad
+\Bnet\,\varphi^2 + \varphi - \Bnet = 0.
+\label{eq:saddle_eq_C}
+\end{equation}
+This is the saddle equation; its unique positive root is the spherical saddle
+\begin{equation}
+\varphi^*(\Bnet) \;=\; \frac{-1 + \sqrt{1+4\Bnet^2}}{2\Bnet}.
+\end{equation}
+The corresponding $\alpha$ on the blue curve follows from
+$\varphi^* = \varphi_{\max}(\alpha^*)$, that is, $\e^{-2\alpha^*} = 1 - \varphi^{*\,2}$:
+\begin{equation}
+\alpha^*(\Bnet) \;=\; -\tfrac12 \ln(1-\varphi^{*\,2}).
+\label{eq:alpha_star_C}
+\end{equation}
+At the point $(\alpha^*(\Bnet), \varphi^*(\Bnet))$ on the blue curve, the tangent
+has slope $1/\Bnet$, equal to the slope of the cusp line. Step~A establishes
+\textit{parallelism} between the tangent at this point and the cusp line; it does
+not yet show the two lines coincide.
+
+\paragraph{Step B: matching the y-intercept (coincidence).}
+A line of slope $1/\Bnet$ passing through $(\alpha^*(\Bnet), \varphi^*(\Bnet))$ has
+y-intercept
+\begin{equation}
+b_{\rm tangent}(\Bnet) \;=\; \varphi^* - \alpha^*/\Bnet.
+\end{equation}
+The cusp line has y-intercept $g_{\max}(\Bnet)/\Bnet$. Using the definition
+$g_{\max}(\Bnet) = g(\varphi^*, \Bnet) = \tfrac12 \ln(1-\varphi^{*\,2}) + \Bnet\,\varphi^*$
+from~\eqref{eq:saddle_value} together with $\alpha^* = -\tfrac12 \ln(1-\varphi^{*\,2})$
+from~\eqref{eq:alpha_star_C}, the cusp-line intercept becomes
+\begin{equation}
+\frac{g_{\max}(\Bnet)}{\Bnet}
+\;=\; \frac{\tfrac12 \ln(1-\varphi^{*\,2})}{\Bnet} + \varphi^*
+\;=\; -\frac{\alpha^*(\Bnet)}{\Bnet} + \varphi^*
+\;=\; b_{\rm tangent}(\Bnet).
+\label{eq:intercept_match_C}
+\end{equation}
+The y-intercepts coincide. Two lines with the same slope and the same y-intercept
+are the same line. The cusp line at sharpness $\Bnet$ therefore coincides with
+the tangent to the blue curve at $(\alpha^*(\Bnet), \varphi^*(\Bnet))$ — two
+independently defined lines, one set by the energy landscape and one by the
+geometry of $\varphi_{\max}$, turn out to be the same line.
+
+\paragraph{Lower envelope.}
+By the concavity statement at the start of this appendix, every tangent line lies
+above the blue curve, with equality only at the tangency point. So the cusp line
+at any sharpness $\Bnet$ lies above the blue curve, with equality only at
+$\alpha = \alpha^*(\Bnet)$:
+\begin{equation}
+\varphi_c(\alpha, \Bnet) \;\ge\; \varphi_{\max}(\alpha) \quad \text{for all $\alpha$ and all $\Bnet > 0$},
+\end{equation}
+with equality at one $\alpha$ for each $\Bnet$. Taking the infimum over $\Bnet$,
+\begin{equation}
+\varphi_{\max}(\alpha) \;=\; \inf_{\Bnet > 0} \varphi_c(\alpha, \Bnet),
+\label{eq:lower_envelope_C}
+\end{equation}
+the lower envelope identity in figure coordinates.
+
+\paragraph{Tangency sweeps the blue curve.}
+The map $\Bnet \mapsto \varphi^*(\Bnet)$ is continuous and strictly increasing on
+$(0, \infty)$, with $\varphi^*(\Bnet) \to 0$ as $\Bnet \to 0^+$ and
+$\varphi^*(\Bnet) \to 1$ as $\Bnet \to \infty$. As $\Bnet$ sweeps $(0, \infty)$,
+the tangency point $(\alpha^*(\Bnet), \varphi^*(\Bnet))$ therefore traces the
+entire blue curve from the origin to its right edge.
+
+\paragraph{Where the Legendre transform sits.}
+The cusp line at sharpness $\Bnet$ and the tangent to the blue curve of slope
+$1/\Bnet$ are two independently defined objects. The cusp line comes from the
+energy landscape via the saddle value $g_{\max}(\Bnet)$; the tangent comes from
+the geometry of the spherical extreme. The y-intercept of either, expressed as a
+function of $\Bnet$, is the (concave) Legendre transform of $\varphi_{\max}$:
+\begin{equation}
+g_{\max}(\Bnet)/\Bnet \;=\; \sup_\alpha\,\bigl[\,\varphi_{\max}(\alpha) - \alpha/\Bnet\,\bigr],
+\end{equation}
+with the supremum attained at $\alpha = \alpha^*(\Bnet)$, where the slope-match
+condition~\eqref{eq:saddle_eq_C} holds. Two lines with the same slope and the
+same y-intercept are the same line; the Legendre identity therefore expresses
+the coincidence of the cusp line at $\Bnet$ with the tangent line of slope
+$1/\Bnet$. The lower-envelope identity~\eqref{eq:lower_envelope_C} is the
+inverse statement: the spherical extreme is recovered as the lower envelope of
+the cusp lines parameterised by sharpness $\Bnet$.
 
 
 \end{document}
