@@ -159,9 +159,11 @@ function main()
     println("LSR N-Scaling Test – GPU v12 (fixed α, variable M)")
     println("  Probe points: $(length(PROBE_POINTS))")
     println("  MC steps: $N_STEPS (record every $TRAJ_STRIDE → $N_TRAJ points)")
-    println("  α = $ALPHA_FIXED (fixed)")
-    println("  M values: $(first.(M_N_DIS))")
-    println("  T values: $T_VALUES")
+    for pt in PROBE_POINTS
+        (α, T, M, nd) = parse_probe(pt)
+        println(@sprintf("  α=%.2f  T=%.2f  M=%d  n_dis=%d  N=%d",
+                         α, T, M, nd, max(round(Int, log(M) / α), 2)))
+    end
     println("=" ^ 70)
 
     summary_file = "v12b_summary.csv"
