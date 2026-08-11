@@ -7,7 +7,7 @@ annotate τ = 1/⟨λ⟩.
 ⟨λ⟩ computed from initial slope of -ln S(t) (early-time regime
 before disorder heterogeneity distorts the curve).
 
-Output: panels_paper/v14_survival_all.{png,pdf}
+Output: panels_paper/v16_survival_all.{png,pdf}
 ────────────────────────────────────────────────────────────────────────
 =#
 
@@ -15,8 +15,8 @@ using Plots, Printf, LaTeXStrings, LinearAlgebra, SpecialFunctions
 default(guidefontsize=7, tickfontsize=6, legendfontsize=6)
 
 # ──────────────── Global compound Poisson model ────────────────
-const GLOBAL_A = 4.5146
-const GLOBAL_C = 0.5051
+const GLOBAL_A = 0.031
+const GLOBAL_C = 0.2501
 const M_PAT = 20000
 const b_lsr_g = 2 + sqrt(2)
 const φ_c_g = (b_lsr_g - 1) / b_lsr_g
@@ -119,7 +119,7 @@ mkpath(out_dir)
 
 # ──────────────── Collect all v14 files ────────────────
 v14_dir = @__DIR__
-all_files = filter(f -> startswith(f, "v14_Pesc_a") && endswith(f, ".csv"), readdir(v14_dir))
+all_files = filter(f -> startswith(f, "v16_Pesc_a") && endswith(f, ".csv"), readdir(v14_dir))
 
 # Parse (α, T) from filenames
 data = Dict{Tuple{Float64,Float64}, Vector{Tuple{Int,Float64}}}()
@@ -230,16 +230,20 @@ for iT in 1:nT
 
             N_val = max(round(Int, log(20000) / α_val), 2)
 
+            # Title: α on top row only, T=... on left column only
+            ttl = (iT == 1) ? @sprintf("α=%.2f", α_val) : ""
+            ylab = (ia == 1) ? @sprintf("T=%.2f", T_val) : ""
+
             p = plot(t_plot, s_plot,
                      yscale=:log10, ylims=(1e-3, 1.0),
                      xlims=(0, t_xmax),
-                     lw=1.2, color=:steelblue, label=false,
-                     xlabel="t", ylabel=(ia == 1 ? "S(t)" : ""),
-                     title=@sprintf("α=%.2f T=%.2f N=%d", α_val, T_val, N_val),
-                     titlefontsize=7, framestyle=:box,
-                     xrotation=30, xguidefontsize=6,
-                     left_margin=(ia==1 ? 5Plots.mm : 1Plots.mm),
-                     bottom_margin=4Plots.mm)
+                     lw=1.5, color=:steelblue, label=false,
+                     xlabel=(iT == nT ? "t" : ""),
+                     ylabel=ylab, yguidefontsize=7,
+                     title=ttl, titlefontsize=9,
+                     framestyle=:box,
+                     left_margin=(ia==1 ? 6Plots.mm : 1Plots.mm),
+                     bottom_margin=(iT==nT ? 4Plots.mm : 1Plots.mm))
 
             if !isnan(λ_mean) && λ_mean > 0
                 t_fit = range(0, t_xmax, length=300)
@@ -248,32 +252,32 @@ for iT in 1:nT
                 s_exp = [t > t0 ? exp(-λ_mean * (t - t0)) : 1.0 for t in t_fit]
                 plot!(p, t_fit, s_exp, lw=1.0, ls=:dash, color=:red, label=false)
 
-                # Magenta dotted: Poisson model
-                s_poiss = [t > t0 ?
-                    exp(-best_K * (1 - exp(-(t - t0) / best_τch))) : 1.0
-                    for t in t_fit]
-                plot!(p, t_fit, s_poiss, lw=1.2, ls=:dot, color=:magenta, label=false)
-
-                # Green solid: global compound Poisson (A=4.5, c=0.5)
+                # Green solid: global compound Poisson
                 s_global = compound_poisson_S(collect(t_fit), α_val, T_val, N_val)
                 plot!(p, t_fit, s_global, lw=1.5, ls=:solid, color=:green, label=false)
 
-                # Annotate τ, K, τ_ch
-                if τ_val < 1e6
-                    τ_str = τ_val ≥ 1000 ? @sprintf("τ=%.0fk", τ_val/1000) : @sprintf("τ=%.0f", τ_val)
-                else
-                    τ_str = @sprintf("τ=%.0ek", τ_val/1000)
+                # τ_data from Poisson fit (red), τ_model from compound Poisson (green)
+                # τ_model: initial slope of green curve
+                dt_m = t_fit[2] - t_fit[1]
+                τ_model = s_global[1] > s_global[2] && s_global[2] > 0 ?
+                    -dt_m / log(s_global[2] / s_global[1]) : Inf
+
+                function fmt_tau(τ)
+                    τ ≥ 1e6 ? @sprintf("%.1fM", τ/1e6) :
+                    τ ≥ 1000 ? @sprintf("%.0fk", τ/1000) :
+                    @sprintf("%.0f", τ)
                 end
-                K_str = @sprintf("K=%.1f", best_K)
-                τch_str = best_τch ≥ 1000 ? @sprintf("τ_ch=%.0fk", best_τch/1000) : @sprintf("τ_ch=%.0f", best_τch)
-                ann = τ_str * "\n" * K_str * " " * τch_str
-                annotate!(p, t_xmax*0.95, 0.3, text(ann, :red, 6, :right))
+
+                ann = @sprintf("τ_d=%s\nτ_m=%s", fmt_tau(τ_val), fmt_tau(τ_model))
+                annotate!(p, t_xmax*0.95, 0.25, text(ann, :black, 6, :right))
             end
         else
             # Empty panel
+            ttl = (iT == 1) ? @sprintf("α=%.2f", alphas[ia]) : ""
+            ylab = (ia == 1) ? @sprintf("T=%.2f", Ts_desc[iT]) : ""
             p = plot(framestyle=:box, grid=false,
-                     title=@sprintf("α=%.2f T=%.2f", alphas[ia], Ts_desc[iT]),
-                     titlefontsize=7)
+                     title=ttl, titlefontsize=9,
+                     ylabel=ylab, yguidefontsize=7)
             annotate!(p, 0.5, 0.5, text("—", :gray, 10, :center))
         end
 
@@ -287,6 +291,6 @@ fig = plot(plots_arr..., layout=(nT, na),
            margin=2Plots.mm)
 
 for ext in ("png", "pdf")
-    savefig(fig, joinpath(out_dir, "v14_survival_all.$ext"))
+    savefig(fig, joinpath(out_dir, "v16_survival_all.$ext"))
 end
-println("Saved: panels_paper/v14_survival_all.{png,pdf}")
+println("Saved: panels_paper/v16_survival_all.{png,pdf}")

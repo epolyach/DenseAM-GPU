@@ -1,0 +1,32 @@
+Report saved to Backups/CHANGES_v3-07-02.md, next to the pre-edit snapshots. Summary:
+
+Errata (verified against scripts/CSVs)
+1. $N(\alpha)$: ceiling replaced by round, matching N_for_alpha in the code.
+2. $N = 77 \to 76$ at $\alpha = 0.20$ (CSV: N_used = 76).
+3. 50 GB $\to$ 48 GB (RTX A6000).
+4. $\Delta f(\alpha T) \to \Delta f(\alpha, T)$.
+5. "cited in the Abstract" $\to$ "cited in the main text" (Appendix B).
+6. Title: "approach" $\to$ "Approach" (mixed-case rule), in all three files.
+
+Template cleanup
+7. Placeholder author block $\to$ Anonymous submission.
+8. bibentry block and \iffalse examples deleted.
+9. Four dead commented-out paragraphs deleted.
+
+Redundancy cuts
+10. Finite-N smoothing sentence: kept once in Results; cut from caption, condensed in Discussion.
+11. Kramers mechanism: kept in Theory; Results cross-references it.
+12. Equal-depth switching: stated once.
+13. Intro basin-survival claim: three sentences $\to$ one.
+14. "This proves geometrically..." dropped.
+15. Cone paragraph's repeated bulk clause dropped.
+16. Appendix B "Two facts... tangency is automatic" dropped.
+
+Clarity
+17. "blue curve" $\to$ "extreme curve" (4x, Appendix B); figure-axis endpoints made explicit.
+18. Triple \citeauthor{...}'s $\to$ one \citet + pronouns.
+19-22. "were taken to confirm" fixed, "live patterns" removed from abstract/discussion, Full/Cone $N$-reach qualified with "at the high-$\alpha$ end", hedge words dropped.
+
+Verification: all three targets compile with 0 errors and no undefined references (9/7/2 pages); main text still ends at Eq. (35) and the joint appendix lands exactly on the frozen tags (36)-(53).
+
+Left untouched: Appendix C in LSE_capacity.tex remains after \end{document} and does not compile.

@@ -1,0 +1,286 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{natbib}
+\usepackage{bm}
+
+\bibliographystyle{plainnat}
+
+\newcommand{\bxi}{\boldsymbol{\xi}}
+\newcommand{\bx}{\bm{x}}
+\newcommand{\avg}[1]{\langle #1 \rangle}
+
+\title{Retrieval Metastability via Kramers Escape and Centroid Hopping in Continuous Log-Sum-ReLU Dense Associative Memory}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study the retrieval state of Dense Associative Memory with the log-sum-ReLU (LSR) energy on the $N$-sphere as a function of the load $\alpha$ and temperature~$T$.  The compact support of the LSR kernel partitions the retrieval region into three regimes.  At low~$\alpha$, no spurious pattern is close enough to the target to affect the energy landscape, and retrieval is absolutely stable.  Above a threshold $\alpha_{\mathrm{th}}$, the state thermally wandering near the retrieval minimum already fills a spurious pattern basin; the two basins merge into a centroid and retrieval is destroyed.  Between these limits lies the metastable regime: spurious pattern basins exist nearby but are separated from the retrieval basin by a purely entropic barrier.  To escape, the state must drift beyond its typical thermal range and reach a spurious basin, a rare event whose rate we identify as a multi-channel Kramers process.  Monte Carlo simulations with a confirmed-barrier-crossing criterion validate this mechanism: the measured escape time follows the Kramers scaling $\tau \propto K^{-1}\exp(c\,\Delta F/T)$, where $K$ is the number of escape channels, $\Delta F$ is the entropic barrier of the nearest competing pattern, and $c \leq 1$ is a barrier-reduction factor that accounts for the disorder average at low temperatures.  After escape, the system hops between two-pattern centroids on the pattern overlap graph.  The apparent phase boundary observed in finite-$N$ simulations lies inside the metastable regime; it is a kinetic crossover at $\tau \approx T_{\mathrm{MC}}$, not a thermodynamic transition.  Since the escape time grows exponentially with~$N$, the metastable state becomes indistinguishable from true stability at practically relevant system sizes; the kinetic boundary matters only for the moderate~$N$ accessible to MC simulations.
+\end{abstract}
+
+\section{Introduction}
+
+Associative memory networks store patterns such that the correct memory can be retrieved from a noisy or partial cue. The classical Hopfield network~\citep{Hopfield1982} can store $0.138$ patterns per neuron~\citep{amit1987statistical}. Dense Associative Memory (DAM) energy models replace pairwise interactions with highly nonlinear energy functions, achieving exponentially large storage capacity; specifically, the number of patterns $M$ scales as $e^{\alpha N}$ for $N$ neurons or for continuous states on the $N$-sphere~\citep{demircigil2017model,ramsauer2021hopfield}.
+
+The first DAM model was based on the log-sum-exp (LSE) energy. \citet{hoover2025dense} introduced the log-sum-ReLU (LSR) energy, based on the compactly supported Epanechnikov kernel. For continuous neurons on the $N$-sphere, the LSR energy takes the form
+\begin{equation}
+E(\bx) = -\frac{N}{b}\ln\left(\sum_{\mu=1}^{M}\max\!\Big(0,\;1 - b + b\,\phi_\mu\Big)\right)\,,
+\label{eq:lsr}
+\end{equation}
+where $\bx$ is the system state with $|\bx|^2 = N$; $b > 1$ is the rescaled inverse variance that controls the kernel sharpness; $\bxi^\mu$, $\mu = 1,\ldots,M$, are the stored patterns on $S^{N-1}(\!\sqrt{N})$; and $\phi_\mu \equiv (\bx \cdot \bxi^\mu)/N$ is the alignment of state $\bx$ with pattern~$\mu$. The compact support introduces a hard wall at $\varphi_c = (b-1)/b$: pattern~$\mu$ contributes to the energy only when $\phi_\mu > \varphi_c$.
+
+\citet{icml2026theory} investigated the retrieval stability of the LSE and LSR models at finite temperatures, capturing the persistent environmental disturbances that any physical memory system would face. Following \citet{ramsauer2021hopfield} in assuming that the inter-pattern alignment $\varphi_{1\mu} = (\bxi^1 \cdot \bxi^\mu)/N$ between a fixed retrieving pattern $\bxi^1$ and a random spurious pattern $\bxi^\mu$ is approximately distributed as ${\cal N}(0,N^{-1})$, they showed that for the LSR kernel there exists a support threshold, $\alpha_{\mathrm{th}} = \varphi_c^2/2$, below which no spurious pattern falls within the support and retrieval is perfect at any temperature. For $b = 2+\sqrt{2}$, the value used throughout both their work and the present paper, $\varphi_c \approx 0.707$ and $\alpha_{\mathrm{th}} = 0.25$. The exact distribution
+\begin{equation}
+f(\phi) = C_N\,(1 - \phi^2)^{(N-3)/2}\,,\qquad
+C_N = \frac{\Gamma(N/2)}{\Gamma\!\big((N\!-\!1)/2\big)\,\sqrt{\pi}}\,,
+\label{eq:exact_density}
+\end{equation}
+shares the same mean and variance with the Gaussian, but has lighter tails: it vanishes at $|\phi| = 1$, whereas the Gaussian remains nonzero. When weighted by the exponential factor $e^{\alpha N}$ that counts the stored patterns, this lighter tail shifts the threshold to (in the limit $N\to\infty$)
+\begin{equation}
+\alpha_{\mathrm{th}} = -\frac{1}{2}\ln(1-\varphi_c^2) \approx 0.347\,.
+\label{eq:alpha_th}
+\end{equation}
+
+The Monte Carlo simulations (MCS) reported by~\citet{iclr2026mc}, however, place the LSR retrieval boundary much closer to $\alpha \approx 0.25$ than to~$0.347$. We repeated these simulations to investigate this apparent discrepancy in more detail. Since the MCS indicate a lack of retrieval within the theoretically predicted retrieving zone, we focused primarily on this region.
+
+The simulation protocol follows~\citet{iclr2026mc}: $M = 20{,}000$ patterns, Metropolis dynamics with step size $\sigma = 2.4T/\sqrt{N}$, and two independent replicas per disorder sample initialized near the target with $\phi_{\mathrm{init}} \sim \mathrm{U}(0.75, 1.0)$. We doubled the equilibration and sampling times ($N_{\mathrm{eq}} = 2^{15}$, $N_{\mathrm{samp}} = 2^{13}$, total $T_{\mathrm{MC}} \approx 4 \times 10^4$ steps) and refined the load grid to $\Delta\alpha = 0.005$ (110 values). The number of independent trials per $(\alpha, T)$ point decreases linearly from $512$ at $\alpha = 0.005$ to $64$ at $\alpha = 0.55$ ($n_{\mathrm{dis}} = 256$ to $32$ disorder samples, two replicas each). Crucially, we recorded per-sample observables rather than disorder averages: the time-averaged target alignment $\varphi_A$, $\varphi_B$ of each replica, and the time-averaged maximum alignment with any non-target pattern,
+\begin{equation}
+    \phi_{\max}^{\mathrm{other}} = \frac{1}{N_{\mathrm{samp}}} \sum_t \max_{\mu\neq 1}\phi_\mu(\bx_A(t))\,.
+\end{equation}
+The observable $\phi_{\max}^{\mathrm{other}}$ distinguishes retrieval ($\phi_{\max}^{\mathrm{other}} \ll \varphi_c$, no spurious pattern in support) from centroid states ($\phi_{\max}^{\mathrm{other}} \approx 0.82$, a spurious pattern shares the basin with the target).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{figures/cdf_panel_A.pdf}%
+\hfill
+\includegraphics[width=0.48\textwidth]{figures/cdf_panel_B.pdf}
+\caption{Empirical CDF of the per-trial time-averaged alignment $\varphi$ with the target pattern (both replicas pooled). Dashed gray lines mark $\varphi = 0.48$ and $0.83$. \textbf{Left:} fixed $T = 0.325$, varying $\alpha$. \textbf{Right:} fixed $\alpha = 0.22$, varying $T$. The primary peak shifts left with increasing~$T$ (following $\phi_{\mathrm{eq}}(T)$), while the secondary steps at $\varphi \approx 0.83$ and $0.48$ grow in weight.}
+\label{fig:cdf}
+\end{figure}
+
+The per-trial alignment distributions reveal that the retrieval region is richer than the thermodynamic prediction suggests. Both panels of Figure~\ref{fig:cdf} show the empirical CDF of the time-averaged alignment $\varphi$ with the target pattern: the left panel varies~$\alpha$ at fixed $T = 0.325$, and the right panel varies~$T$ at fixed $\alpha = 0.22$. In all cases, the distributions concentrate below unity, since thermal fluctuations at $T > 0$ reduce the time-averaged alignment, in accord with the Boltzmann equilibrium $\phi_{\mathrm{eq}}(T)$~\citep{icml2026theory}. In the left panel, at $\alpha = 0.10$ all trials concentrate near $\varphi \approx 0.90$; as $\alpha$ increases toward $0.25$, secondary steps appear at $\varphi \approx 0.83$ and $\varphi \approx 0.48$, indicating that a growing fraction of trials settles into states of lower alignment, until the primary peak has disappeared by $\alpha = 0.35$. Note also the qualitatively different shape of the red curve ($\alpha = 0.35$), which lies in the theoretically non-retrieving zone. The right panel shows an analogous trend with temperature: as $T$ increases, the primary peak shifts to lower~$\varphi$ and the secondary steps grow.
+
+These steps indicate the presence of metastable states at $\varphi \approx 0.83$ and $0.48$, which are not predicted by the thermodynamic theory of~\citet{icml2026theory}. The goal of this paper is to propose and validate a theory that explains these states and eliminates the discrepancy between theory and MCS.
+
+The paper is organized as follows.  Section~\ref{sec:theory} develops the theory of centroid hopping: the two-pattern geometry, the zero-energy escape path with its purely entropic barrier, the thermal equilibrium at the centroid, and the hopping chain that explains the secondary peaks.  Section~\ref{sec:mc} validates this picture with targeted MC simulations using a confirmed-barrier-crossing criterion, calibrates the multi-channel Kramers escape rate from the data, and constructs the three-zone phase diagram.  Section~\ref{sec:discussion} resolves the apparent contradiction between the corrected thermodynamic boundary and the MC observations, and discusses the implications for retrieval at large~$N$.  Appendix~\ref{app:barrier} derives the entropic barrier from the sphere geometry, and Appendix~\ref{app:compound_poisson} develops the compound Poisson disorder average and its connection to the Kramers escape formula used in the main text.
+
+
+%%% ─────────────────────────────────────────────────────────────────
+\section{Theory of centroid hopping}
+\label{sec:theory}
+
+The Metropolis dynamics on the $N$-sphere is purely diffusive: the state performs a random walk with no momentum, accepting or rejecting proposals based on the energy change alone.  The appropriate framework for escape from a metastable basin in such overdamped dynamics is the Kramers theory of thermally activated transitions~\citep{kramers1940,hanggi1990}.
+
+In the Kramers framework, the escape rate from a metastable basin scales as $\lambda \sim \exp(-\Delta F/T)$, where $\Delta F$ is the free-energy barrier along the escape coordinate~\citep{hanggi1990}.  This barrier can be energetic, entropic, or both.  In our system, the energy along the escape path turns out to be exactly constant ($\Delta E = 0$, as we show below), so the barrier is purely \emph{entropic}: the free-energy cost $\Delta F > 0$ arises because the state must align its perpendicular component with a specific direction on the sphere, reducing the available phase-space volume.  The system must drift beyond its typical thermal fluctuation range to reach a region where a second pattern enters support, and the probability of this excursion is exponentially suppressed by the volume ratio (Appendix~\ref{app:barrier}).
+
+We now analyse the geometry of this escape.
+
+\paragraph{Two-pattern geometry.}
+Consider the target pattern $\bxi^1$ and a spurious pattern $\bxi^\mu$ with inter-pattern alignment $\varphi_{1\mu} > 0$.  We decompose the state in the orthonormal basis
+\begin{equation}
+\mathbf{e}_1 = \frac{\bxi^1}{\sqrt{N}}\,, \qquad
+\mathbf{e}_2 = \frac{\bxi^\mu/\sqrt{N} - \varphi_{1\mu}\,\mathbf{e}_1}{\sqrt{1-\varphi_{1\mu}^2}}\,,
+\label{eq:basis}
+\end{equation}
+writing $\bx/\sqrt{N} = a\,\mathbf{e}_1 + v\,\mathbf{e}_2 + \mathbf{c}_\perp$, where $\mathbf{c}_\perp$ collects the remaining $N{-}2$ components perpendicular to both patterns, and $a^2 + v^2 + |\mathbf{c}_\perp|^2 = 1$.  The alignments with the two patterns are
+\begin{equation}
+\phi_1 = a\,, \qquad \phi_\mu = a\,\varphi_{1\mu} + v\sqrt{1-\varphi_{1\mu}^2}\,.
+\label{eq:overlaps}
+\end{equation}
+
+At the retrieval equilibrium, $a = \phi_{\mathrm{eq}}(T)$ and $v = 0$ (star in Fig.~\ref{fig:overlap_dist}); only pattern~$\bxi^1$ is in support.  The system can increase~$v$ (diffusing along~$\mathbf{e}_2$) while keeping $\phi_1 = a$ fixed.  Since only~$\bxi^1$ is in support and $\phi_1$ does not change, the energy is exactly constant along this diffusion (Stage~1, $\Delta E = 0$).  When~$v$ reaches
+\begin{equation}
+v_{\mathrm{entry}} = \frac{\varphi_c - \phi_{\mathrm{eq}}\,\varphi_{1\mu}}{\sqrt{1-\varphi_{1\mu}^2}}\,,
+\label{eq:ventry}
+\end{equation}
+the spurious pattern enters support ($\phi_\mu = \varphi_c$).  From this point the energy decreases and the system slides irreversibly to the centroid (Stage~2, $\Delta E < 0$).  The condition $v \geq v_{\mathrm{entry}}$ is equivalent to $\phi_\mu \geq \varphi_c$, so the barrier crossing can be detected in MC simulations by monitoring all pattern alignments.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{figures/centroid_geometry.pdf}%
+\hfill
+\includegraphics[width=0.48\textwidth]{figures/K_vs_alpha.pdf}
+\caption{\textbf{Left:} the escape path in the $(\phi_1, v)$ plane.  Blue region: $\bxi^1$ in support.  Red region: $\bxi^\mu$ in support.  Star: retrieval state $(\phi_{\mathrm{eq}}, 0)$.  Red dot: entry point $v_{\mathrm{entry}}$, where $\bxi^\mu$ enters support.  Diamond: centroid.  Stage~1: diffusion along~$v$ at fixed $\phi_1$ ($\Delta E = 0$).  Stage~2: slide to the centroid ($\Delta E < 0$).  \textbf{Right:} expected number of escape-enabling patterns $K$ versus $\alpha$ for $M = 20{,}000$ at several temperatures.  Dotted gray: $K = 1$.}
+\label{fig:overlap_dist}
+\end{figure}
+
+\paragraph{Escape-enabling patterns.}
+The escape requires $\phi_{\mathrm{eq}}^2 + v_{\mathrm{entry}}^2 \leq 1$ (the state must remain on the sphere).  This restricts the escape to patterns with inter-pattern alignment above
+\begin{equation}
+\varphi_{\min}(\phi_{\mathrm{eq}}) = \varphi_c\,\phi_{\mathrm{eq}} - \sqrt{(1-\varphi_c^2)(1-\phi_{\mathrm{eq}}^2)}\,.
+\label{eq:phi_min}
+\end{equation}
+For $\phi_{\mathrm{eq}} = 0.90$: $\varphi_{\min} = 0.328$.  The expected number of escape-enabling patterns, $K = M\,\Pr(\varphi_{1\mu} > \varphi_{\min})$ computed from the exact density~\eqref{eq:exact_density}, is shown in Fig.~\ref{fig:overlap_dist} (right) for $M = 20{,}000$.  $K$ grows rapidly with~$\alpha$ and depends on~$T$ through~$\phi_{\mathrm{eq}}$: higher temperature lowers $\phi_{\mathrm{eq}}$, which lowers $\varphi_{\min}$ and admits more escape channels.  At $T = 0$, $\phi_{\mathrm{eq}} = 1$ and $\varphi_{\min} = \varphi_c$; the $K = 1$ crossing then defines the absolute retrieval boundary, which in the $N \to \infty$ limit occurs at $\alpha_{\mathrm{th}} = 0.347$.  At finite $N = \ln M/\alpha$, finite-size corrections shift all curves to the right relative to this limit (Fig.~\ref{fig:overlap_dist}, right), so the absolute retrieval boundary depends on both $T$ and~$N$ and is not a vertical line.
+
+\paragraph{The entropic barrier.}
+Since the energy is constant along the escape path, no energy barrier opposes the escape.  The barrier is entropic: as~$v$ increases from~$0$ to $v_{\mathrm{entry}}$, the sphere constraint $|\mathbf{c}_\perp|^2 = 1 - a^2 - v^2$ forces the perpendicular volume to shrink, reducing the entropy $S \propto \tfrac{N{-}3}{2}\ln(R^2 - v^2)$ of the perpendicular subspace.  Since $\Delta E = 0$, the free-energy cost is purely $\Delta F = -T\Delta S$.  The resulting free-energy cost (Appendix~\ref{app:barrier}) is
+\begin{equation}
+\frac{\Delta F}{T} = \frac{N-3}{2}\left[-\ln\!\left(1 - \frac{v_{\mathrm{entry}}^2}{R^2}\right)\right],
+\label{eq:kramers_barrier}
+\end{equation}
+where $R^2 = 1 - \phi_{\mathrm{eq}}^2$.  Through $v_{\mathrm{entry}}$~\eqref{eq:ventry}, the barrier depends on the inter-pattern alignment~$\varphi_{1\mu}$: more distant patterns require larger~$v_{\mathrm{entry}}$ and face a higher barrier.  For any fixed $\varphi_{1\mu}$, the barrier grows linearly with~$N$, making escape exponentially unlikely at large system sizes.  The barrier~\eqref{eq:kramers_barrier} is obtained by projecting the dynamics onto the single escape coordinate~$v$; the multi-dimensional Langer theory~\citep{langer1969,hanggi1990} does not apply directly here because the entropic potential is monotonically increasing and the escape occurs at an absorbing boundary rather than over a saddle point.
+
+\paragraph{Two-pattern thermal equilibrium.}
+After crossing the barrier, the system thermalizes in the basin where both $\bxi^1$ and $\bxi^\mu$ are in support.  In this basin the energy depends on $\phi_1 + \phi_\mu$, which from~\eqref{eq:overlaps} is a function of $(a, v)$ alone; the perpendicular component $\mathbf{c}_\perp$ contributes only through the sphere constraint $|\mathbf{c}_\perp|^2 = 1 - a^2 - v^2$.  Integrating out $\mathbf{c}_\perp$ produces an entropy $s \propto \tfrac{1}{2}\ln(1 - a^2 - v^2)$, which penalizes large $a$ and $v$.  Balancing this entropy against the two-pattern energy $u_2 = -b^{-1}\ln[(1{-}b{+}b\phi_1) + (1{-}b{+}b\phi_\mu)]$ (the LSR energy~\eqref{eq:lsr} restricted to the two in-support patterns; see~\citet{icml2026theory} for the general finite-temperature framework) and parametrizing the equilibrium by $\phi_1 = \phi_\mu \equiv \phi$ (the symmetric minimum) yields the self-consistency equation
+\begin{equation}
+\frac{1}{1-b+b\,\phi} = \frac{2\,T\,\phi}{(1+\varphi_{1\mu}) - 2\phi^2}\,.
+\label{eq:two_pat_sc}
+\end{equation}
+At $T = 0$ this reduces to $\phi = \sqrt{(1{+}\varphi_{1\mu})/2}$, the geometric centroid.  At finite $T$, thermal fluctuations shift $\phi$ to a lower value $\varphi_{\mathrm{cen}}(\varphi_{1\mu}, T)$.  Since $\varphi_{1\mu}$ varies slowly with~$\alpha$ and $\varphi_{\mathrm{cen}}$ is a weak function of~$T$, the centroid position is approximately universal: $\varphi_{\mathrm{cen}} \approx 0.82$--$0.84$ across the metastable regime, consistent with the step at $\varphi \approx 0.83$ observed in Fig.~\ref{fig:cdf}.
+
+\paragraph{Centroid hopping.}
+After reaching the centroid $(\bxi^1, \bxi^\mu)$, the system can escape again by the same mechanism, recruiting a new pattern~$\bxi^\nu$.  The sphere constraint makes it difficult for three patterns to be in support simultaneously and the MC data confirm that transitions are pair-to-pair: one pattern enters support while another drops out.  The result is a chain of pair-to-pair transitions:
+\begin{equation}
+\underbrace{\bxi^1}_{\phi_1 \approx 0.90}
+\;\xrightarrow{\text{1st hop}}\;
+\underbrace{(\bxi^1,\,\bxi^\mu)}_{\phi_1 \approx 0.83}
+\;\xrightarrow{\text{2nd hop}}\;
+\underbrace{(\bxi^\mu,\,\bxi^\nu)}_{\phi_1 \approx 0.48}
+\;\to\; \cdots
+\label{eq:hopping_chain}
+\end{equation}
+After the second hop, the target alignment is $\phi_1 = (\varphi_{1\mu} + \varphi_{1\nu})/\sqrt{2(1+\varphi_{\mu\nu})}$.  Since $\bxi^\nu$ was selected for high alignment with $\bxi^\mu$, $E[\varphi_{1\nu} | \varphi_{\mu\nu}] = \varphi_{1\mu}\varphi_{\mu\nu}$, giving $\phi_1 \approx 0.51$ at $\alpha = 0.20$, consistent with the observed step at $\varphi \approx 0.48$ (Fig.~\ref{fig:cdf}).  The system performs a random walk on the pattern overlap graph, always at some two-pattern centroid; in the LSR model, the energy diverges when no pattern is in support, so a true paramagnetic state does not exist.
+
+%%% ─────────────────────────────────────────────────────────────────
+\section{Monte Carlo simulations}
+\label{sec:mc}
+
+The bulk survey and the theory of Section~\ref{sec:theory} establish that the centroid states exist and explain their alignments: $\phi_{\max}^{\mathrm{other}} \approx 0.82$ in every non-retrieval bin of the bulk data, and the predicted residual overlap after the second hop ($\phi_1 \approx 0.51$) matches the observed step at $\varphi \approx 0.48$.  We now turn to a quantitative test of the escape \emph{timescale}: does the Kramers mechanism account for the rate at which trials leave the retrieval basin?
+
+The targeted simulations cover $\alpha \in [0.20,\, 0.34]$ and $T \in [0.15,\, 2.0]$, with $n_{\mathrm{dis}} = 2000$ disorder samples per point and run lengths from $10^4$ to $5 \times 10^5$ MC steps.  Each trial is initialized at $\phi_1 = 1$.  Three measurement campaigns progressively extend the coverage, yielding $68$ distinct $(\alpha, T)$ points.  Comparing runs that detect escape through any pattern ($\phi_\mu \geq \varphi_c$ for any $\mu \neq 1$) with runs monitoring only the nearest pattern ($\phi_{\mu_{\max}} \geq \varphi_c$), we find that the latter gives escape times $15$--$100\times$ longer, confirming that the total rate is set by the sum over $K$ channels.  The escape is detected in two steps:
+\begin{enumerate}[nosep, leftmargin=*]
+\item At each recording step, all $M$ alignments $\phi_\mu$ are checked.  When any $\phi_\mu \geq \varphi_c$ for $\mu \neq 1$, a \emph{candidate escape} is flagged, and the identity of pattern~$\mu$ and its inter-pattern alignment $\varphi_{1\mu}$ are recorded.
+\item The escape is \emph{confirmed} by measuring the diffusion coefficient $D_v$ in the perpendicular direction toward~$\bxi^\mu$ over the next $50$ strides.  A genuine escape triggers Stage~2 ($\Delta E < 0$), which accelerates the motion: $D_v^{\mathrm{post}} / D_v^{\mathrm{ret}} > 2$.  If the ratio is below this threshold, the system has touched the support boundary but bounced back without sliding to the centroid; the candidate is discarded.
+\end{enumerate}
+This criterion uses the physical barrier-crossing condition $\phi_\mu \geq \varphi_c$ from Section~\ref{sec:theory}.  A simpler approach based on thresholding~$\phi_1$ gives escape times biased low by $5$--$20\times$ at $T \geq 0.4$, because thermal fluctuations momentarily push $\phi_1$ below the threshold without the system leaving the retrieval basin.
+
+The multi-channel Kramers picture predicts that the total escape rate for a fixed disorder sample is proportional to $K$, the number of escape-enabling patterns, times the Boltzmann factor for the entropic barrier.  The disorder average of this rate and the resulting escape-time formula are discussed in Appendix~\ref{app:compound_poisson}.  We use
+\begin{equation}
+\tau \;\approx\; \frac{\tau_{\mathrm{rel}}}{A\,K}\,\exp\!\left(c\,\frac{\Delta F_{\min}}{T}\right),
+\label{eq:tau_highT}
+\end{equation}
+where $\tau_{\mathrm{rel}} = R^2/D_v$ is the relaxation time of the perpendicular coordinate in the retrieval basin, $\Delta F_{\min} \equiv \Delta F(\varphi_{1,\max})$ is the barrier at the nearest-pattern alignment $\varphi_{1,\max} = \sqrt{1-e^{-2\alpha}}$, $K = K(\alpha,T)$ is the number of escape-enabling patterns, $c$ is a barrier-reduction factor, and $A$ is a dimensionless prefactor.  The diffusion coefficient $D_v$ entering $\tau_{\mathrm{rel}}$ is measured from separate MC simulations within the retrieval basin (distinct from the $D_v^{\mathrm{post}}/D_v^{\mathrm{ret}}$ ratio used for escape confirmation above).  The LSR energy landscape makes the dynamics strongly anisotropic ($D_v$ differs from the target-direction diffusion coefficient $D_{\phi_1}$ by a factor of $8$--$10$), so the free-diffusion estimate $D_{\mathrm{free}} = \sigma^2/(2N)$ cannot be used.  The formula has two free parameters ($A$, $c$); everything else is computed from theory and independent measurements.
+
+To calibrate $A$ and $c$, we rearrange~\eqref{eq:tau_highT} as
+\begin{equation}
+\ln\!\left(\frac{\tau\,K}{\tau_{\mathrm{rel}}}\right) - c\,\frac{\Delta F_{\min}}{T} \;=\; -\ln A\,.
+\label{eq:residual}
+\end{equation}
+Figure~\ref{fig:phase_diagram} (left) plots this residual with $c = 1$ for all $68$ measured $(\alpha, T)$ points.  At high temperature ($T \geq 0.5$), the curves for different~$T$ cluster near $\approx 4$, confirming $c \approx 1$ and giving
+\begin{equation}
+A = e^{-4} \approx 0.018\,.
+\label{eq:A_value}
+\end{equation}
+At low temperature ($T = 0.2$--$0.3$), the residual fans out at small~$\alpha$, dropping well below~$4$.  The slope of the low-$T$ curves corresponds to an effective $c \approx 1/3$; the approximations underlying~\eqref{eq:tau_highT} and the origin of the temperature dependence of~$c$ are discussed in Appendix~\ref{app:compound_poisson}.  We parametrize this crossover by interpolating $c$ linearly from $1/3$ at $T = 0.2$ to $1$ at $T = 0.5$, with $c = 1$ for $T \geq 0.5$.
+
+Figure~\ref{fig:phase_diagram} (right) shows the three-zone phase diagram.  The background is the disorder-averaged alignment $\avg{\varphi}(\alpha, T)$ from the bulk survey (Section~1).
+
+The blue dashed curve $\alpha_{\mathrm{abs}}(T)$ and the cyan curve $\alpha_M(T)$ mark the $K = 1$ boundary in the thermodynamic limit ($M, N \to \infty$) and at finite $M = 20{,}000$, respectively.  To the left of these curves, no stored pattern is close enough to reach the support boundary, and retrieval is absolutely stable.
+
+The black dotted curve $\alpha_{\mathrm{th}}$ with $\alpha_c(T)$ is the corrected theoretical boundary~\eqref{eq:alpha_th} beyond which the system, while sitting at the retrieval basin center, already fills the support of a spurious pattern.  The two basins merge into a centroid without any barrier; the system slides directly into the centroid state.  This is the true non-retrieval boundary in the thermodynamic limit, and its position restores the theoretical result of~\citet{icml2026theory} once the exact density~\eqref{eq:exact_density} is used in place of the Gaussian approximation.
+
+Between $\alpha_M$ and $\alpha_{\mathrm{th}}$ lies the metastable regime.  Here escape channels exist ($K \geq 1$) but are separated from the retrieval basin by an entropic barrier.  The escape time grows exponentially with~$N$, so in the limit of large~$N$ this metastable zone becomes indistinguishable from true stability; the theoretical retrieval region is recovered.  In Monte Carlo simulations at finite~$N$, however, the metastable state has a finite lifetime, and the apparent retrieval boundary depends on the simulation time.  The green dotted curve shows the Kramers contour $\tau = T_{\mathrm{MC}}$ from~\eqref{eq:tau_highT} with $A = 0.018$ and $c(T)$: to its left, the escape time exceeds $T_{\mathrm{MC}}$ and the state appears stable; to its right, the system escapes during the simulation and hops away from the retrieval basin.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{figures/residual_vs_alpha.pdf}%
+\hfill
+\includegraphics[width=0.48\textwidth]{figures/heatmap_3phase.pdf}
+\caption{%
+\textbf{Left:} Kramers residual~\eqref{eq:residual} vs $\alpha$ for $c = 1$, with each curve at a fixed temperature.  The high-$T$ curves ($T \geq 0.5$) cluster near $\approx 4$, confirming $c = 1$ and giving $A = e^{-4} \approx 0.018$.  At low $T$ ($0.2$--$0.3$), the residual fans out at small~$\alpha$, where large barriers cause the disorder average to reduce the effective~$c$ below unity.
+\textbf{Right:} Three-zone phase diagram ($M = 20{,}000$).  Background: $\avg{\varphi}(\alpha, T)$ from bulk survey.  Blue dashed: $\alpha_{\mathrm{abs}}$ ($K = 1$, $N \to \infty$).  Cyan: $\alpha_M$ ($K = 1$, $M = 20{,}000$).  Black dotted: $\alpha_{\mathrm{th}}$ with $\alpha_c(T)$ (TD limit).  Green dotted: $\tau = T_{\mathrm{MC}}$ contour from~\eqref{eq:tau_highT} with $A = 0.018$ and $c(T)$.  AR: absolute retrieval.  MS: metastable.  NR: non-retrieval.}
+\label{fig:phase_diagram}
+\end{figure}
+
+%%% ─────────────────────────────────────────────────────────────────
+\section{Discussion and summary}
+\label{sec:discussion}
+
+The thermodynamic theory of~\citet{icml2026theory} predicts a sharp retrieval boundary for the LSR kernel.  Using the Gaussian approximation for the inter-pattern alignment distribution, the boundary is at $\alpha_{\mathrm{th}} = \varphi_c^2/2 = 0.25$; using the exact density~\eqref{eq:exact_density}, it shifts to $\alpha_{\mathrm{th}} = -\tfrac{1}{2}\ln(1-\varphi_c^2) \approx 0.347$.  Monte Carlo simulations, however, place the apparent retrieval boundary much closer to $\alpha \approx 0.25$, in seeming agreement with the Gaussian result and in apparent contradiction with the exact-density prediction.
+
+This paper resolves the contradiction.  The compact support of the LSR kernel creates a purely entropic barrier between the retrieval basin and the basins of spurious patterns (Section~\ref{sec:theory}).  The barrier height $\Delta F/T \propto N$ grows linearly with the dimension, so the escape time $\tau \propto \exp(c\,\Delta F/T)$ is exponentially large in~$N$.  At the system sizes accessible to MC simulations ($N \approx 40$--$50$), this escape time is comparable to the simulation time $T_{\mathrm{MC}} \approx 4 \times 10^4$ near $\alpha \approx 0.25$.  The coincidence with the Gaussian threshold is accidental: it depends on $T_{\mathrm{MC}}$ and $N$, not on the Gaussian approximation being correct.  At larger~$N$, the barrier grows and the kinetic boundary shifts rightward, eventually reaching the exact-density threshold $\alpha_{\mathrm{th}} \approx 0.347$ where the barrier vanishes and retrieval is lost without thermal activation.  The theoretical result of~\citet{icml2026theory} is thus restored once the exact density is used.
+
+The escape proceeds through $K$ channels, each corresponding to a stored pattern whose support overlaps with the retrieval basin.  We confirm this multi-channel mechanism by comparing single-channel and all-channel escape detection, finding a factor $15$--$100\times$ in escape times that matches the predicted~$K$.  After escape, the system hops between two-pattern centroids on the pattern overlap graph~\eqref{eq:hopping_chain}; a true paramagnetic state (uncorrelated with all patterns, $\phi_\mu \ll \varphi_c$ for all~$\mu$) does not exist for the LSR energy because no pattern would be in support and $E = -(N/b)\ln(0) \to +\infty$~\eqref{eq:lsr}.
+
+The Kramers escape formula~\eqref{eq:tau_highT}, calibrated from the residual plot (Fig.~\ref{fig:phase_diagram}, left), accurately reproduces the measured escape times with $A = e^{-4} \approx 0.018$ and $c = 1$ at high temperatures.  At low temperatures, the effective barrier-reduction factor drops to $c \approx 1/3$, which we attribute to the disorder average being dominated by rare samples with anomalously low barriers.  For practical retrieval at $N \gg 50$, the metastable state is effectively permanent: at $N = 50$ and $\alpha = 0.20$, $\tau \sim 10^6$ MC steps; at $N = 100$, $\tau \sim 10^{12}$.
+
+A question raised by the corrected threshold concerns the ultimate storage capacity.  The Gaussian approximation used by~\citet{ramsauer2021hopfield} for the LSE kernel predicts a limiting load $\alpha_c = 0.5$ beyond which retrieval fails at any temperature.  This bound originates from the tail of the Gaussian: for $\alpha > 0.5$, the probability that at least one spurious alignment exceeds $\varphi_c$ becomes $O(1)$.  For the exact density~\eqref{eq:exact_density}, however, the maximum alignment among $M - 1$ patterns scales as $\varphi_{1,\max} = \sqrt{1 - e^{-2\alpha}}$, which remains strictly below~$1$ for all finite~$\alpha$.  Whether the $\alpha_c = 0.5$ limit survives when the exact density is used, and whether metastable retrieval persists beyond this value for LSE or LSR kernels, are open questions that we plan to address with dedicated Monte Carlo simulations.
+
+\bibliography{references}
+
+\appendix
+
+\section{Origin of the entropic barrier}
+\label{app:barrier}
+
+The Metropolis dynamics on $S^{N-1}(\!\sqrt{N})$ proposes isotropic displacements and projects onto the sphere.  Along the escape path (Stage~1), the energy is exactly constant ($\Delta E = 0$), so every proposal is accepted regardless of~$v$.  However, the volume of the perpendicular subspace at position~$v$ is $\mathrm{Vol}(v) \propto (R^2 - v^2)^{(N-3)/2}$: it is maximal at $v = 0$ and shrinks as $v \to v_{\mathrm{entry}}$.  The sphere projection after each MC step creates a geometric drift toward $v = 0$, not from energy rejection, but because there is more room at low~$v$.  The equilibrium distribution is $P_{\mathrm{eq}}(v) \propto (R^2 - v^2)^{(N-3)/2}$, and the escape requires diffusing from the maximum-volume point $v = 0$ to $v_{\mathrm{entry}}$ against this geometric bias.  The ratio of volumes gives the barrier:
+\[
+\exp\!\left(\frac{\Delta F}{T}\right) = \frac{\mathrm{Vol}(0)}{\mathrm{Vol}(v_{\mathrm{entry}})} = \left(\frac{R^2}{R^2 - v_{\mathrm{entry}}^2}\right)^{(N-3)/2}\!,
+\]
+and the escape time scales as $\tau \sim \tau_{\mathrm{diff}} \times \exp(\Delta F/T)$.
+
+
+\section{Compound Poisson model and the Kramers formula}
+\label{app:compound_poisson}
+
+For a fixed disorder realization~$d$, the per-channel Kramers rate is $\lambda_\mu = (A/\tau_{\mathrm{rel}})\exp(-\Delta F(\varphi_{1\mu})/T)$ and the total escape rate is $\lambda_d = \sum_{\mu:\,\varphi_{1\mu}>\varphi_{\min}} \lambda_\mu$.  The survival for sample~$d$ is $S_d(t) = e^{-\lambda_d t}$.  Assuming that the $K$ channels contribute independently to the escape rate, and that the $M-1$ inter-pattern alignments $\varphi_{1\mu}$ are independent draws from $f(\varphi)$~\eqref{eq:exact_density}, the disorder-averaged survival factorizes:
+\begin{equation}
+S(t) = \avg{S_d(t)} = \left[\int_{-1}^{1} e^{-\lambda(\varphi)\,t}\,f(\varphi)\,d\varphi\right]^{M-1},
+\label{eq:compound_poisson_exact}
+\end{equation}
+where $\lambda(\varphi) = (A/\tau_{\mathrm{rel}})\exp(-\Delta F(\varphi)/T)$ for $\varphi > \varphi_{\min}$ and $\lambda = 0$ otherwise.  Writing $S(t) = [1 - I(t)]^{M-1}$ with $I(t) = \int(1-e^{-\lambda(\varphi)t})f(\varphi)\,d\varphi$, we note that $I(t) \leq K/(M{-}1) \ll 1$ since only the $K \ll M$ escape-enabling patterns contribute.  The approximation $(1-I)^{M-1} \approx e^{-(M-1)I}$ gives the compound Poisson form:
+\begin{equation}
+S(t) \approx \exp\!\left(-(M{-}1)\!\int_{\varphi_{\min}}^{1}\!\bigl(1 - e^{-\lambda(\varphi)\,t}\bigr)\,f(\varphi)\,d\varphi\right).
+\label{eq:compound_poisson}
+\end{equation}
+At early times, $1 - e^{-\lambda t} \approx \lambda t$ and this reduces to exponential decay $S(t) \approx e^{-t/\tau}$ with
+\begin{equation}
+\frac{1}{\tau} = \frac{A\,(M{-}1)}{\tau_{\mathrm{rel}}}\int_{\varphi_{\min}}^{1} e^{-\Delta F(\varphi)/T}\,f(\varphi)\,d\varphi\,.
+\label{eq:tau_integral}
+\end{equation}
+Assuming that the barriers vary slowly across the $K$ channels, we replace $\Delta F(\varphi)$ by $\Delta F_{\min} \equiv \Delta F(\varphi_{1,\max})$ and factor the integral as $e^{-\Delta F_{\min}/T} \times K/(M{-}1)$, giving
+\begin{equation}
+\lambda_d \;\approx\; \frac{A\,K}{\tau_{\mathrm{rel}}}\,\exp\!\left(-\frac{\Delta F_{\min}}{T}\right).
+\label{eq:lambda_simple}
+\end{equation}
+Empirically, this scaling holds with $c = 1$ at high~$T$ ($T \geq 0.5$) but requires a reduced $c < 1$ at low~$T$ (Fig.~\ref{fig:phase_diagram}, left).  Introducing a temperature-dependent barrier-reduction factor $c(T) \leq 1$ gives the escape time
+\begin{equation}
+\tau \;=\; \frac{\tau_{\mathrm{rel}}}{A\,K}\,\exp\!\left(c\,\frac{\Delta F_{\min}}{T}\right),
+\label{eq:kramers_rate_app}
+\end{equation}
+as in~\eqref{eq:tau_highT}.
+
+\paragraph{Validity of the approximations.}
+Two assumptions enter the derivation of~\eqref{eq:lambda_simple}: (i)~the barriers vary slowly across the $K$ channels, and (ii)~the channels contribute independently.  Neither assumption holds quantitatively.
+
+Regarding~(i): the barrier $\Delta F(\varphi)/T$ ranges from $0$ at $\varphi = \varphi_c/\phi_{\mathrm{eq}}$ (where $v_{\mathrm{entry}} = 0$) to $\gg 10$ at low alignments.  At $(\alpha, T) = (0.20, 2.0)$, for instance, $64\%$ of~$K$ comes from $\varphi < 0.20$ where $\Delta F/T > 38$, while $\Delta F_{\min}/T \approx 7$.  Replacing $e^{-\Delta F/T}$ by $e^{-\Delta F_{\min}/T}$ in the exact disorder-averaged rate~\eqref{eq:tau_integral} overestimates the integral by a factor $\sim\! 5 \times 10^3$.
+
+Regarding~(ii): a thermal fluctuation that moves the state toward the support boundary simultaneously reduces the barrier for all patterns in the same angular sector, correlating the per-channel rates.  Fitting~\eqref{eq:tau_integral} to the measured escape times with a single constant~$A$ yields values that vary by a factor of $\approx 5$ between $T = 0.5$ and $T = 2.0$, likely reflecting these correlations.  Additionally, transverse fluctuations in the $(N{-}2)$-dimensional perpendicular subspace, which are neglected by the one-dimensional projection onto~$v$, may allow the system to explore directions with lower effective barriers, further modifying the escape rate relative to~\eqref{eq:tau_integral}.
+
+Despite the quantitative failure of both assumptions, the formula~\eqref{eq:kramers_rate_app} accurately reproduces the measured escape times across the full $(\alpha, T)$ grid (Fig.~\ref{fig:phase_diagram}, left), and we use it as an empirical escape-time formula calibrated in Section~\ref{sec:mc}.
+
+
+\end{document}
+
+%%% ─────────────────────────────────────────────────────────────────
+%%% PARKED: Limitations (to be incorporated into main text)
+%%% ─────────────────────────────────────────────────────────────────
+
+%% 1. One-dimensional projection.
+%% The entropic barrier~\eqref{eq:kramers_barrier} is derived by projecting the dynamics onto the single coordinate~$v$ (the perpendicular component toward the escaping pattern), reducing the problem to diffusion in the potential $V(v) = -\tfrac{N-3}{2}\,T\ln(R^2 - v^2)$ with an absorbing boundary at $v = v_{\mathrm{entry}}$.  The full dynamics takes place on the $(N{-}1)$-dimensional sphere, where the remaining $N - 2$ transverse coordinates fluctuate freely.  The multi-dimensional Langer theory~\citep{langer1969} accounts for these transverse modes through the ratio of Hessian determinants at the saddle point and the minimum, but in our geometry there is no saddle point: the entropic potential is monotonically increasing and the escape occurs at an absorbing boundary.  The standard Langer prefactor therefore does not apply directly, and the prefactor~$A$ in~\eqref{eq:tau_highT} is determined from data.
+
+%% 2. Barrier-reduction factor.
+%% The effective $c(T) < 1$ at low temperatures has two contributing origins discussed in Appendix~\ref{app:compound_poisson}: (i)~the broad distribution of barriers across the $K$ escape channels, and (ii)~the likely violation of the channel-independence assumption.  Transverse fluctuations in the $(N{-}2)$-dimensional perpendicular subspace may also play a role by allowing the system to explore directions with lower effective barriers, further reducing~$c$ below the single-coordinate prediction $c = 1$.  Disentangling these contributions would require either an analytical treatment of the multi-dimensional escape or simulations at much larger~$N$ where the barrier distribution narrows.
+
+%% 3. Diffusion coefficient.
+%% The relaxation time $\tau_{\mathrm{rel}} = R^2/D_v$ uses the diffusion coefficient $D_v$ measured from MC simulations within the retrieval basin, rather than the free-diffusion estimate $D_{\mathrm{free}} = \sigma^2/(2N)$.  The free-diffusion estimate assumes isotropic, unconstrained motion, but the LSR energy landscape makes the dynamics strongly anisotropic: the diffusion coefficient in the escape direction ($D_v$) differs from that along the target direction ($D_{\phi_1}$) by a factor of $8$--$10$.  Furthermore, $D_v$ depends on temperature non-trivially, peaking near $T \approx 0.8$ and decreasing at higher~$T$ as the Metropolis acceptance rate drops when the step size $\sigma \propto T$ becomes too large.  Using the measured $D_v$ accounts for both effects.
+
+%% 4. Empirical nature of the escape formula.
+%% The Kramers formula~\eqref{eq:tau_highT} with the calibrated $A$ and $c(T)$ reproduces the measured escape times across the full $(\alpha, T)$ grid, but it is not derived from first principles.  As shown in Appendix~\ref{app:compound_poisson}, the rigorous compound Poisson model under the independence assumption does not reduce to~\eqref{eq:tau_highT} because of the broad barrier distribution and the inter-channel correlations.  The formula should therefore be regarded as an empirical parametrization validated by the targeted simulations, rather than a consequence of the Kramers theory alone.

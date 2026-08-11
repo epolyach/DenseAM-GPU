@@ -21,21 +21,23 @@ default(dpi = 300)
 
 const φ_star = (sqrt(5)-1)/2
 const g_max  = 0.5*log(1 - φ_star^2) + φ_star            # ≈ 0.3774
+const C_pre  = 1/sqrt(1 - φ_star^4)                       # ≈ 1.082, Appendix A prefactor
+const lnC    = log(C_pre)
 const M_DATA = 4.4e6
 const T_LO   = 0.005
 const β      = 1.0
 
 φ_c(α) = α + g_max
 
-V_LO(φ, α, T) = -max(φ, φ_c(α)) - (T/2)*log(1 - φ^2)
+V_LO(φ, α, T) = 1 - max(φ, φ_c(α)) - (T/2)*log(1 - φ^2)
 
-# Use logsumexp form to avoid overflow for large N
+# Use logsumexp form to avoid overflow for large N. Includes Appendix A prefactor C_pre on the spurious branch and the exact spherical entropy (N-3)/(2N) (not the large-N limit 1/2).
 function V_N(φ, α, T, N)
     a = β*N*φ
-    b = N*φ_c(α)
+    b = N*φ_c(α) + lnC
     m = max(a, b)
     E = -(m + log(1 + exp(-abs(a-b)))) / (β*N)
-    return E - (T/2)*log(1 - φ^2)
+    return 1 + E - (T*(N-3)/(2N))*log(1 - φ^2)
 end
 
 # Match Nramp: N(α) = round(log M / α), floored at 12
@@ -46,11 +48,14 @@ labels = [L"\alpha=0.62,\ N=%$(N_for(0.62))",
           L"\alpha=0.65,\ N=%$(N_for(0.65))",
           L"\alpha=0.70,\ N=%$(N_for(0.70))"]
 
-# Expanded coordinate: u = log10(1 - φ_1) ∈ [-3, 0]
-# u = -3 → φ_1 = 1 − 10^{−3} = 0.999 (close to 1)
-# u =  0 → φ_1 = 0
-u_grid = collect(-3.0:0.005:0.0)
-φ_grid = 1 .- 10 .^ u_grid
+# Plot against v = -log10(1 - φ) so high φ (basin) is on the right.
+# v = 0 → φ = 0; v = 1 → φ = 0.9; v = 2 → φ = 0.99; v = 3 → φ = 0.999.
+v_grid = collect(0.0:0.005:3.0)
+φ_grid = 1 .- 10 .^ (-v_grid)
+
+# Manual φ-ticks at v = 0, 1, 2, 3.
+xtick_v     = [0.0, 1.0, 2.0, 3.0]
+xtick_label = ["0", "0.9", "0.99", "0.999"]
 
 plots = []
 for (i, (α, lbl)) in enumerate(zip(αs, labels))
@@ -58,41 +63,61 @@ for (i, (α, lbl)) in enumerate(zip(αs, labels))
     V_lo_curve = V_LO.(φ_grid, α, T_LO)
     V_N_curve  = V_N.(φ_grid, α, T_LO, N)
 
-    # φ_c → u_c = log10(1 - φ_c) only valid when φ_c < 1
-    u_c = φ_c(α) < 1 ? log10(1 - φ_c(α)) : nothing
+    # φ_c position on the v-axis (only when φ_c < 1)
+    v_c = φ_c(α) < 1 ? -log10(1 - φ_c(α)) : nothing
 
-    ylabel_str = i == 1 ? L"V_{\mathrm{eff}}(\phi_1) / N" : ""
+    ylabel_str = i == 1 ? L"V_N(\varphi) / N" : ""
 
-    p = plot(u_grid, V_lo_curve;
+    p = plot(v_grid, V_lo_curve;
              color = :black, lw = 1.0, ls = :solid,
              label = L"\mathrm{LO}\ (N\to\infty)",
-             xlabel = L"u = \lg(1 - \phi_1)",
+             xlabel = L"\varphi",
              ylabel = ylabel_str,
-             yformatter = x -> @sprintf("%.2f", x),
+             yformatter = x -> @sprintf("%.3f", x),
+             xticks = (xtick_v, xtick_label),
              title = lbl, titlefontsize = 6,
              guidefontsize = 7, tickfontsize = 5,
-             framestyle = :box, legend = :topright, legendfontsize = 4,
+             framestyle = :box, legend = :topleft, legendfontsize = 4,
              foreground_color_legend = nothing,
              background_color_legend = RGBA(1,1,1,0.85),
              left_margin   = (i == 1 ? 4Plots.mm : 0Plots.mm),
              bottom_margin = 2Plots.mm,
              top_margin    = 0Plots.mm,
-             right_margin  = 0Plots.mm,
+             right_margin  = (i == 3 ? 3Plots.mm : 1Plots.mm),
              aspect_ratio  = :auto)
-    plot!(p, u_grid, V_N_curve;
+    plot!(p, v_grid, V_N_curve;
           color = :red, lw = 1.0, ls = :solid,
           label = L"\mathrm{finite}\ N = %$N")
-    if u_c !== nothing && u_c >= -3
-        vline!(p, [u_c]; color = :grey, ls = :dot, lw = 0.8,
-               label = L"u_c = \lg(1-\phi_c)")
+    if v_c !== nothing && v_c <= 3
+        vline!(p, [v_c]; color = :grey, ls = :dot, lw = 0.8,
+               label = L"\varphi_c")
     end
-    # Y-window: extra headroom at the top so the top-right legend has space
+
+    # Red dot at V_N residual-basin minimum (search in φ ∈ [0.9, 0.999], i.e. v ∈ [1, 3]).
+    mask_res     = (v_grid .>= 1.0) .& (v_grid .<= 3.0)
+    idx_res      = findall(mask_res)
+    min_res_idx  = idx_res[argmin(V_N_curve[idx_res])]
+    scatter!(p, [v_grid[min_res_idx]], [V_N_curve[min_res_idx]];
+             color = :red, markersize = 2.5, markerstrokewidth = 0, label = "")
+
+    # Black dot at LO retrieval-basin minimum in the leftmost panel only.
+    # LO basin exists only when φ_eq(T) > φ_c (here only at α = 0.62).
+    if i == 1
+        φ_eq = 0.5*(sqrt(T_LO^2 + 4) - T_LO)
+        if φ_eq > φ_c(α)
+            v_eq    = -log10(1 - φ_eq)
+            V_LO_eq = V_LO(φ_eq, α, T_LO)
+            scatter!(p, [v_eq], [V_LO_eq];
+                     color = :black, markersize = 2.5, markerstrokewidth = 0, label = "")
+        end
+    end
+    # Y-window: extra headroom at the top so the top-left legend has space
     # above the LO curve and doesn't overlap any line.
     Vmin = min(minimum(V_lo_curve), minimum(V_N_curve))
     Vmax = max(maximum(V_lo_curve), maximum(V_N_curve))
     span = Vmax - Vmin
     ylims!(p, (Vmin - 0.05*span, Vmax + 0.45*span))
-    xlims!(p, (-3, 0))
+    xlims!(p, (0, 3))
     push!(plots, p)
 end
 
@@ -127,7 +152,7 @@ for (α, lbl) in zip(αs, labels)
             push!(crit, i+1)
         end
     end
-    @printf("  %s: critical φ_1 = %s; V at those = %s\n", lbl,
+    @printf("  %s: critical φ = %s; V at those = %s\n", lbl,
             join([@sprintf("%.4f", φ_grid[i]) for i in crit], ", "),
             join([@sprintf("%.5f", V_vals[i]) for i in crit], ", "))
     @printf("    V_N(0)   = %.5f,  V_N(0.99) = %.5f\n",

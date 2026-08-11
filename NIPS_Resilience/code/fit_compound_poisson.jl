@@ -62,8 +62,9 @@ function interp_Dv(α_q, T_q)
 end
 
 # ──────────────── Read all v14 files ────────────────
+# Use v16 data (confirmed barrier crossing — clean Kramers escape)
 v14_dir = @__DIR__
-all_files = filter(f -> startswith(f, "v14_Pesc_a") && endswith(f, ".csv"), readdir(v14_dir))
+all_files = filter(f -> startswith(f, "v16_Pesc_a") && endswith(f, ".csv"), readdir(v14_dir))
 
 struct PanelData
     α::Float64; T::Float64; N::Int
@@ -166,12 +167,12 @@ function global_fit(panels)
 
     best_A = 0.0; best_c = 0.0; best_mse = Inf
 
-    function eval_mse(A, c, panels; stride=5)
+    function eval_mse(logA, c, panels; stride=3)
+        A = exp(logA)
         total_err = 0.0; n_pts = 0
         for pd in panels
             idx = 1:stride:length(pd.steps)
-            # Only fit where S ∈ [0.01, 0.99] — avoid tails
-            mask = (pd.surv[idx] .> 0.01) .& (pd.surv[idx] .< 0.99)
+            mask = (pd.surv[idx] .> 0.27) .& (pd.surv[idx] .< 0.99)
             sum(mask) < 3 && continue
             sel = idx[mask]
             lnS_model = compound_poisson_lnS(pd.steps[sel], pd.α, pd.T, pd.N, A, c)
@@ -182,28 +183,60 @@ function global_fit(panels)
         return n_pts > 0 ? total_err / n_pts : Inf
     end
 
-    # Coarse scan
-    for log_A in range(-2, 6, length=50)
-        A = 10.0^log_A
-        for c in range(0.05, 2.0, length=40)
-            mse = eval_mse(A, c, panels; stride=5)
-            if mse < best_mse
-                best_mse = mse; best_A = A; best_c = c
-            end
+    # Filter: only metastable points (τ_data > T_MC = 40960)
+    T_MC = 2^15 + 2^13
+    meta_panels = PanelData[]
+    for pd in panels
+        pesc_final = 1.0 - pd.surv[end]
+        # Rough τ estimate: if P_esc < 0.5, likely τ > T_run > T_MC
+        # More precisely: use the survival curve
+        # A panel is metastable if most trials DON'T escape
+        if pesc_final < 0.63  # P_esc < 1-e⁻¹ → τ > T_run
+            push!(meta_panels, pd)
+            @printf("  META: α=%.2f T=%.2f (P_esc=%.3f)\n", pd.α, pd.T, pesc_final)
+        else
+            @printf("  skip: α=%.2f T=%.2f (P_esc=%.3f)\n", pd.α, pd.T, pesc_final)
         end
     end
-    @printf("  Coarse: A=%.3e, c=%.3f, MSE=%.4f\n", best_A, best_c, best_mse)
+    @printf("  Using %d metastable panels (of %d total)\n", length(meta_panels), length(panels))
+    panels = meta_panels  # use only metastable for fitting
 
-    # Fine scan
-    for log_A in range(log10(best_A)-0.5, log10(best_A)+0.5, length=60)
-        A = 10.0^log_A
-        for c in range(max(0.01, best_c-0.3), best_c+0.3, length=60)
-            mse = eval_mse(A, c, panels; stride=3)
-            if mse < best_mse
-                best_mse = mse; best_A = A; best_c = c
-            end
+    # Start from known good point
+    best_A = 0.025; best_c = 0.25
+    best_mse = eval_mse(log(best_A), best_c, panels)
+    @printf("  Start: A=%.3e, c=%.3f, MSE=%.4f\n", best_A, best_c, best_mse)
+
+    # Newton (finite-difference) optimization on (logA, c)
+    logA = log(best_A); c = best_c
+    ε = 1e-3  # finite difference step
+    @printf("  Newton iterations:\n")
+    for iter in 1:30
+        f0 = eval_mse(logA, c, panels)
+        # Gradient
+        dfdA = (eval_mse(logA+ε, c, panels) - eval_mse(logA-ε, c, panels)) / (2ε)
+        dfdc = (eval_mse(logA, c+ε, panels) - eval_mse(logA, c-ε, panels)) / (2ε)
+        # Hessian
+        d2fdA2 = (eval_mse(logA+ε, c, panels) - 2f0 + eval_mse(logA-ε, c, panels)) / ε^2
+        d2fdc2 = (eval_mse(logA, c+ε, panels) - 2f0 + eval_mse(logA, c-ε, panels)) / ε^2
+        d2fdAc = (eval_mse(logA+ε, c+ε, panels) - eval_mse(logA+ε, c-ε, panels) -
+                  eval_mse(logA-ε, c+ε, panels) + eval_mse(logA-ε, c-ε, panels)) / (4ε^2)
+        H = [d2fdA2 d2fdAc; d2fdAc d2fdc2]
+        g = [dfdA; dfdc]
+        det_H = H[1,1]*H[2,2] - H[1,2]*H[2,1]
+        abs(det_H) < 1e-20 && (@printf("    iter %d: singular Hessian\n", iter); break)
+        δ = H \ g
+        # Damped step (trust region)
+        step_size = min(1.0, 2.0 / norm(δ))
+        logA_new = logA - step_size * δ[1]
+        c_new = max(0.01, c - step_size * δ[2])
+        f_new = eval_mse(logA_new, c_new, panels)
+        @printf("    iter %d: A=%.4e c=%.4f MSE=%.6f\n", iter, exp(logA_new), c_new, f_new)
+        if abs(f_new - f0) < 1e-6 * abs(f0)
+            logA = logA_new; c = c_new; break
         end
+        logA = logA_new; c = c_new
     end
+    best_A = exp(logA); best_c = c; best_mse = eval_mse(logA, c, panels)
 
     @printf("\n  ═══ RESULT: A = %.4e, c = %.4f ═══\n", best_A, best_c)
     @printf("  MSE(ln S) = %.4f (RMS = %.3f)\n", best_mse, sqrt(best_mse))

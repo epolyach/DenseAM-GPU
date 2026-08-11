@@ -1,0 +1,252 @@
+%File: LSE_capacity_appendices.tex
+%
+% Standalone appendices for LSE_capacity_na.tex.
+% Equation numbers (36)--(53) are frozen via \tag{N} to match the joint compile.
+% Cross-references to main-text equations are hard-coded as numerals.
+%
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage[submission]{aaai2026}  % DO NOT CHANGE THIS
+\usepackage{times}  % DO NOT CHANGE THIS
+\usepackage{helvet}  % DO NOT CHANGE THIS
+\usepackage{courier}  % DO NOT CHANGE THIS
+\usepackage[hyphens]{url}  % DO NOT CHANGE THIS
+\usepackage{graphicx} % DO NOT CHANGE THIS
+\urlstyle{rm} % DO NOT CHANGE THIS
+\def\UrlFont{\rm}  % DO NOT CHANGE THIS
+\usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption} % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing  % DO NOT CHANGE THIS
+\setlength{\pdfpagewidth}{8.5in} % DO NOT CHANGE THIS
+\setlength{\pdfpageheight}{11in} % DO NOT CHANGE THIS
+
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+
+\usepackage{newfloat}
+\usepackage{listings}
+\DeclareCaptionStyle{ruled}{labelfont=normalfont,labelsep=colon,strut=off}
+\lstset{%
+	basicstyle={\footnotesize\ttfamily},
+	numbers=left,numberstyle=\footnotesize,xleftmargin=2em,
+	aboveskip=0pt,belowskip=0pt,%
+	showstringspaces=false,tabsize=2,breaklines=true}
+\floatstyle{ruled}
+\newfloat{listing}{tb}{lst}{}
+\floatname{listing}{Listing}
+
+\pdfinfo{
+/TemplateVersion (2026.1)
+}
+
+\setcounter{secnumdepth}{1}
+
+% Custom macros (same as main file)
+\newcommand{\bxi}{\boldsymbol{\xi}}
+\newcommand{\bx}{\bm{x}}
+\newcommand{\avg}[1]{\langle #1 \rangle}
+\newcommand{\e}{{\mathrm{e}}}
+\newcommand{\dd}{{\mathrm{d}}}
+\newcommand{\Bnet}{\beta}
+\newcommand{\phieq}{\varphi_{\mathrm{eq}}}
+\newcommand{\fret}{f_{\mathrm{ret}}}
+\newcommand{\gmax}{g_{\max}}
+\newcommand{\ac}{\alpha_c}
+\newcommand{\acEd}{\alpha_c^{\mathrm{ed}}}
+\newcommand{\p}{\partial}
+\newcommand{\cas}{\textstyle\frac}
+
+\title{\bfseries Supplementary Material:\\Appendices for ``Thermodynamic approach and Saddle-Dominated Capacity of the LSE Dense Associative Memory''}
+
+\author{Anonymous submission}
+\affiliations{~}
+
+\begin{document}
+
+\maketitle
+
+\appendix
+
+\section{Appendix A: Derivation of the prefactor \\in the non-retrieval sum}
+
+The Debye uniform asymptotic of the modified Bessel function~\citep[10.41.3]{olver2010nist}
+gives the prefactor of Eq.~(13). Keeping the leading ($k = 0$) term of
+the asymptotic series,
+\begin{equation}
+I_\nu(\nu z') \sim \frac{\e^{\nu\eta(z')}}{(2\pi\nu)^{1/2}(1+{z'}^2)^{1/4}},
+\tag{36}
+\end{equation}
+where $z' = 2\Bnet N/(N-2)$ and
+\begin{equation}
+    \eta(z') = \sqrt{1+{z'}^2} + \ln\frac{z'}{1+\sqrt{1+{z'}^2}}\,.
+    \tag{37}
+    \label{eq:bessel_debye}
+\end{equation}
+$\eta(z')$ is expanded to $\mathcal{O}(N^{-1})$ because it is multiplied by
+$\nu = N/2 - 1$ in the exponent:
+\begin{equation}
+    \eta(z') = \eta(2\Bnet) + \eta'(2\Bnet) \frac{4\Bnet}{N} + O(N^{-2})\,,
+    \tag{38}
+\end{equation}
+where
+\begin{align}
+    \eta(2\Bnet)  &= 1 + 2\Bnet\varphi^* + \ln\varphi^*\,, \tag{39}\\
+    \eta'(2\Bnet) &= \varphi^* + \frac{1}{2\Bnet}\,. \tag{40}
+\end{align}
+Then
+\begin{equation}
+    \nu \eta(z') = \tfrac{N}{2} \eta(2\Bnet) - \ln\varphi^* + \mathcal{O}(1/N)\,.
+    \tag{41}
+\end{equation}
+The $\mathcal{O}(1)$ piece $-\ln\varphi^*$ in the exponent contributes a factor
+$1/\varphi^*$ to the prefactor. Using Stirling's formula
+\begin{equation}
+    \Gamma(N/2) \sim \sqrt{4\pi/N}\,(N/2)^{N/2}\,\e^{-N/2}
+    \tag{42}
+\end{equation}
+and collecting all terms in Eq.~(18) to $\mathcal{O}(1)$ in the
+exponent and to leading order in the prefactor reproduces the exponent
+of Eq.~(13) and gives the prefactor:
+\begin{equation}
+S_{\rm nr} \approx \frac{\e^{N[\alpha + g_{\max}(\Bnet) - \Bnet]}}{\sqrt{1-\varphi^{*4}}}\,,
+\tag{43}
+\end{equation}
+with $g_{\max}(\Bnet)$ given by Eq.~(12).
+At $\Bnet = 1$, $\varphi^* \approx 0.618$ and the prefactor is $\approx 1.082$, reproducing Eq.~(14).
+
+
+\section{Appendix B: Tangency of the cusp lines \\to the spherical extreme}
+
+To show that the cusp lines~(16) are tangent to the
+spherical-extreme curve~(6) at every
+$\Bnet$, we need to show that the slope and the $\varphi$-intercept
+coincide.
+
+Differentiating~(6) once gives
+\begin{equation}
+\varphi_{\max}'(\alpha) \;=\; \frac{1-\varphi_{\max}^2}{\varphi_{\max}}\,,
+\tag{44}
+\label{eq:tangent_slope_C}
+\end{equation}
+and a second differentiation gives $\varphi_{\max}''(\alpha) < 0$ for $\alpha > 0$,
+so $\varphi_{\max}$ is strictly concave on $(0, \infty)$. For a concave function
+every tangent line lies above the function, with equality only at the tangency
+point. This is used in the lower-envelope identity below.
+
+The cusp line at sharpness $\Bnet$,
+\begin{equation}
+\varphi \;=\; \alpha/\Bnet + g_{\max}(\Bnet)/\Bnet\,,
+\tag{45}
+\end{equation}
+has slope $1/\Bnet$ and $\varphi$-intercept $g_{\max}(\Bnet)/\Bnet$. To find the point on
+the blue curve where the tangent has the same slope, set the right-hand side
+of~\eqref{eq:tangent_slope_C} equal to $1/\Bnet$:
+\begin{equation}
+\frac{1-\varphi^2}{\varphi} \;=\; \frac{1}{\Bnet}
+\quad\Longleftrightarrow\quad
+\Bnet\,\varphi^2 + \varphi - \Bnet = 0\,.
+\tag{46}
+\label{eq:saddle_eq_C}
+\end{equation}
+This is the saddle equation and its unique positive root is the spherical saddle~(11).
+The corresponding $\alpha$ on the blue curve follows from
+$\varphi^* = \varphi_{\max}(\alpha^*)$:
+\begin{equation}
+\alpha^*(\Bnet) \;=\; -\tfrac12 \ln(1-\varphi^{*\,2})\,.
+\tag{47}
+\label{eq:alpha_star_C}
+\end{equation}
+
+A line of slope $1/\Bnet$ passing through $(\alpha^*(\Bnet), \varphi^*(\Bnet))$ has
+$\varphi$-intercept
+\begin{equation}
+b_{\rm tg}(\Bnet) \;=\; \varphi^* - \alpha^*/\Bnet\,.
+\tag{48}
+\end{equation}
+The cusp line has $\varphi$-intercept $g_{\max}(\Bnet)/\Bnet$.
+Using~(12), the $\varphi$-intercepts coincide;
+the two lines are therefore identical.
+
+By the concavity statement above, the cusp line at any sharpness $\Bnet$ lies above the blue curve, with equality only at
+$\alpha = \alpha^*(\Bnet)$:
+\begin{equation}
+\varphi_c(\alpha, \Bnet) \;\ge\; \varphi_{\max}(\alpha) \quad \text{for all $\alpha$ and all $\Bnet > 0$}\,,
+\tag{49}
+\end{equation}
+with equality at one $\alpha$ for each $\Bnet$. Taking the infimum over $\Bnet$,
+\begin{equation}
+\varphi_{\max}(\alpha) \;=\; \inf_{\Bnet > 0} \varphi_c(\alpha, \Bnet)\,,
+\tag{50}
+\label{eq:lower_envelope_C}
+\end{equation}
+the lower-envelope identity.
+
+The saddle function $\varphi^*(\Bnet)$~(11) is continuous and strictly increasing on $(0, \infty)$ from $0$ to $1$. As $\Bnet$ sweeps $(0, \infty)$,
+the tangency point $(\alpha^*(\Bnet), \varphi^*(\Bnet))$ therefore traces the entire blue curve from the origin to its right edge.
+
+Two results follow from the geometric setup above.  At $T = 0$ the
+cusp line of slope $1/\Bnet$ reaches $\varphi = 1$ at
+$\alpha = \Bnet - g_{\max}(\Bnet)$, which is the zero-temperature
+capacity~(17) (equivalently, the spinodal at
+$T = 0$).
+
+The \citeauthor{ramsauer2021hopfield}'s condition
+$\varphi_{\max}(\alpha) = 1 - \alpha/\Bnet$ is the intersection of
+$\varphi_{\max}$ with the line of slope $-1/\Bnet$ through $(0, 1)$.
+By~\eqref{eq:lower_envelope_C}, $\varphi_{\max}$ lies below every
+cusp line, so the \citeauthor{ramsauer2021hopfield}'s line crosses $\varphi_{\max}$ at strictly
+smaller $\alpha$ than the cusp line at slope $1/\Bnet$ reaches
+$\varphi = 1$.  \citeauthor{ramsauer2021hopfield}'s capacity $\alpha_c^R$ therefore satisfies
+$\alpha_c^R < \alpha_c(\Bnet, 0)$ for every $\Bnet > 0$.
+
+Using~(11) in
+(12) and then in~(17), one obtains:
+\begin{equation}
+\begin{aligned}
+\ac(\Bnet, 0) = \Bnet - g_{\max}(\Bnet) &\;\to\; \Bnet
+   && (\Bnet \to 0)\,,\\
+\ac(\Bnet, 0) = \Bnet - g_{\max}(\Bnet) &\;\to\; \tfrac{1}{2}\ln\Bnet + \tfrac{1}{2}
+   && (\Bnet \to \infty)\,,
+\end{aligned}
+\tag{51}
+\label{eq:asymptotic_C}
+\end{equation}
+the small- and large-$\Bnet$ limits of the zero-temperature capacity
+cited in the Abstract.
+
+\paragraph{Legendre transform.}
+The lower-envelope identity~\eqref{eq:lower_envelope_C} and the formula
+below are the two sides of a Legendre transform between
+$\varphi_{\max}(\alpha)$ and $g_{\max}(\Bnet)/\Bnet$.  The forward
+transform takes $\varphi_{\max}$ to its conjugate,
+\begin{equation}
+g_{\max}(\Bnet)/\Bnet \;=\; \sup_\alpha\,\bigl[\,\varphi_{\max}(\alpha) - \alpha/\Bnet\,\bigr]\,,
+\tag{52}
+\label{eq:legendre_C}
+\end{equation}
+with the supremum attained at $\alpha = \alpha^*(\Bnet)$ from the
+slope-match condition~\eqref{eq:saddle_eq_C}.  The Legendre transform
+is involutive: applying it to $g_{\max}(\Bnet)/\Bnet$ recovers
+$\varphi_{\max}(\alpha)$, which is exactly~\eqref{eq:lower_envelope_C}
+after using the cusp-line definition~(16).
+
+Two facts follow from the duality.  First, the lower-envelope
+identity~\eqref{eq:lower_envelope_C} is the inverse
+of~\eqref{eq:legendre_C}, so the tangency is automatic.  Second,
+differentiating~(12) in $\Bnet$ and using the
+envelope theorem $\p g/\p\varphi|_{\varphi^*} = 0$ gives
+\begin{equation}
+g_{\max}'(\Bnet) \;=\; \varphi^*(\Bnet)\,,
+\tag{53}
+\label{eq:envelope_C}
+\end{equation}
+so $g_{\max}(\Bnet)$ is recovered by integrating $\varphi^*(\Bnet)$.
+Plugging the small- and large-$\Bnet$ limits $\varphi^* \sim \Bnet$
+and $\varphi^* \sim 1 - 1/(2\Bnet)$ into~\eqref{eq:envelope_C} and
+integrating reproduces~\eqref{eq:asymptotic_C}.
+
+\bibliography{aaai2026}
+
+\end{document}

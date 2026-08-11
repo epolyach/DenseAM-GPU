@@ -19,7 +19,7 @@ const cusp   = α + g_max
 
 phi_eq(T)  = 0.5*(-T + sqrt(T^2 + 4))
 T_sp_LO(α) = (1 - (α + g_max)^2)/(α + g_max)
-f_LO(φ, T) = -max(φ, cusp) - 0.5*T*log(1 - φ^2)
+f_LO(φ, T) = 1 - max(φ, cusp) - 0.5*T*log(1 - φ^2)
 
 const Tsp = T_sp_LO(α)
 
@@ -65,10 +65,10 @@ end
 vline!(p, [cusp]; lw = 1.0, ls = :dash, color = :black, alpha = 0.55, label = "cusp")
 
 xlims!(p, (0.55, 1.0))
-ylims!(p, (-1.07, -0.45))
+ylims!(p, (-0.07, 0.55))
 
-annotate!(p, 0.71, -0.98, text("SV", 6, :center, :black))
-annotate!(p, 0.94, -0.98, text("RB", 6, :center, :black))
+annotate!(p, 0.71, 0.02, text("NRB", 6, :center, :black))
+annotate!(p, 0.94, 0.02, text("RB", 6, :center, :black))
 
 outdir = joinpath(@__DIR__, "panels_paper")
 isdir(outdir) || mkpath(outdir)

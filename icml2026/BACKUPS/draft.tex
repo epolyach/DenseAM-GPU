@@ -1,0 +1,155 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[numbers]{natbib}
+
+\newcommand{\e}{{\mathrm{e}}}
+\renewcommand{\i}{{\mathrm{i}}}
+\newcommand{\d}{{\mathrm{d}}}
+
+\title{Learning to Remember: Error-Driven Attractor Formation\\
+in Thermodynamic Dense Associative Memories}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+%===========================================================
+\begin{abstract}
+Continual learning systems must acquire new knowledge over time without erasing previously stored information.
+A key missing piece in many approaches is an explicit mechanism for \emph{learning when to remember}---i.e., when the system should form a new memory rather than adapt existing representations.
+We formulate this problem in Hopfield-type dense associative memories, where memories correspond to attractors of an energy (or free energy) landscape.
+Our central hypothesis is that large prediction errors signal the absence of a suitable attractor for the current input and should therefore trigger \emph{attractor formation}.
+Using thermodynamic dense associative memories (Thermo-DAMs), we provide an energy-based framework in which memory formation corresponds to controlled deformations of the free energy landscape, enabling principled reasoning about stability, basin geometry, and interference in continual learning.
+\end{abstract}
+
+%===========================================================
+\section{Introduction}
+
+Continual learning addresses learning from a non-stationary stream of data while preserving previously acquired knowledge.
+A central difficulty is catastrophic forgetting: incorporating new information can destroy older knowledge.
+Most existing solutions mitigate forgetting through parameter regularization, architectural isolation, or replay of past data.
+While effective in certain regimes, these approaches often treat memory as an auxiliary resource and do not explicitly address a fundamental decision problem: \emph{when should a system form a new memory?}
+
+We argue that continual learning is fundamentally a problem of \emph{learning to remember}.
+In particular, a learning system operating online must decide \emph{when} to create a new memory trace (or attractor) and when to rely on existing ones.
+This decision is nontrivial: indiscriminate memorization leads to interference and uncontrolled growth, while overly conservative updates prevent adaptation to novel structure.
+
+Hopfield-type associative memories provide a natural language for this question.
+In dense associative memories (DAMs), stored patterns correspond to attractors of an energy landscape, and retrieval is realized by dynamical convergence.
+From this viewpoint, ``remembering'' is not an explicit data storage operation but the existence of a stable basin of attraction that supports robust retrieval.
+Consequently, learning to remember can be cast as the problem of \emph{when and how to create new attractors}.
+
+In this work, we propose a principled trigger for attractor formation: \emph{prediction error}.
+Intuitively, if an input can be explained by convergence to an existing attractor, prediction error remains small and no new memory is required.
+If prediction error becomes large, this suggests that no suitable attractor exists---the system fails to retrieve an internal state that supports correct prediction---and a new attractor should be formed.
+We formalize this idea within thermodynamic dense associative memories (Thermo-DAMs), where attractor stability and interference can be analyzed through the free energy landscape and its entropic geometry.
+
+%===========================================================
+\section{Related Work}
+
+\paragraph{Continual learning.}
+Continual learning has been studied through regularization-based approaches (constraining parameter drift), replay mechanisms (storing and revisiting past samples), and architectural expansion (allocating task-specific subnetworks).
+These methods primarily operate at the parameter or data level.
+In contrast, our focus is the \emph{memory formation decision}: when a novel event should be committed as a new stable memory state.
+
+\paragraph{Hopfield networks and dense associative memories.}
+Hopfield networks and modern dense variants have been analyzed in terms of capacity, retrieval dynamics, and connections to energy-based models and attention.
+Most work assumes a fixed set of stored patterns and studies retrieval.
+We instead consider the continual regime, where the memory set itself evolves, and ask when new attractors should be created.
+
+\paragraph{Prediction error and surprise signals.}
+Prediction error is a central concept in learning theories across neuroscience and machine learning.
+In machine learning it is typically used to drive incremental parameter updates.
+Here we use it as a \emph{structural signal}: a criterion for creating new attractors in an associative memory.
+
+%===========================================================
+\section{Problem Formulation: Learning When to Remember}
+
+We consider a system that processes a stream of inputs $\{\bm{x}_t\}$ and produces predictions for a task of interest (e.g., classification, next-step prediction, or reconstruction).
+At each time $t$, the system incurs a prediction error $e_t$ (task-dependent, e.g., negative log-likelihood or squared error).
+
+The system is equipped with a Hopfield-type dense associative memory with stored patterns $\{\bm{\xi}^\mu\}_{\mu=1}^p$.
+Memory retrieval corresponds to dynamical convergence to an attractor (a local minimum of an energy or free energy function) given an initial state or cue.
+
+\paragraph{Key question.}
+The central problem is to learn a rule for \emph{memory formation}:
+\begin{quote}
+\emph{When should the system modify its attractor landscape by creating a new stable memory state (attractor), rather than relying on existing attractors or incremental adaptation?}
+\end{quote}
+
+\paragraph{Error-driven attractor formation.}
+Our guiding hypothesis is that prediction error provides a principled trigger:
+small errors indicate that the current input is well explained by existing attractors;
+large errors indicate the absence of a suitable attractor and should trigger \emph{attractor formation}.
+Thermo-DAMs provide the appropriate framework to analyze this process in terms of the free energy landscape, basin geometry, and entropic costs of introducing additional attractors.
+
+%===========================================================
+\section{Thermodynamic Dense Associative Memory Model}
+\label{sec:thermo_dam}
+
+We now introduce the thermodynamic dense associative memory (Thermo-DAM) framework underlying our formulation.
+This model provides an energy-based description of stored patterns, retrieval dynamics, and basin geometry.
+Crucially, it also enables reasoning about how the landscape changes when new memories are formed.
+
+% -------------------- YOUR TEXT STARTS HERE (UNCHANGED) --------------------
+% Insert your full Thermo-DAM derivations and equations here as-is.
+% -------------------- YOUR TEXT ENDS HERE --------------------
+
+%===========================================================
+\section{Error-Driven Attractor Formation in Thermo-DAMs}
+\label{sec:formation}
+
+In Hopfield-type associative memories, successful retrieval corresponds to convergence toward an existing attractor.
+If an input lies within the basin of attraction of a stored memory, the system reaches a stable state that supports correct prediction, and the prediction error remains small.
+
+When prediction error is large, the system fails to find a stable internal state compatible with the input and the task objective.
+In the language of energy-based memories, this suggests the absence of an appropriate attractor in the relevant region of state space.
+We propose to interpret such events as \emph{signals to remember}: the system should form a new attractor that encodes the novel structure revealed by the error and its subsequent correction.
+
+Within the thermodynamic formulation, memory formation corresponds to a controlled deformation of the free energy landscape.
+Introducing a new attractor increases the set of retrievable states but incurs an entropic cost by reducing the available volume of microstates compatible with a given set of alignments.
+This naturally yields a trade-off between adaptability (forming new memories) and stability (preserving existing basins), providing a principled viewpoint on interference and forgetting.
+
+Importantly, this perspective does not require proposing a new architecture.
+Thermo-DAMs serve as a theoretical and computational substrate for formulating continual learning as \emph{learning when to remember} via error-driven attractor formation.
+
+%===========================================================
+\section{Experimental Protocol}
+\label{sec:protocol}
+
+We outline experimental protocols aimed at diagnosing whether error-driven attractor formation improves continual learning.
+The emphasis is on testing the causal chain:
+\[
+\text{large prediction error} \;\Rightarrow\; \text{attractor formation} \;\Rightarrow\; \text{improved future retrieval and retention}.
+\]
+Candidate settings include class-incremental learning, noisy pattern completion, and task-switching.
+In each case, the key diagnostic is whether error-triggered memory formation leads to stable attractors with basins that support robust retrieval under future perturbations.
+
+%===========================================================
+\section{Discussion}
+
+Our formulation reframes continual learning as the problem of shaping an attractor landscape online.
+In this view, forgetting is not merely parameter drift but the loss of basin structure supporting retrieval of earlier memories.
+Prediction error becomes a structural signal for deciding \emph{when} a new memory should be formed.
+
+The thermodynamic viewpoint adds an essential layer: it provides explicit control variables (temperature, entropic penalties) and yields interpretable trade-offs between memory growth, stability, and robustness.
+This perspective suggests new evaluation criteria for continual learning beyond accuracy curves, such as basin volumes, attractor stability, and free energy barriers.
+
+%===========================================================
+\section{Conclusion}
+
+We proposed a Hopfield-centric formulation of continual learning as \emph{learning to remember}: deciding when to form new memories.
+We argued that large prediction errors signal the absence of a suitable attractor and should trigger error-driven attractor formation.
+Thermodynamic dense associative memories provide a principled framework for analyzing and implementing this mechanism through free energy landscape shaping.
+This viewpoint opens new directions for studying continual learning as a dynamical memory formation problem grounded in attractor geometry.
+
+\bibliographystyle{plainnat}
+% \bibliography{refs}
+
+\end{document}

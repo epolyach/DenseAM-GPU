@@ -1,0 +1,683 @@
+%%%%%%%% ICML 2026 EXAMPLE LATEX SUBMISSION FILE %%%%%%%%%%%%%%%%%
+
+\documentclass{article}
+
+% Recommended, but optional, packages for figures and better typesetting:
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs} % for professional tables
+
+\usepackage{bm}
+
+\newcommand{\e}{{\mathrm{e}}}
+\renewcommand{\i}{{\mathrm{i}}}
+\newcommand{\dd}{{\mathrm{d}}}
+
+% hyperref makes hyperlinks in the resulting PDF.
+% If your build breaks (sometimes temporarily if a hyperlink spans a page)
+% please comment out the following usepackage line and replace
+% \usepackage{icml2026} with \usepackage[nohyperref]{icml2026} above.
+\usepackage{hyperref}
+
+
+% Attempt to make hyperref and algorithmic work together better:
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+
+% Use the following line for the initial blind version submitted for review:
+\usepackage{icml2026}
+
+% For preprint, use
+% \usepackage[preprint]{icml2026}
+
+% If accepted, instead use the following line for the camera-ready submission:
+% \usepackage[accepted]{icml2026}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{amsthm}
+
+
+% if you use cleveref..
+\usepackage[capitalize,noabbrev]{cleveref}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% THEOREMS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% Todonotes is useful during development; simply uncomment the next line
+%    and comment out the line below the next line to turn off comments
+%\usepackage[disable,textsize=tiny]{todonotes}
+\usepackage[textsize=tiny]{todonotes}
+
+% The \icmltitle you define below is probably too long as a header.
+% Therefore, a short form for the running title is supplied here:
+\icmltitlerunning{Geometric Entropy and Retrieval Phase Transitions in Continuous DAM}
+
+\begin{document}
+
+\twocolumn[
+  \icmltitle{Geometric Entropy and Retrieval Phase Transitions\\
+  in Continuous Dense Associative Memory}
+
+  % It is OKAY to include author information, even for blind submissions: the
+  % style file will automatically remove it for you unless you've provided
+  % the [accepted] option to the icml2026 package.
+
+  % List of affiliations: The first argument should be a (short) identifier you
+  % will use later to specify author affiliations Academic affiliations
+  % should list Department, University, City, Region, Country Industry
+  % affiliations should list Company, City, Region, Country
+
+  % You can specify symbols, otherwise they are numbered in order. Ideally, you
+  % should not use this facility. Affiliations will be numbered in order of
+  % appearance and this is the preferred way.
+  \icmlsetsymbol{equal}{*}
+
+  \begin{icmlauthorlist}
+    \icmlauthor{Firstname1 Lastname1}{equal,yyy}
+    \icmlauthor{Firstname2 Lastname2}{equal,yyy,comp}
+    \icmlauthor{Firstname3 Lastname3}{comp}
+    \icmlauthor{Firstname4 Lastname4}{sch}
+    \icmlauthor{Firstname5 Lastname5}{yyy}
+    \icmlauthor{Firstname6 Lastname6}{sch,yyy,comp}
+    \icmlauthor{Firstname7 Lastname7}{comp}
+    %\icmlauthor{}{sch}
+    \icmlauthor{Firstname8 Lastname8}{sch}
+    \icmlauthor{Firstname8 Lastname8}{yyy,comp}
+    %\icmlauthor{}{sch}
+    %\icmlauthor{}{sch}
+  \end{icmlauthorlist}
+
+  \icmlaffiliation{yyy}{Department of XXX, University of YYY, Location, Country}
+  \icmlaffiliation{comp}{Company Name, Location, Country}
+  \icmlaffiliation{sch}{School of ZZZ, Institute of WWW, Location, Country}
+
+  \icmlcorrespondingauthor{Firstname1 Lastname1}{first1.last1@xxx.edu}
+  \icmlcorrespondingauthor{Firstname2 Lastname2}{first2.last2@www.uk}
+
+  % You may provide any keywords that you find helpful for describing your
+  % paper; these are used to populate the "keywords" metadata in the PDF but
+  % will not be shown in the document
+  \icmlkeywords{Machine Learning, ICML}
+
+  \vskip 0.3in
+]
+
+% this must go after the closing bracket ] following \twocolumn[ ...
+
+% This command actually creates the footnote in the first column listing the
+% affiliations and the copyright notice. The command takes one argument, which
+% is text to display at the start of the footnote. The \icmlEqualContribution
+% command is standard text for equal contribution. Remove it (just {}) if you
+% do not need this facility.
+
+% Use ONE of the following lines. DO NOT remove the command.
+% If you have no special notice, KEEP empty braces:
+\printAffiliationsAndNotice{}  % no special notice (required even if empty)
+% Or, if applicable, use the standard equal contribution text:
+% \printAffiliationsAndNotice{\icmlEqualContribution}
+
+\begin{abstract}
+We study the thermodynamic memory capacity of modern Hopfield networks (Dense Associative Memory models) with continuous states under geometric constraints, extending classical analyses of pairwise associative memory. We derive thermodynamic phase boundaries for Dense Associative Memory networks with exponential capacity $M = e^{\alpha N}$, comparing Gaussian (LSE) and Epanechnikov (LSR) kernels. For continuous neurons on an $N$-sphere, the geometric entropy depends solely on the spherical geometry, not the kernel. In the sharp-kernel regime, the maximum theoretical capacity $\alpha = 0.5$ is achieved at zero temperature; below this threshold, a critical line separates retrieval from \textbf{non-retrieval}. The two kernels differ qualitatively in their phase boundary structure: \textbf{for LSE, a critical line exists at all loads $\alpha > 0$}. For LSR, the finite support introduces a threshold $\alpha_{\text{th}}$ below which no spurious patterns contribute to the noise floor, \textbf{and no critical line exists --- retrieval is perfect at any temperature}. These results advance the theory of high-capacity associative memory and clarify fundamental limits of retrieval robustness in modern attention-like memory architectures.
+%\textbf{We study the thermodynamic memory capacity of modern Hopfield networks (Dense Associative Memory models) with continuous states under geometric constraints, extending classical analyses of pairwise associative memory.} We derive thermodynamic phase boundaries for Dense Associative Memory networks with exponential capacity $p = e^{\alpha N}$, comparing Gaussian (LSE) and Epanechnikov (LSR) kernels. For continuous neurons on an $N$-sphere, the geometric entropy depends solely on the spherical geometry, not the kernel. \textbf{In the sharp-kernel regime,} the maximum theoretical capacity $\alpha = 0.5$ is achieved at zero temperature; below this threshold, a critical line separates retrieval from a spin-glass phase. Kernel sharpness introduces a trade-off between energetic stability and entropic cost: while LSR provides deeper energy minima, it exhibits a smaller retrieval region than LSE at finite temperature because enforcing higher alignment incurs a geometric entropy penalty that outweighs the energetic gain. The kernels also differ qualitatively in their thermal limits: LSR possesses a finite maximum retrieval temperature, whereas LSE permits retrieval at arbitrarily high temperatures for sufficiently low loads. \textbf{These results advance the theory of high-capacity associative memory and clarify fundamental limits of retrieval robustness in modern attention-like memory architectures.}
+\end{abstract}
+
+\section{Introduction}
+
+Associative memory networks store patterns such that the correct memory can be retrieved from a noisy or partial cue. The classic example is the Hopfield network~\citep{Hopfield1982}, which can reliably retrieve a memory pattern up to a certain storage limit. In the original Hopfield model, each neuron is binary and the memory capacity scales linearly with the number of neurons $N$ (on the order of $0.14N$ patterns in the symmetric binary case~\citep{amit1985storing}). Numerous extensions have been proposed to achieve super-linear capacity, including models with $p$-body interactions yielding polynomial scaling~\citep{gardner1988space,krotov2016dense}. More recently, Dense Associative Memory (DAM) or modern Hopfield networks have been shown to achieve exponential storage capacity~\citep{demircigil2017model,ramsauer2021hopfield}.
+
+In modern Hopfield models, pairwise interactions are replaced by highly nonlinear energy functions, substantially improving storage capacity and robustness to interference in high-load regimes. When defined over continuous states constrained to an $N$-dimensional sphere, DAMs can store an exponential number of patterns ($M = e^{\alpha N}$) with perfect recall in the zero-temperature limit~\citep{demircigil2017model,ramsauer2021hopfield,lucibello2024exponential}. These models have attracted renewed interest due to their formal equivalence to softmax attention mechanisms in Transformers, making DAMs a tractable theoretical framework for analyzing capacity limits, interference, and robustness in attention-style retrieval mechanisms~\citep{ramsauer2021hopfield}. However, existing theoretical results largely focus on zero-temperature behavior, leaving open how retrieval stability persists under noise and thermal fluctuations. In energy-based associative memories, such noise naturally corresponds to finite temperature, where retrieval is governed by a competition between energy and entropy.
+
+Recent work has revisited associative memory from a thermodynamic perspective. Building on classical analyses of retrieval-to-spin-glass transitions~\citep{amit1987statistical}, \citet{rooke2026stochastic} introduced a stochastic thermodynamics framework for DAMs, while \citet{lucibello2024exponential} analyzed retrieval stability under exponential memory load, emphasizing entropic penalties in high-dimensional settings. Nevertheless, it remains unclear how such thermodynamic effects constrain retrieval robustness in continuous DAMs that are directly connected to modern neural architectures.
+
+While both our analysis and that of \citet{lucibello2024exponential} address exponential memory load and thermodynamic limits, the latter primarily focuses on zero-temperature or energy-dominated regimes. In contrast, we derive explicit finite-temperature phase boundaries for continuous DAMs on the $N$-sphere and show that retrieval stability is governed by a competition between kernel-dependent energy and a kernel-independent \emph{geometric entropy} term induced solely by the spherical constraint. This separation enables a principled comparison of different kernels and reveals qualitative differences in thermal robustness, including a support threshold for compactly supported kernels below which retrieval is perfect at any temperature. In particular, it clarifies which aspects of retrieval robustness are determined by modeling choices, such as the similarity kernel, and which are imposed by high-dimensional geometry.
+
+From this finite-temperature perspective, we obtain an explicit characterization of the thermodynamic retrieval phase in continuous DAMs under exponential memory load by deriving the phase boundary $\alpha_c(T)$ in the $(\alpha,T)$ plane separating retrieval from disordered behavior. We study DAMs on the $N$-sphere with two kernel-based energy functions: the Gaussian log-sum-exp (LSE) and the compactly supported log-sum-ReLU (LSR)~\citep{hoover2025dense}. Although both achieve exponential capacity as $T \to 0$, they differ qualitatively in how kernel sharpness mediates robustness to thermal noise. In high dimensions, sharper kernels incur a larger entropic cost to maintain high alignment, leading to distinct phase boundary structures.
+
+Our main contributions are: (i) analytical characterization of the finite-temperature retrieval transition in continuous DAMs with exponential memory load; (ii) identification of a kernel-independent geometric entropy term on the $N$-sphere and its competition with kernel-dependent energy; and (iii) explicit phase boundaries for LSE and LSR, showing that LSR exhibits a support threshold below which retrieval is perfect at any temperature, \textbf{while for LSE a critical line exists at all loads $\alpha > 0$}.
+
+\paragraph{Paper outline.}
+\Cref{sec:dam} introduces the DAM models and kernel-based energy functions studied in this work. 
+\Cref{sec:statmech} develops the thermodynamic framework for retrieval, including the replica formulation, geometric entropy induced by the spherical constraint, and the noise-floor comparison used to determine stability. 
+\Cref{sec:transition} derives explicit phase boundaries $\alpha_c(T)$ for LSE and LSR and presents phase diagrams with Monte Carlo validation. 
+\Cref{sec:conclusion} summarizes the main findings. 
+Derivations are provided in \Cref{app:free_energy,app:lsr_energy}.
+
+
+
+
+\section{Dense Associative Memory networks}\label{sec:dam}
+
+In this section, we specify the class of energy-based associative memory models studied in this work and relate their energy functions to kernelized, attention-like retrieval.
+
+In the study of Dense AM (Associative Memory), two types of Hamiltonians, i.e., energy functions, that define the internal energy of the system are distinguished.  The first type is $k$-polynomial~\cite{krotov2016dense}. Here, retrieval can be viewed as minimizing $H_k(\bm{x})$ over the state $\bm{x}$, so the form of $H_k$ determines the geometry of basins of attraction and, ultimately, the storage capacity.
+\begin{equation}
+    H_k(\bm{x}) = - \frac{1}{N^{k-1}} \sum\limits_{\mu=1}^{M} (\bm{x} \cdot \bm{\xi}^\mu)^k\,,
+    \label{eq:H_k}
+\end{equation}
+a special case of which is the classical Hopfield network \cite{Hopfield1982} when $k=2$. 
+The vectors $\bm{x}$ and $\bm{\xi}^\mu$ belong to the same space and define, respectively, the current state of the system and the stored patterns (memories, $\mu=1\dots M$). They can either be simply elements of the binary neuron space $\{-1,+1\}^N$, or be continuous, for example, bounded on each coordinate by the interval $[-1, 1]$. This type is characterized by polynomial capacity $M_{\rm max} = \alpha N^{k-1}$~\cite{krotov2016dense}. In particular, for the Hopfield network with spins, the well known result is $M_{\rm max} \approx 0.14N$.
+
+The second type of Hamiltonians is the exponential interaction type. The connection to polynomial interactions arises in the limiting case $k \to \infty$, where polynomial terms give way to exponential ones. This modification yields a maximum capacity of $M_{\rm max} \approx \exp(\alpha N)$, with $\alpha \approx 0.35$ for binary spin data~\cite{demircigil2017model}.
+
+A particularly relevant instance is the log-sum-exp energy, whose gradient-based dynamics induce a softmax-like weighting over stored patterns.
+\citet{ramsauer2021hopfield} extended these exponential capacity results to continuous states using the Log-Sum-Exp (LSE) energy function,
+\begin{equation}
+    H_{\rm LSE}(\bm{x}) \propto -\ln \left( \sum_{\mu=1}^M \exp(\beta_{\rm net} \, \bm{x} \cdot \bm{\xi}^\mu) \right) \,,
+    \label{eq:lse_energy}
+\end{equation}
+and showed that the update rule minimizing this energy is mathematically equivalent to the self-attention mechanism in Transformers, with stored patterns as keys and the state vector as query. To ensure bounded activations, vector magnitudes must be constrained. We adopt the $N$-sphere model, where continuous real-valued coordinates satisfy $\sum_{i=1}^{N} x_i^2 = N$. Under this constraint, \citet{ramsauer2021hopfield} proved $M_{\rm max} \propto \exp(\alpha N)$ with $\alpha = 0.5$. \textbf{Note that $\alpha$ in the exponential regime is not comparable to the classical Hopfield capacity parameter: there $M = \alpha N$ measures patterns per neuron, whereas here $M = e^{\alpha N}$ makes $\alpha = \ln(M)/N$ a logarithmic load per neuron.}
+
+\citet{krotov2021large} introduced an alternative formulation based on Euclidean distance $d^2(\bm{x}, \bm{\xi}^\mu) = \|\bm{x}-\bm{\xi}^\mu\|^2$, yielding the kernel-based energy function:
+\begin{equation}
+    H_{\rm LSE}(\bm{x}) = -\frac{1}{\beta_{\rm net}} \ln p(\bm{x}) \,,
+    \label{eq:H_lse}
+\end{equation}
+with 
+\begin{equation}
+    p(\bm{x}) \equiv \sum_{\mu=1}^M \exp\left[ - \frac{\beta_{\rm net}}{2} d^2(\bm{x}, \bm{\xi}^\mu) \right] \,.
+    \label{eq:dens}
+\end{equation}
+This form corresponds to the negative log-likelihood of a Gaussian kernel density estimate of the memory distribution~\citep{hoover2025dense}. Equivalently, the network assigns higher scores to states $\bm{x}$ that lie in high-density regions of the memory distribution under this kernel, making retrieval a form of mode-seeking in representation space. Under the $N$-sphere constraint, the dot product and distance formulations are equivalent:
+\begin{equation}
+    d^2(\bm{x}, \bm{\xi}^\mu) = \|\bm{x}\|^2 + \|\bm{\xi}^\mu\|^2 - 2\bm{x} \cdot \bm{\xi}^\mu = 2N - 2\bm{x} \cdot \bm{\xi}^\mu \,.
+    \label{eq:edist}
+\end{equation}
+
+The parameter $\beta_{\rm net}$, termed the {\it inverse variance}, has nothing to do with the outer thermal bath. Instead, it controls the sharpness of the similarity kernel and thereby the shape of the energy landscape, with effective width $\sigma$ given by:
+\begin{equation}
+    \sigma^2 \equiv \beta_{\rm net}^{-1} \,.
+\end{equation}
+
+Recently, \citet{hoover2025dense} proposed the log-sum-ReLU (LSR) energy function, inspired by optimal kernel density estimation using the Epanechnikov kernel. This formulation achieves exact memory retrieval with exponential capacity without relying on exponential kernels:
+\begin{equation}
+    H_{\rm LSR}(\bm{x}) = -\frac{1}{\beta_{\rm net}} \ln \left( \sum_{\mu=1}^M \max\left[\epsilon,  1 - \frac{d^2(\bm{x},\bm{\xi}^\mu)}{2\sigma^2} \right] \right) \,,
+    \label{eq:H_lsr}
+\end{equation}
+where $\epsilon > 0$ is a small constant introduced to prevent singularities in the logarithm.
+
+Memory retrieval occurs when patterns are sufficiently separated and the initial state lies within the basin of attraction of the target pattern. The relevant quantity is the \textit{alignment}:
+\begin{equation}
+    \phi^\mu(\bm{x}) = \frac{1}{N} \bm{x} \cdot \bm{\xi}^\mu\,,
+    \label{eq:alignment}
+\end{equation}
+with $\phi^\mu \approx 1$ when $\bm{x}$ is near $\bm{\xi}^\mu$ and $\phi^\mu \approx 0$ otherwise. The Euclidean distance~\eqref{eq:edist} becomes $d^2(\bm{x}, \bm{\xi}^\mu) = 2N[1 - \phi^\mu(\bm{x})]$, scaling linearly with $N$. This scaling requires a corresponding rescaling of the LSR inverse variance in the thermodynamic limit (see Appendix~B).
+
+When the width $\sigma$ is small, the minima are well separated. Because LSE kernels have global support, gradient descent converges to a local minimum regardless of initialization. For LSR, successful retrieval requires the initial state to lie within the basin of attraction of a stored pattern. As $\sigma$ increases, the two models behave differently. For LSE, nearby patterns simply merge into a single basin. For LSR, there exists a narrow range of $\sigma$ in which spurious local minima can emerge between patterns; further increasing $\sigma$ eventually causes basins to merge as in the LSE case~\citep{hoover2025dense}.
+
+
+\section{Statistical Mechanics of Retrieval}\label{sec:statmech}
+
+In this section, we develop a thermodynamic description of memory retrieval that makes it possible to analyze robustness to noise and interference in the high-dimensional limit introduced above.
+
+Thermal Dense AM involves two sources of randomness. The first is quenched disorder: the random distribution of patterns across state space, which together with $\beta_{\rm net}$ determines the energy landscape. The second is thermal noise from coupling to a heat bath at temperature $T$. We analyze phase transitions in the thermodynamic limit $N \to \infty$, averaging over the disorder in the patterns $\xi^\mu$.
+
+\subsection{The Macroscopic Framework and the Replica Method}
+
+Our goal is to characterize typical retrieval behavior averaged over random memory sets, which requires computing disorder-averaged macroscopic quantities rather than properties of a single realization.
+
+The Hamiltonians~(\ref{eq:H_lse}, \ref{eq:H_lsr}) can be expressed in terms of the alignment vector $\bm{\phi} = (\phi^1, \dots, \phi^M)^T$:
+\begin{multline}
+    H_{\rm LSE}(\bm{x}) \equiv U_{\rm LSE}(\bm{\phi}) = \\ -\frac{1}{\beta_{\rm net}} \ln \left[ \sum_{\mu=1}^M \exp\left( -\frac{N(1 - \phi^\mu)}{\sigma^2} \right) \right]\,.
+\end{multline}
+Thermodynamic behavior is governed by the partition function $Z$, with $\beta = 1/T$:
+\begin{equation}
+    Z = \!\int\!\dd \bm{x} \exp\left( -\beta H(\bm{x}) \right) = \!\int\! \dd \bm{x} \left[ p(\bm{x}) \right]^{\beta/\beta_{\rm net}}\!.
+    \label{eq:partition}
+\end{equation}
+
+The disorder-averaged free energy density $\langle f \rangle = -(N\beta)^{-1} \langle \ln Z \rangle$ is computed via the replica identity~\citep{sk75}:
+\begin{equation}
+    \langle \ln Z \rangle = \lim_{n \to 0} \frac{\langle Z^n \rangle - 1}{n}\,.
+    \label{eq:limit}
+\end{equation}
+This formalism provides a systematic way to compute typical macroscopic retrieval behavior in the presence of quenched disorder.
+Evaluating $\langle Z^n \rangle$ requires passing from the microscopic integral over $N$ neurons to a macroscopic description in terms of alignments and overlaps (see Appendix~A). The result takes the standard form:
+\begin{equation}
+    \langle f \rangle = -\frac{1}{N\beta} \langle \ln Z \rangle 
+    \approx  u(\phi) - T s\,,
+\end{equation}
+where $s$ is the entropy density and $u(\phi)$ is the internal energy density of a single memory basin. This decomposition makes explicit the competition between energetic alignment with a target memory and the entropic cost of constraining the state in high dimensions.
+For the LSE and LSR kernels (see Appendices~A and~B):
+\begin{equation}
+    u_{\rm LSE} = 1-\phi\,,
+    \label{eq:u_lse}
+\end{equation}
+and 
+\begin{equation}
+    u_{\rm LSR} = -b^{-1} \ln \Big[1 - b (1-\phi) \Big]\,.
+    \label{eq:u_lsr}
+\end{equation}
+where $b\equiv N \beta_{\rm net}$ is the rescaled inverse variance.
+
+\subsection{Geometric Entropy on the $N$-sphere}
+
+Here we show that even in the absence of noise, geometric constraints alone induce an entropic pressure that limits retrieval in high-dimensional spaces.
+
+To derive the entropy, we compute the volume $\Omega$ of configuration space satisfying the alignment constraints $\bm{\phi}$. We decompose $\bm{x}$ into orthogonal components: the projection $\bm{x}_{\parallel}$ onto the subspace spanned by the $M$ memories, and $\bm{x}_{\perp}$ in the remaining $N-M$ dimensions. We assume $M < N$, though phase transition analysis requires only $M=1$.
+
+For linearly independent memories, the squared norm of the parallel component is:
+\begin{equation}
+    \|\mathbf{x}_{\parallel}\|^2 = N \bm{\phi}^T G^{-1} \bm{\phi}
+\end{equation}
+where $G_{\mu\nu} = \frac{1}{N} \bm{\xi}^\mu \cdot \bm{\xi}^\nu$ is the Gram matrix. Since the total norm is fixed to $N$:
+\begin{equation}
+    \|\mathbf{x}_{\perp}\|^2 = N \left( 1 - \bm{\phi}^T G^{-1} \bm{\phi} \right).
+\end{equation}
+The volume $\Omega(\bm{\phi})$ is proportional to the surface area of an $(N-M)$-sphere with radius $R = \|\mathbf{x}_{\perp}\|$, giving:
+\begin{equation}
+    \Omega(\bm{\phi}) \propto \left[ N \left( 1 - \bm{\phi}^T G^{-1} \bm{\phi} \right) \right]^{(N-M-1)/2}\,.
+\end{equation}
+In the large $N$ limit, discarding $\phi$-independent constants:
+\begin{equation}
+    S(\bm{\phi}) = \ln \Omega = \frac{N-M}{2} \ln \left( 1 - \bm{\phi}^T G^{-1} \bm{\phi} \right).
+\end{equation}
+For a single memory as $N \to \infty$, the entropy density becomes:
+\begin{equation}
+    s(\phi) \equiv \frac{S(\phi)}{N} = \frac{1}{2} \ln ( 1 - \phi^2 )
+	\label{eq:entropy_g}
+\end{equation}
+This expression holds for a single microstate with alignment $\phi$. This dependence is purely geometric and does not involve any kernel-specific assumptions. \textbf{This kernel-independence is not specific to the two kernels studied here; it follows from the replica derivation in Appendix~A, where the Hamiltonian factors out of the microscopic integral over the $N$-sphere. The remaining configuration volume $\Omega$ depends only on the spherical geometry and never references any kernel. The only requirement is single-pattern dominance~(\ref{eq:dens_red}), which is a condition on the retrieval regime, not on the kernel choice.}
+In the thermal setting, under the replica symmetry ansatz, the system occupies a cloud of states centered at a point with alignment $\phi$ to the target pattern. We characterize this cloud by the self-overlap parameter:
+\begin{equation}
+    q = \frac{1}{N} \langle \bm{x} \rangle \cdot \langle \bm{x} \rangle\,,
+\end{equation}
+which measures the cloud's tightness on the $N$-sphere: as $T \to 0$, the cloud collapses to a point ($q \to 1$); as $T \to \infty$, it spreads over the sphere ($q \to 0$). The quantity $1-q$ gives the variance of fluctuations about the mean state.
+
+Generalizing the geometric entropy to account for finite tightness $q$ (see Appendix~A):
+\begin{equation}
+    s(\phi, q) = \frac{1}{2} \ln(1-q) + \frac{q - \phi^2}{2(1-q)}.
+	\label{eq:entropy_q}
+\end{equation}
+Along the equilibrium line $q = \phi^2$ (see Section~4),~\eqref{eq:entropy_q} reduces to~\eqref{eq:entropy_g}.
+
+
+
+\subsection{Crosstalk and the Noise Floor}
+
+In classical associative memory with linear load $M = \alpha N$, interference between stored patterns manifests as Gaussian noise, captured by an additional term in the free energy density~\citep{amit1987statistical}. This noise can trap the system in spurious states outside the true minima.
+
+For exponential capacity $M = e^{\alpha N}$, the Gaussian approximation fails. Because $M$ is exponential in $N$, random configurations can accidentally align with nearby patterns, creating a noise floor that competes with retrieval. This regime is best described by the Random Energy Model (REM)~\citep{derrida1980random}. In this regime, retrieval fails not due to local noise, but due to the presence of exponentially many competing alignments.
+
+We therefore adopt a different approach: we compute the retrieval free energy $f_{\rm ret}(\phi, q) = u(\phi) - T s(\phi, q)$ and compare it directly with the noise floor energy $u_{\rm noise}$. Retrieval is thermodynamically stable if and only if:
+\begin{equation}
+    \min_{\phi, q} \left[ u(\phi) - T s(\phi, q) \right] \leq u_{\rm noise}.
+    \label{eq:stability}
+\end{equation}
+
+As $T$ increases, the entropy term grows, raising the retrieval free energy. As $\alpha$ increases, $u_{\rm noise}$ drops. The retrieval-to-disorder transition occurs at the critical temperature $T_c$ where these values cross. Because the LSE and LSR energy wells are sharply peaked, this transition is first-order. We now derive $u_{\rm noise}$ for each kernel.
+
+
+\subsubsection{LSE Noise Floor $u_{\rm noise}$}
+We first consider the noise floor induced by globally supported kernels. To derive the noise floor energy, we evaluate the partition function of the $M$ non-retrieved patterns. For a random state uncorrelated with any memory, the alignment follows a Gaussian distribution $P(\phi) \sim \exp(-N\phi^2/2)$. The expected number of patterns at alignment $\phi$ is $n(\phi) = M P(\phi) = \exp(N[\alpha - \phi^2/2])$. Setting $n(\phi) \sim 1$ gives the maximum spurious alignment:
+\begin{equation}
+    \phi_{\rm max} = \sqrt{2\alpha} \le 1\,.
+    \label{eq:max_spur}
+\end{equation}
+
+For the LSE kernel, the noise floor is determined by:
+\begin{multline}
+    p_{\rm noise} = \sum_{\mu=1}^{M} \exp\left( -\beta_{\rm net} N (1 - \phi^\mu) \right) \approx \\
+    \int \dd\phi \exp\left( N \left[ \alpha - \beta_{\rm net}(1 - \phi) - \frac{\phi^2}{2} \right] \right).
+\end{multline}
+The internal energy density $u_{\rm noise} = -[N\beta_{\rm net}]^{-1} \ln p_{\rm noise}$ is dominated by the maximum of the exponent:
+\begin{equation}
+    g(\phi) = \alpha - \beta_{\rm net} u(\phi) - \phi^2/2\,,
+    \label{eq:g_phi}
+\end{equation}
+which yields a saddle point at $\phi^* = \beta_{\rm net}$, constrained by~\eqref{eq:max_spur}. This leads to two regimes:
+
+\begin{enumerate}
+    \item \textbf{\textbf{Load-limited} regime} ($\beta_{\rm net} > \sqrt{2\alpha}$): The saddle point lies beyond $\phi_{\rm max}$, so the integral is dominated by the maximum spurious alignment:
+    \begin{equation}
+        u_{\rm noise} = 1 - \sqrt{2\alpha}.
+    \end{equation}
+
+    \item \textbf{\textbf{Kernel-limited} regime} ($\beta_{\rm net} < \sqrt{2\alpha}$): The saddle point $\phi^* = \beta_{\rm net}$ lies within the available range, giving:
+    \begin{equation}
+        u_{\rm noise} = 1 - \frac{\alpha}{\beta_{\rm net}} - \frac{\beta_{\rm net}}{2}.
+    \end{equation}
+\end{enumerate}
+
+
+\subsubsection{LSR Noise Floor $u_{\rm noise}$}
+For the Epanechnikov (LSR) kernel, the derivation must account for finite support: a pattern $\mu$ contributes to the noise only if $\phi^\mu > 1 - 1/b$.
+
+The maximum spurious alignment is again $\phi_{\rm max} = \sqrt{2\alpha}$. However, a noise floor exists only if $\phi_{\rm max}$ exceeds the support boundary, defining a support threshold:
+\begin{equation}
+    \alpha_{\rm th} = \frac{1}{2} (1 - 1/b)^2 .
+    \label{eq:alpha_th}
+\end{equation}
+For $\alpha < \alpha_{\rm th}$, no random patterns fall within the support and no noise floor forms. For $\alpha > \alpha_{\rm th}$, following the same REM logic as for LSE, the saddle point $\phi^*$ satisfies:
+\begin{equation}
+    b = f(\phi^*) = \frac{\phi^*}{1 + \phi^* - (\phi^*)^2}\,.
+\end{equation}
+This leads to two regimes:
+
+\begin{enumerate}
+    \item \textbf{\textbf{Load-limited} regime} ($b > f(\phi_{\rm max})$): The saddle point lies beyond $\phi_{\rm max}$, so the integral is dominated by the maximum spurious alignment:
+    \begin{equation}
+        u_{\rm noise} = -b^{-1} \ln \left( 1 - b(1 - \sqrt{2\alpha}) \right).
+    \end{equation}
+    Unlike LSE, this energy diverges as $\sqrt{2\alpha} \to 1 - 1/b$.
+
+    \item \textbf{\textbf{Kernel-limited} regime} ($b < f(\phi_{\rm max})$): The saddle point lies within the available range:
+    \begin{equation}
+        u_{\rm noise} = -b^{-1} \ln \left( 1 - b(1 - \phi^*) \right).
+    \end{equation}
+\end{enumerate}
+
+
+\section{\textbf{Retrieval Transition}}\label{sec:transition}
+
+This section turns the free-energy formulation from Section~3 into explicit phase boundaries that predict when retrieval remains stable under noise and interference.
+\textbf{We focus on the boundary between retrieval and non-retrieval.} Before deriving phase boundaries, we clarify the optimization problem that determines the network's steady state. 
+
+In standard thermodynamics, equilibrium minimizes the free energy. However, for disordered systems analyzed via the replica method, the physical equilibrium corresponds to a saddle point of $f(\phi, q)$. This arises from the interplay between the thermodynamic limit ($N \to \infty$) and the replica limit ($n \to 0$).
+
+The replicated partition function $\langle Z^n \rangle$ is evaluated as $N \to \infty$ using steepest descent. For fixed $n > 1$, the integral is dominated by the minimum of $f(\phi, q)$. However, obtaining the physical free energy requires analytic continuation to $n \to 0$. As $n$ passes below 1, the number of independent off-diagonal elements in the overlap matrix, $n(n-1)/2$, becomes negative. This leads to a well-known inversion of stability criteria: the physical stationary point is a maximum with respect to $q$ but a minimum with respect to $\phi$~\citep{Almeida_1978}. Here $\phi$ sets the mean alignment with the target memory, while $q$ controls the spread of thermal fluctuations around that mean on the sphere.
+
+This saddle-point structure has geometric significance. The parameter $q$ measures the tightness of the thermal cloud on the $N$-sphere, subject to the constraint $q \ge \phi^2$ (Section~3.2). Naively minimizing $f = u - Ts$ over $q$ would drive $q \to 1$, implying that the state collapses to a single point regardless of temperature, which is inconsistent with finite-temperature behavior.
+
+Instead, we seek the stationary point $\partial f / \partial q = 0$. For both LSE and LSR kernels, this occurs at 
+\begin{equation}
+    q = \phi^2\,,
+    \label{eq:q_constraint}
+\end{equation}
+where the geometric entropy $s(\phi, q)$ is maximized for given $\phi$. Physically, this corresponds to isotropic thermal fluctuations in the subspace perpendicular to the target pattern. Evaluating the system at this saddle point correctly captures the entropic pressure leading to the first-order transition at $T_c$.
+
+\subsection{\textbf{LSE Retrieval Transition}}
+We first derive the equilibrium alignment and phase boundary for the globally supported LSE (Gaussian) kernel.
+
+Minimizing $f_{\rm ret}(\phi, q)$ using~\eqref{eq:u_lse} and~\eqref{eq:entropy_q} over $\phi$ yields the physical solution:
+\begin{equation}
+    \phi_{\rm LSE}(T) = \frac{1}{2} \Big[-T + \sqrt{T^2 + 4}\Big]\,,
+    \label{eq:phi_lse}
+\end{equation}
+satisfying $\phi \to 1$ as $T \to 0$, with corresponding free energy:
+\begin{equation}
+    f_{\rm ret}^{\rm LSE}(T) = 1 - \phi_{\rm LSE}(T) - \frac{T}{2}\ln\Big[1 - \phi^2_{\rm LSE}(T)\Big].
+    \label{eq:f_lse}
+\end{equation}
+The phase boundary occurs when equality holds in~\eqref{eq:stability}. \textbf{Using the noise floor from the load-limited regime (Section~\ref{sec:statmech}):}
+\begin{equation}
+    \alpha_c^{\rm LSE}(T) = \frac{1}{2} \Big[1 - f_{\rm ret}^{\rm LSE}(T) \Big]^2\,.
+    \label{eq:alpha_lse}
+\end{equation}
+\textbf{For any $\alpha > 0$, there exists a finite critical temperature $T_c(\alpha)$ above which retrieval fails.} In the limit $T \to 0$, one recovers the well-known result $\alpha_c = 0.5$ by~\citet{ramsauer2021hopfield}.
+
+
+\subsection{\textbf{LSR Retrieval Transition}}
+
+Similarly, minimizing $f_{\rm ret}(\phi, q)$ using~\eqref{eq:u_lsr} and~\eqref{eq:entropy_q} over $\phi$ yields:
+\begin{equation}
+    -\frac{1}{1 - b(1-\phi)} + \frac{T\phi}{1-\phi^2} = 0.
+\end{equation}
+With $y = 1 - \phi$, this becomes a quadratic equation:
+\begin{equation}
+    (bT + 1)y^2 - (2 + T + Tb)y + T = 0.
+    \label{eq:lsr_quadratic}
+\end{equation}
+For $b = 1$, the solution simplifies to $\phi_{\rm LSR}(T) = 1/\sqrt{1+T}$. For general $b > 1$, the solution must be obtained numerically from (\ref{eq:lsr_quadratic}).
+
+The finite support of the LSR kernel introduces a support boundary $\phi > 1 - 1/b$ and a corresponding threshold:
+\begin{equation}
+    \alpha_{\rm th}(b) = \frac{1}{2}\Big[1 - b^{-1}\Big]^2.
+\end{equation}
+For $\alpha < \alpha_{\rm th}$, no spurious patterns fall within the kernel's support, providing enhanced retrieval stability. Above the threshold, the phase boundary \textbf{is:}
+\begin{equation}
+    \alpha_c^{\rm LSR}(T) = \frac{1}{2} \Big[1 - f_{\rm ret}^{\rm LSR}(T) \Big]^2\,,
+    \label{eq:alpha_lsr}
+\end{equation}
+as for LSE.
+
+The key qualitative advantage of LSR with $b > 1$ emerges below the support threshold $\alpha_{\text{th}}(b) = \frac{1}{2}(1 - b^{-1})^2$. When $\alpha < \alpha_{\text{th}}$, no spurious patterns fall within the kernel's support region $\phi > 1 - 1/b$, and the REM-derived noise floor does not exist. The retrieval basin is completely isolated from interference, enabling perfect retrieval at any temperature. This sub-threshold regime has no analog in LSE, where interference from spurious patterns is always present regardless of load. While LSE permits retrieval at arbitrarily high temperatures for low loads, this robustness coexists with ever-present noise; LSR below threshold eliminates interference entirely.
+
+
+\subsection{Phase Diagrams and Monte Carlo Validation}
+
+\begin{figure*}[t]
+  \vskip 0.1in
+  \begin{center}
+    \centerline{\includegraphics[width=0.9\textwidth]{fig_phase_diagram_5.eps}}
+    \caption{\textbf{Phase diagrams for spherical DAM with exponential capacity $M = e^{\alpha N}$. \textbf{Left:} LSE kernel. The critical line $\alpha_c(T)$ (solid black) separates retrieval (blue) from non-retrieval at all loads. \textbf{Right:} LSR kernel with $b = 3.41$. Below the support threshold $\alpha_{\text{th}} = 0.25$ (dashed line), no critical line exists and retrieval is perfect at any temperature. Above threshold, the critical line $\alpha_c(T)$ bounds the retrieval region, reaching $T_{\max} \approx 0.22$ at $\alpha = \alpha_{\text{th}}$. Both kernels achieve $\alpha_c(0) = 0.5$ at zero temperature (dotted line).}}
+    \label{fig:phase_diagram}
+  \end{center}
+  \vskip -0.1in
+\end{figure*}
+
+Fig.\,\ref{fig:phase_diagram} shows the phase diagrams in the $(\alpha, T)$ plane for LSE (left) and LSR (right) kernels. \textbf{For LSR, we use $b = 3.41$ for illustration, placing $\alpha_{\text{th}} = 0.25$ in the middle of the panel. On the $N$-sphere, inter-pattern distances grow as $\sqrt{N}$, so the kernel support must scale likewise, requiring $\beta_{\rm net} = O(1/N)$ and hence $b = N\beta_{\rm net} = \mathrm{const}$ (see Appendix~B); this constant can be large, and for $b \gg 1$ the threshold $\alpha_{\rm th}$ approaches $0.5$, see Eq.~\eqref{eq:alpha_th}. In the retrieval region (blue), the system maintains high alignment $\phi \approx 1$ with a target pattern. For LSE, the critical line $\alpha_c(T)$ bounds this region at all loads $\alpha > 0$. For LSR with $b > 1$, no critical line exists below $\alpha_{\text{th}}$, and retrieval is perfect at any temperature. In the non-retrieval region (red), interference or thermal fluctuations destabilize retrieval. Distinguishing between different non-retrieval regimes (e.g., spin-glass vs paramagnetic) requires evaluating the Edwards--Anderson order parameter $q$ in the disordered phase, which is beyond the scope of this work.}
+
+% \textbf{\paragraph{Monte Carlo validation.}
+\textbf{Figure~\ref{fig:equilibrium} compares theoretical predictions with Monte Carlo Metropolis--Hastings simulations at two points in the $(\alpha, N)$ space: $\alpha = 0.1$, $N = 50$ and $\alpha = 0.05$, $N = 100$, both giving $M = e^{\alpha N} = 148$ stored patterns. Each $(\alpha, T)$ point averages 50 independent trials with fresh pattern sets, 8192 equilibration + 4096 sampling steps, step size $\sigma = 2.4\,T/\sqrt{N}$, and random initial alignment $\phi_{\rm init} \in [0.75, 1.0]$. Error bars show the standard error of the mean across trials.}
+
+\textbf{The MC data at $N = 50$ reproduce the finite-$N$ Boltzmann curve $\phi_{\rm eq}(T)$, obtained by numerical integration over the $N$-sphere. The $N = 100$ points fall between the Boltzmann and thermodynamic-limit curves, consistent with convergence to the $N \to \infty$ theory. For LSR, both loads lie below $\alpha_{\rm th} = 0.25$, so the MC points at $\alpha = 0.05$ and $\alpha = 0.1$ overlap, confirming the predicted $\alpha$-independence of retrieval below threshold. For LSE, the alignment drops sharply near the predicted $T_c$, confirming the retrieval-to-non-retrieval transition at finite temperature.}
+
+\begin{figure*}[t]
+  \vskip 0.1in
+  \begin{center}
+    \centerline{\includegraphics[width=0.9\textwidth]{mc_validation_icml.eps}}
+    \caption{\textbf{Equilibrium alignment $\phi(T)$ from theory and Monte Carlo simulations. \textbf{Left:} LSE kernel. \textbf{Right:} LSR kernel ($b = 3.41$). Theory curves: Boltzmann equilibrium $\phi_{\rm eq}(T)$ at $N = 50$ (red) and thermodynamic limit $\phi(T)$ as $N \to \infty$ (black, Eqs.~\ref{eq:phi_lse},~\ref{eq:lsr_quadratic}). MC: $\alpha = 0.05$, $N = 100$ (blue) and $\alpha = 0.1$, $N = 50$ (red); both give $M = 148$ patterns. Error bars show SEM over 50 independent trials.}}
+    \label{fig:equilibrium}
+  \end{center}
+  \vskip -0.1in
+\end{figure*}
+
+\section{Conclusion}\label{sec:conclusion}
+
+We have derived the thermodynamic phase boundaries for Dense Associative Memory networks operating in the exponential capacity regime $M = e^{\alpha N}$. By separating the free energy into kernel-dependent energy and geometry-dependent entropy, we obtained analytic expressions for the critical line $\alpha_c(T)$ that delineates the retrieval phase from \textbf{non-retrieval}.
+
+% Our central finding is a fundamental trade-off between energetic stability and entropic cost. The Epanechnikov (LSR) kernel creates deeper energy wells that maintain higher alignment $\phi(T)$ at finite temperature. However, this tighter confinement incurs a larger geometric entropy penalty: the system must pay an entropic cost proportional to $-\frac{1}{2}\ln(1 - \phi^2)$ for maintaining high alignment in high-dimensional spherical geometry. Above the support threshold, this penalty results in a smaller retrieval region for LSR compared to LSE.
+
+The two kernels exhibit qualitatively different phase boundary structures. \textbf{For LSE, a critical line exists at all loads: retrieval always fails above a finite $T_c(\alpha)$.} For LSR with $b > 1$, the finite support introduces a threshold $\alpha_{\text{th}}(b)$ below which no spurious patterns contribute to the noise floor. In this sub-threshold regime, retrieval is perfect at any temperature, a qualitative advantage with no analog in LSE.
+
+The practical implications are twofold. First, kernel choice involves a robustness-capacity trade-off: LSE provides thermal robustness across all loads with ever-present interference, while LSR offers complete isolation from interference below the support threshold, guaranteeing perfect retrieval regardless of temperature in this regime. Second, both kernels achieve the same zero-temperature capacity $\alpha_c(0) = 0.5$, confirming that exponential storage capacity is a geometric property of the spherical constraint rather than a kernel-specific feature.
+
+\textbf{Two caveats may apply. First, the noise-floor derivation relies on the Gaussian approximation for inter-pattern alignments~(\ref{eq:max_spur}); the exact distribution on the $N$-sphere has different tails, which may affect the phase boundaries. Second, Monte Carlo validation is limited by the relation $N = \ln M/\alpha$, which prevents $N$ from exceeding $\approx 50$ at $\alpha = 0.25$ (the expected transition boundary for the parameter $b$ considered) when all patterns are generated explicitly, leaving finite-size effects potentially significant.}
+
+
+%\section*{Software and Data}
+
+% Acknowledgements should only appear in the accepted version.
+%\section*{Acknowledgements}
+
+%\textbf{Do not} include acknowledgements in the initial version of the paper
+%submitted for blind review.
+
+%If a paper is accepted, the final camera-ready version can (and usually should)
+%include acknowledgements.  Such acknowledgements should be placed at the end of
+%the section, in an unnumbered section that does not count towards the paper
+%page limit. Typically, this will include thanks to reviewers who gave useful
+%comments, to colleagues who contributed to the ideas, and to funding agencies
+%and corporate sponsors that provided financial support.
+
+\section*{Impact Statement}
+
+This paper analytically characterizes the thermodynamic stability of retrieval in continuous Dense Associative Memory networks on the $N$-sphere under finite temperature and exponential memory load. By separating kernel-dependent energy from geometry-induced entropy, it clarifies fundamental limits on retrieval robustness and explains how modeling choices, such as kernel support and sharpness, qualitatively affect stability under noise.
+
+The work is purely theoretical: it introduces no new datasets, user-facing systems, or deployment procedures, and involves no personal data or human-subject experiments. Its broader impact is indirect. By providing a principled understanding of when and why high-capacity associative memories remain stable or fail, the results can inform the theoretical analysis and design of memory and attention-like mechanisms in machine learning. The societal implications are comparable to those of general advances in machine learning theory.
+
+
+
+
+% In the unusual situation where you want a paper to appear in the
+% references without citing it in the main text, use \nocite
+\nocite{langley00}
+
+\bibliography{dense_am}
+\bibliographystyle{icml2026}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% APPENDIX
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\appendix
+\onecolumn
+
+\section{Derivation of the Free Energy Density}\label{app:free_energy}
+
+The disorder-averaged replicated partition function is:
+\begin{equation}
+    \langle Z^n \rangle = \int \prod_{a=1}^n \dd\bm{x}_a \, \delta(|\bm{x}_a|^2 - N) \left\langle \exp\left(-\beta \sum_{a=1}^n H(\bm{x}^a, \bm{\xi}^\mu)\right) \right\rangle\,.
+    \label{eq:Zn}
+\end{equation}
+Let $\phi_a = \bm{x}_a \cdot \bm{\xi}/N$ denote the alignment of replica $a$ with a target memory $\bm{\xi}$, and introduce the overlap matrix:
+\begin{equation}
+    q_{ab} = \frac{1}{N} \bm{x}_a \cdot \bm{x}_b\,.
+\end{equation}
+On the $N$-sphere, diagonal elements are fixed: $q_{aa} = 1$. The off-diagonal elements $q_{ab}$ ($a \neq b$) correspond to the Edwards–Anderson order parameter~\citep{ea75}, measuring similarity between replica configurations.
+
+Inserting the identity
+\begin{equation}
+1 = \int \prod_a \dd \phi_a \delta\left(\phi_a - \bm{x}_a \cdot \bm{\xi}/N\right) 
+\int \prod_{b<c} \dd q_{bc} \delta\left(q_{bc} - \bm{x}_b \cdot \bm{x}_c/N\right)
+\end{equation}
+into~\eqref{eq:Zn} and rearranging:
+\begin{multline}
+\langle Z^n \rangle = \int \prod_a \dd \phi_a \int \prod_{b<c} \dd q_{bc} \left\langle \int \prod_d \dd \bm{x}_d \, \delta(\|\bm{x}_d\|^2 - N) \delta(\phi_a - \bm{x}_a \cdot \bm{\xi}/N) \right. \times \\
+\left.  \delta(q_{bc} - \bm{x}_b \cdot \bm{x}_c/N) \exp\left(-\beta \sum_d H(\bm{x}_d, \bm{\xi}^\mu)\right) \right\rangle \,.
+\end{multline}
+
+In the retrieval basin of $\bm{\xi}$, the density $p(\bm{x})$~\eqref{eq:dens} is dominated by the target memory:
+\begin{equation}
+    p(\bm{x}) \approx \exp\left[ - \frac{\beta_{\rm net}}{2} d^2(\bm{x}, \bm{\xi}) \right] \,.
+    \label{eq:dens_red}    
+\end{equation}
+The microscopic Hamiltonian can then be replaced by a macroscopic potential depending only on $\phi_a$:
+\begin{equation}
+    H(\bm{x}^a, \bm{\xi}^\mu) \to \mathcal{U}(\phi_a) = -\frac{1}{\beta_{\rm net}} \ln \exp\left( -\frac{N(1 - \phi_a)}{\sigma^2} \right) = N(1-\phi_a)
+\end{equation}
+for the LSE kernel. Since $\mathcal{U}(\phi_a)$ no longer depends on $\bm{x}_a$, it factors out of the microscopic integral:
+\begin{equation}
+    \langle Z^n \rangle = \int \prod_a \dd \phi_a \int \prod_{b<c} \dd q_{bc} \exp\left(-\beta \sum_a \mathcal{U}(\phi_a)\right) \Omega(\phi_a, q_{bc})\,,
+\end{equation}
+where $\Omega(\phi_a, q_{bc})$ is the configuration space volume satisfying the macroscopic constraints:
+\begin{equation}
+\Omega(\phi_a, q_{bc}) = \left\langle \int \prod_d \dd \bm{x}_d \,\delta(\|\bm{x}_d\|^2 - N) \prod_a \delta(\phi_a - \bm{x}_a \cdot \bm{\xi}/N) \prod_{b<c} \delta(q_{bc} - \bm{x}_b \cdot \bm{x}_c/N) \right\rangle\,.
+\end{equation}
+This purely geometric quantity counts the arrangements of $n$ vectors on an $N$-sphere with fixed norms $\sqrt{N}$, projections $\phi_a$ onto the memory, and mutual overlaps $q_{bc}$.
+
+With $u(\phi) = \mathcal{U}(\phi)/N$ and defining the entropy density $s(\phi_a, q_{bc}) = \lim_{N \to \infty} N^{-1} \ln \Omega$:
+\begin{equation}
+    \langle Z^n \rangle \approx \int \prod_a \dd \phi_a \int \prod_{b<c} \dd q_{bc} \exp\left( N \left[ -\beta \sum_a u(\phi_a) + s(\phi_a, q_{bc}) \right] \right)\,.
+\end{equation}
+
+Under the replica symmetric ansatz~\citep{amit1987statistical}, $\phi_a = \phi$ and $q_{ab} = q$ for all $a \neq b$, reducing the integral to two order parameters:
+\begin{equation}
+\langle Z^n \rangle \approx \int \dd \phi \int \dd q \exp \left( N n \left[ -\beta u(\phi) + s(\phi, q) \right] \right)\,.
+\end{equation}
+
+To evaluate $s(\phi, q)$, we follow~\citet{gardner1988space}. Decomposing each replica into components parallel and perpendicular to the target: $\bm{x}^a = \bm{x}_\parallel^a + \bm{x}_\perp^a$. The alignment constraint fixes $\bm{x}_\parallel^a = \sqrt{N}\phi \hat{\bm{\xi}}$. The overlap between replicas $a$ and $b$ is:
+\begin{equation}
+    q = \frac{1}{N} \left( \bm{x}_\parallel^a \cdot \bm{x}_\parallel^b + \bm{x}_\perp^a \cdot \bm{x}_\perp^b \right) = \phi^2 + \frac{1}{N} \left( \bm{x}_\perp^a \cdot \bm{x}_\perp^b \right)\,.
+\end{equation}
+Since the perpendicular overlap is non-negative, this implies the geometric constraint $q \ge \phi^2$.
+
+Gardner's calculation gives the log-volume for an isotropic cloud on the $N$-sphere as $\frac{1}{2}\ln(1-q) + q/[2(1-q)]$. With alignment $\phi$ constraining the longitudinal direction, the perpendicular overlap is $q_\perp = q - \phi^2$. Substituting into Gardner's result yields:
+\begin{equation}
+    s(\phi, q) = \frac{1}{2} \left[ \ln(1-q) + \frac{q - \phi^2}{1-q} \right]\,.
+\end{equation}
+
+In the thermodynamic limit, the integral is dominated by the saddle point satisfying:
+\begin{equation}
+    \beta \frac{\partial u}{\partial \phi} + \frac{\phi}{1-q} = 0\,,\qquad 
+    \frac{1}{1-q} - \frac{1-\phi^2}{(1-q)^2} = 0\,.
+\end{equation}
+The second equation gives $q = \phi^2$: the thermal cloud tightness is determined by the alignment. Thus:
+\begin{equation}
+    \langle Z^n \rangle \approx \exp\left( N n [-\beta u(\phi) + s(\phi, q)] \right)\,.
+\end{equation}
+Applying the replica identity~\eqref{eq:limit}:
+\begin{equation}
+    \langle f \rangle = -\frac{1}{N\beta} \langle \ln Z \rangle 
+    \approx u(\phi) - T s(\phi, q)\,.
+\end{equation}
+
+
+
+
+\section{Derivation of the Internal Energy Density for the LSR Kernel}\label{app:lsr_energy}
+
+To determine the internal energy density $u(\phi)$ for the LSR Hamiltonian~\eqref{eq:H_lsr}, we must account for the scaling of Euclidean distances and kernel parameters in the limit $N \to \infty$. The distance is given by $d^2(\bm{x}, \bm{\xi}^\mu) = 2N(1 - \phi^\mu)$.
+
+On the $N$-sphere, the volume of a basin with fixed Euclidean width $\sigma^2$ vanishes as $N \to \infty$. For the retrieval basin to span a macroscopic range of alignments $\phi \in [0, 1]$, the kernel width $\sigma^2$ must scale linearly with $N$. We therefore define the rescaled inverse variance:
+\begin{equation}
+    b = N \beta_{\rm net}\,.
+\end{equation}
+This scaling ensures that the internal energy $H$ is $O(N)$, so the energy density $u = H/N$ remains $O(1)$ and competes meaningfully with the geometric entropy $s$. This approach follows the scaling used in~\citet{hoover2025dense} and makes the LSR internal energy directly comparable to LSE, with both energy basins having identical slopes at perfect retrieval ($\phi = 1$).
+
+Assuming the system is within the retrieval basin of pattern $\bm{\xi}$, the Hamiltonian sum is dominated by a single term. Substituting the rescaled parameters into~\eqref{eq:H_lsr}:
+\begin{equation}
+    H_{\rm LSR}(\phi) \approx -\frac{N}{b} \ln \left[ 1 - b(1-\phi) \right]\,.
+\end{equation}
+Dividing by $N$ gives the internal energy density:
+\begin{equation}
+    u_{\rm LSR}(\phi) = -b^{-1} \ln \left[ 1 - b(1-\phi) \right]\,.
+\end{equation}
+
+The Taylor expansion near perfect retrieval ($\phi \to 1$) gives:
+\begin{equation}
+    u_{\rm LSR}(\phi) \approx (1-\phi) + \frac{b}{2}(1-\phi)^2 + \cdots
+\end{equation}
+Thus LSR matches the linear LSE behavior to first order, but introduces a quadratic correction proportional to the sharpness $b$.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
+
+% This document was modified from the file originally made available by
+% Pat Langley and Andrea Danyluk for ICML-2K. This version was created
+% by Iain Murray in 2018, and modified by Alexandre Bouchard in
+% 2019 and 2021 and by Csaba Szepesvari, Gang Niu and Sivan Sabato in 2022.
+% Modified again in 2023 and 2024 by Sivan Sabato and Jonathan Scarlett.
+% Previous contributors include Dan Roy, Lise Getoor and Tobias
+% Scheffer, which was slightly modified from the 2010 version by
+% Thorsten Joachims & Johannes Fuernkranz, slightly modified from the
+% 2009 version by Kiri Wagstaff and Sam Roweis's 2008 version, which is
+% slightly modified from Prasad Tadepalli's 2007 version which is a
+% lightly changed version of the previous year's version by Andrew
+% Moore, which was in turn edited from those of Kristian Kersting and
+% Codrina Lauth. Alex Smola contributed to the algorithmic style files.
+
+
+
+
+
+To determine the internal energy density $u(\phi)$ for the Log-Sum-ReLU (LSR) Hamiltonian, one must account for the scaling of Euclidean distances and kernel parameters in the limit $N \to \infty$. The internal energy of the network using the Epanechnikov kernel is defined by the Hamiltonian (\ref{eq:H_lsr}), where the distance is given by $d^2(\mathbf{x}, \boldsymbol{\xi}^\mu) = 2N(1 - \phi^\mu)$. 
+
+In the limit of $N \to \infty$, the geometry of the $N$-sphere causes the volume of a basin with fixed Euclidean width $\sigma^2$ to vanish. For the retrieval basin to span a macroscopic range of alignments $\phi \in [0, 1]$, the kernel width $\sigma^2$ must scale linearly with $N$. Consequently, we define the normalized network sharpness (rescaled inverse variance) as:
+\begin{equation}
+b = N \beta_{\text{net}}.
+\end{equation}
+The necessity of this scaling is a fundamental feature of continuous DAMs: it ensures that the internal energy $H$ scales as $O(N)$, allowing the energy density $u = H/N$ to remain finite ($O(1)$) and thus compete meaningfully with the geometric entropy $s$. This approach follows the implicit scaling logic used in \citet{hoover2025dense} to achieve exact memory retrieval with exponential capacity. By adopting this rescaling, the LSR internal energy becomes directly comparable to the LSE case, ensuring that both energy basins have identical slopes at the point of perfect retrieval ($\phi=1$).
+
+Assuming the system is localized within the retrieval basin of a specific pattern $\boldsymbol{\xi}$, the sum in the Hamiltonian is dominated by that single term. Substituting the rescaled parameters and the alignment-based distance into (\ref{eq:H_lsr}), we obtain:
+\begin{equation}
+H_{\text{LSR}}(\phi) \approx -\frac{N}{b} \ln \left[ 1 - b(1-\phi) \right].
+\end{equation}
+Dividing by $N$, we obtain the macroscopic internal energy density used in the free energy evaluation:
+\begin{equation}
+u_{\text{LSR}}(\phi) = -b^{-1} \ln \left[ 1 - b(1-\phi) \right]. \tag{60}
+\end{equation}
+The significance of the LSR kernel is revealed by the Taylor expansion near the point of perfect retrieval ($\phi \to 1$):
+\begin{equation}
+u_{\text{LSR}}(\phi) \approx (1-\phi) + \frac{b}{2}(1-\phi)^2 + \dots
+\end{equation}
+This confirms that while LSR behaves like the linear LSE basin to first order, it introduces a quadratic correction proportional to the sharpness $b$. 

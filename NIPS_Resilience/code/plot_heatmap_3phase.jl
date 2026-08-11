@@ -338,9 +338,9 @@ end
 
 const INTERP_DV = setup_Dv()
 
-# Global (A, c) from compound Poisson fit to v14 survival curves
-const BEST_A = 2.4787e-03
-const BEST_C = 0.2501
+# Global (A, c) from high-T Kramers calibration (c=1, A=e^{-4})
+const BEST_A = 0.018
+const BEST_C = 1.0
 @printf("  Global compound Poisson: A = %.4f, c = %.4f\n", BEST_A, BEST_C)
 
 # ══════════════════════════════════════════════════════════════════════
@@ -378,42 +378,6 @@ end
 #                     COMPUTE KRAMERS CONTOUR
 # ══════════════════════════════════════════════════════════════════════
 
-function compute_cp_contour(A_val, c_val; α_lo=0.08, α_hi=0.52, n_α=200, T_max=2.0)
-    α_range_kr = range(α_lo, α_hi, length=n_α)
-    α_out = Float64[]; T_out = Float64[]
-    T_scan = range(0.02, T_max, length=300)
-    for α_val in α_range_kr
-        for i in 1:(length(T_scan)-1)
-            N = max(log(M_PAT)/α_val, 3.0)  # continuous N for smooth contour
-            lnS1 = compound_poisson_lnS_single(Float64(T_MC_v8m), α_val, T_scan[i], N, A_val, c_val; Dv_func=INTERP_DV)
-            lnS2 = compound_poisson_lnS_single(Float64(T_MC_v8m), α_val, T_scan[i+1], N, A_val, c_val; Dv_func=INTERP_DV)
-            # Contour where S(T_MC) = 1/e → ln S = -1
-            if lnS1 > -1 && lnS2 ≤ -1
-                T_lo, T_hi = T_scan[i], T_scan[i+1]
-                for _ in 1:40
-                    T_mid = (T_lo + T_hi) / 2
-                    lnS_mid = compound_poisson_lnS_single(Float64(T_MC_v8m), α_val, T_mid, N, A_val, c_val; Dv_func=INTERP_DV)
-                    if lnS_mid > -1
-                        T_lo = T_mid
-                    else
-                        T_hi = T_mid
-                    end
-                end
-                push!(α_out, α_val); push!(T_out, (T_lo+T_hi)/2)
-                break
-            end
-        end
-    end
-    return α_out, T_out
-end
-
-println("\nComputing contours...")
-α_c0, T_c0 = compute_cp_contour(BEST_A, BEST_C)
-@printf("  A=%.1f c=%.2f: %d points\n", BEST_A, BEST_C, length(α_c0))
-
-
-# Keep original as α_contour, T_contour for the main plot
-α_contour = α_c0; T_contour = T_c0
 
 
 # ──────────────── K = 1 contour (exact density) ────────────────
@@ -445,6 +409,117 @@ function α_c_exact(T_val)
     return -0.5 * log(arg)
 end
 
+# ──────────────── α_abs(T): K=1 at N→∞ ────────────────
+# α_abs = -½ ln(1 - φ_min(φ_eq(T))²)
+function φ_min_val(T_val)
+    φeq = φ_eq_LSR(T_val)
+    return φ_c * φeq - sqrt((1 - φ_c^2) * (1 - φeq^2))
+end
+
+function α_abs_inf(T_val)
+    pm = φ_min_val(T_val)
+    pm ≤ 0 && return 0.0
+    return -0.5 * log(1 - pm^2)
+end
+
+# ──────────────── α_M(T): K=1 at finite M=20000 ────────────────
+function compute_K_finite(α_val, T_val)
+    N = log(M_PAT) / α_val
+    φeq = φ_eq_LSR(T_val)
+    pm = φ_min_val(T_val)
+    pm ≥ 1 && return 0.0
+    pm = max(0.0, pm)
+    logC = loggamma(N/2) - 0.5*log(π) - loggamma((N-1)/2)
+    n_pts = 1000
+    dφ = (1.0 - pm) / n_pts
+    dφ ≤ 0 && return 0.0
+    integral = 0.0
+    for i in 0:n_pts
+        φ = pm + i * dφ; φ ≥ 1 && break
+        s = 1 - φ^2; s ≤ 0 && continue
+        integral += exp(logC + (N-3)/2 * log(s)) * dφ
+    end
+    return (M_PAT - 1) * integral
+end
+
+function α_M_finite(T_val)
+    # Bisect to find α where K=1
+    α_lo = 0.01; α_hi = 0.50
+    K_lo = compute_K_finite(α_lo, T_val)
+    K_hi = compute_K_finite(α_hi, T_val)
+    K_lo > 1 && return α_lo
+    K_hi < 1 && return α_hi
+    for _ in 1:50
+        α_mid = (α_lo + α_hi) / 2
+        K_mid = compute_K_finite(α_mid, T_val)
+        if K_mid > 1; α_hi = α_mid; else; α_lo = α_mid; end
+    end
+    return (α_lo + α_hi) / 2
+end
+
+# ──────────────── Simple Kramers contour: τ = τ_rel/(AK) exp(ΔF_min/T) = T_MC ────────────────
+function barrier_at_phi1max(α, T)
+    N = log(M_PAT) / α
+    φeq = φ_eq_LSR(T); R2 = 1 - φeq^2; R2 ≤ 0 && return Inf
+    φ1max = sqrt(1 - exp(-2α))
+    v_entry = (φ_c - φeq * φ1max) / sqrt(1 - φ1max^2)
+    v_entry ≤ 0 && return 0.0
+    v2R2 = v_entry^2 / R2; v2R2 ≥ 0.9999 && return Inf
+    return (N - 3) / 2 * (-log(1 - v2R2))
+end
+
+# Effective c(T): c=1/3 for T≤0.2, linear to c=1 at T=0.5, c=1 for T≥0.5
+function c_eff(T)
+    T ≥ 0.5 && return 1.0
+    T ≤ 0.2 && return 1/3
+    return 1/3 + (T - 0.2) / (0.5 - 0.2) * (1 - 1/3)  # linear interpolation
+end
+
+function tau_simple(α, T, A_val)
+    K = compute_K_finite(α, T); K < 0.01 && return Inf
+    φeq = φ_eq_LSR(T); R2 = 1 - φeq^2; R2 ≤ 1e-10 && return Inf
+    Dv = INTERP_DV(α, T); τ_rel = R2 / Dv
+    dF = barrier_at_phi1max(α, T); isinf(dF) && return Inf
+    return τ_rel / (A_val * K) * exp(c_eff(T) * dF)
+end
+
+function compute_simple_contour(A_val; α_lo=0.08, α_hi=0.52, n_α=200, T_max=2.0)
+    α_out = Float64[]; T_out = Float64[]
+    T_scan = range(0.02, T_max, length=300)
+    for α_val in range(α_lo, α_hi, length=n_α)
+        for i in 1:(length(T_scan)-1)
+            τ1 = tau_simple(α_val, T_scan[i], A_val)
+            τ2 = tau_simple(α_val, T_scan[i+1], A_val)
+            if τ1 > T_MC_v8m && τ2 ≤ T_MC_v8m
+                T_lo, T_hi = T_scan[i], T_scan[i+1]
+                for _ in 1:40
+                    T_mid = (T_lo + T_hi) / 2
+                    τ_mid = tau_simple(α_val, T_mid, A_val)
+                    if τ_mid > T_MC_v8m; T_lo = T_mid; else; T_hi = T_mid; end
+                end
+                push!(α_out, α_val); push!(T_out, (T_lo+T_hi)/2)
+                break
+            end
+        end
+    end
+    return α_out, T_out
+end
+
+println("\nComputing Kramers contour...")
+α_c0, T_c0 = compute_simple_contour(BEST_A)
+@printf("  Simple Kramers (A=%.4f, c(T)): %d points\n", BEST_A, length(α_c0))
+
+# Keep original as α_contour, T_contour for the main plot
+α_contour = α_c0; T_contour = T_c0
+
+println("Computing α_abs(T) and α_M(T)...")
+T_curve = range(0.005, 2.0, length=200)
+α_abs_curve = [α_abs_inf(t) for t in T_curve]
+α_M_curve = [α_M_finite(t) for t in T_curve]
+# Filter valid
+mask_abs = α_abs_curve .> 0.005
+mask_M = α_M_curve .> 0.005
+
 # ══════════════════════════════════════════════════════════════════════
 #                          PLOT
 # ══════════════════════════════════════════════════════════════════════
@@ -454,34 +529,33 @@ println("\nPlotting 3-phase heatmap...")
 p1 = heatmap(alphas, Ts, phi_grid,
     color=cgrad(:RdYlBu, rev=false), clims=(0, 1),
     xlabel=L"\alpha = \ln M / N", ylabel=L"T",
-    xlims=(0, 0.55), ylims=(0, maximum(Ts)),
+    xlims=(0, 0.55), ylims=(0, 2.0),
     colorbar_title=L"\langle\varphi\rangle",
     size=(FIG_W + 40, FIG_H), dpi=FIG_DPI,
     left_margin=2Plots.mm, bottom_margin=1Plots.mm)
 
 # ── Phase boundaries ──
 
-# 1. Absolute retrieval vertical line (small α)
-const α_abs = 0.08
-plot!(p1, [α_abs, α_abs], [0, maximum(Ts)],
-      color=:blue, lw=1.5, ls=:dash, label=false)
+# 1. α_abs(T): K=1 at N→∞ (absolute retrieval boundary, thermodynamic limit)
+plot!(p1, α_abs_curve[mask_abs], collect(T_curve)[mask_abs],
+      color=:blue, lw=1.5, ls=:dash,
+      label=L"\alpha_\mathrm{abs}")
 
-# 2. Theoretical TD boundary (dotted): α_th vertical + α_c(T) curve
-#    This is the N→∞ thermodynamic limit, NOT the main result
+# 2. α_M(T): K=1 at M=20000 (absolute retrieval boundary, finite N)
+plot!(p1, α_M_curve[mask_M], collect(T_curve)[mask_M],
+      color=:cyan, lw=2.0, ls=:solid,
+      label=L"\alpha_M")
+
+# 3. Theoretical TD boundary (dotted): α_th vertical + α_c(T) curve
 T_range_e = range(0.005, maximum(Ts), length=500)
 T_phys_e = [t for t in T_range_e if f_ret_LSR(t) ≤ 1.0]
 T_solid_e = [t for t in T_phys_e if α_c_exact(t) ≥ α_th && α_c_exact(t) ≤ 0.55]
 α_solid_e = [α_c_exact(t) for t in T_solid_e]
 
-# Find T where α_c(T) meets α_th (top of curved part)
 T_join = isempty(T_solid_e) ? maximum(Ts) : maximum(T_solid_e)
-
-# Vertical part: from T_join up to top of plot
 plot!(p1, [α_th, α_th], [T_join, maximum(Ts)],
       color=:black, lw=1.5, ls=:dot,
-      label=L"N \to \infty\;\mathrm{(TD)}")
-
-# Curved part: α_c(T)
+      label=L"\alpha_\mathrm{th}")
 if !isempty(T_solid_e)
     plot!(p1, α_solid_e, T_solid_e,
           color=:black, lw=1.5, ls=:dot, label=false)
@@ -494,20 +568,10 @@ if !isempty(α_c0)
 end
 
 
-# Phase labels — metastable is to the LEFT of the red curve
-annotate!(p1, 0.04, 1.0, text("Absolute\nretrieval", :black, 5, :center))
-annotate!(p1, 0.18, 0.25, text("Metastable", :white, 6, :center))
-annotate!(p1, 0.47, 0.8, text("Non-\nretrieval", :white, 6, :center))
-
-# v16 calibration points (white circles)
-v16_dir = @__DIR__
-v16_files = filter(f -> startswith(f, "v16_Pesc_a") && endswith(f, ".csv"), readdir(v16_dir))
-for f in v16_files
-    m_a = match(r"a(\d+\.\d+)", f); m_T = match(r"T(\d+\.\d+)", f)
-    m_a === nothing && continue; m_T === nothing && continue
-    scatter!(p1, [parse(Float64, m_a.captures[1])], [parse(Float64, m_T.captures[1])],
-             markersize=2, color=:white, markerstrokecolor=:black, markerstrokewidth=0.5, label=false)
-end
+# Phase labels
+annotate!(p1, 0.03, 0.15, text("AR", :black, 7, :center))
+annotate!(p1, 0.13, 1.0, text("MS", :white, 7, :center))
+annotate!(p1, 0.47, 1.0, text("NR", :white, 7, :center))
 
 for ext in ("png", "pdf")
     savefig(p1, joinpath(out_dir, "heatmap_3phase.$ext"))

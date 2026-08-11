@@ -122,14 +122,44 @@ function τ_rel_OU(N, φeq, T_val)
     (1 - φeq^2) * N^2 / (2.88 * T_val^2)
 end
 
-function τ_kramers(α, T_val, c_bar, c_pre; M=20000)
+# D_eff saturating model: D = D_max * T²/(T² + T₀²)
+# Measured from v11 trajectories:
+#   α=0.18 (N=55): D_max=8.13e-6, T₀=0.339
+#   α=0.20 (N=49): D_max=8.62e-6, T₀=0.308
+#   α=0.22 (N=45): D_max=9.24e-6, T₀=0.238
+#   α=0.24 (N=41): D_max=1.07e-5, T₀=0.176
+# Interpolate T₀ and D_max linearly in α.
+const α_cal = [0.18, 0.20, 0.22, 0.24]
+const T0_cal = [0.339, 0.308, 0.238, 0.176]
+const Dm_cal = [8.13e-6, 8.62e-6, 9.24e-6, 1.07e-5]
+
+function interp_linear(x, xs, ys)
+    x ≤ xs[1] && return ys[1] + (ys[2]-ys[1])/(xs[2]-xs[1]) * (x - xs[1])
+    x ≥ xs[end] && return ys[end-1] + (ys[end]-ys[end-1])/(xs[end]-xs[end-1]) * (x - xs[end-1])
+    for i in 1:length(xs)-1
+        if xs[i] ≤ x ≤ xs[i+1]
+            f = (x - xs[i]) / (xs[i+1] - xs[i])
+            return ys[i] + f * (ys[i+1] - ys[i])
+        end
+    end
+    return ys[end]
+end
+
+function τ_rel_corrected(N, φeq, T_val, α)
+    T0 = interp_linear(α, α_cal, T0_cal)
+    Dm = interp_linear(α, α_cal, Dm_cal)
+    D_eff = Dm * T_val^2 / (T_val^2 + T0^2)
+    return (1 - φeq^2) / D_eff
+end
+
+function τ_kramers(α, T_val, c_bar, c_pre; M=20000, use_corrected_D=false)
     N = floor(Int, log(M) / α)
     N < 3 && return Inf
     φeq = φ_eq_LSR(T_val)
     φ1m = φ_1max_exact(α)
     dF = barrier_ΔF_over_T(N, φeq, φ1m)
     isinf(dF) && return Inf
-    tr = τ_rel_OU(N, φeq, T_val)
+    tr = use_corrected_D ? τ_rel_corrected(N, φeq, T_val, α) : τ_rel_OU(N, φeq, T_val)
     return N * tr * exp(c_pre + c_bar * dF)
 end
 
@@ -137,17 +167,17 @@ end
 const T_MC_v8m = 2^15 + 2^13
 
 # ──────────────── Kramers contour function ────────────────
-function compute_contour(c_bar, c_pre, α_range, T_max_val)
+function compute_contour(c_bar, c_pre, α_range, T_max_val; use_corrected_D=false)
     α_out = Float64[]; T_out = Float64[]
     T_scan = range(0.02, T_max_val, length=500)
     for α_val in α_range
-        τ_scan = [τ_kramers(α_val, t, c_bar, c_pre) for t in T_scan]
+        τ_scan = [τ_kramers(α_val, t, c_bar, c_pre; use_corrected_D=use_corrected_D) for t in T_scan]
         for i in 1:(length(T_scan)-1)
             if τ_scan[i] > T_MC_v8m && τ_scan[i+1] ≤ T_MC_v8m
                 T_lo, T_hi = T_scan[i], T_scan[i+1]
                 for _ in 1:60
                     T_mid = (T_lo + T_hi) / 2
-                    if τ_kramers(α_val, T_mid, c_bar, c_pre) > T_MC_v8m
+                    if τ_kramers(α_val, T_mid, c_bar, c_pre; use_corrected_D=use_corrected_D) > T_MC_v8m
                         T_lo = T_mid
                     else
                         T_hi = T_mid
@@ -163,10 +193,13 @@ function compute_contour(c_bar, c_pre, α_range, T_max_val)
 end
 
 α_range = range(0.10, 0.50, length=300)
+
+# Kramers contour: calibrated barrier (c=0.37)
+# Kramers contour with D ∝ T² (original)
 α_c, T_c = compute_contour(C_BARRIER, C_PREFACTOR, α_range, maximum(Ts))
-α_lo, T_lo = compute_contour(0.8*C_BARRIER, C_PREFACTOR, α_range, maximum(Ts))
-α_hi, T_hi = compute_contour(1.2*C_BARRIER, C_PREFACTOR, α_range, maximum(Ts))
-α_c1, T_c1 = compute_contour(1.0, C_PREFACTOR, α_range, maximum(Ts))  # c=1 uncorrected
+
+# Kramers contour with corrected D_eff (saturating)
+α_corr, T_corr = compute_contour(C_BARRIER, C_PREFACTOR, α_range, maximum(Ts); use_corrected_D=true)
 
 # ──────────────── P_esc = 0.5 contour from v8m data ────────────────
 # Interpolate the α at which P_esc crosses 0.5 for each T.
@@ -221,21 +254,16 @@ if !isempty(α_pesc_contour)
           label=L"P_\mathrm{esc} = 0.5")
 end
 
-# Kramers contours: c, 0.8c, 1.2c
-if !isempty(α_lo)
-    plot!(p1, α_lo, T_lo, color=:red, lw=1.0, ls=:dot, alpha=0.5, label=false)
-end
+# Kramers contour with D ∝ T² (original)
 if !isempty(α_c)
     plot!(p1, α_c, T_c, color=:red, lw=2.0, ls=:dot,
-          label=L"\tau_\mathrm{eff} = T_\mathrm{MC}")
+          label=L"\tau_\mathrm{eff}(D \propto T^2)")
 end
-if !isempty(α_hi)
-    plot!(p1, α_hi, T_hi, color=:red, lw=1.0, ls=:dot, alpha=0.5, label=false)
-end
-# c=1 contour (uncorrected barrier)
-if !isempty(α_c1)
-    plot!(p1, α_c1, T_c1, color=:magenta, lw=1.5, ls=:dash,
-          label=L"\tau_\mathrm{eff}(c\!=\!1)")
+
+# Kramers contour with corrected D_eff (saturating)
+if !isempty(α_corr)
+    plot!(p1, α_corr, T_corr, color=:blue, lw=2.0, ls=:dot,
+          label=L"\tau_\mathrm{eff}(D_\mathrm{eff})")
 end
 
 # Gaussian theory boundary (for reference)

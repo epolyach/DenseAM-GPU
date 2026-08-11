@@ -11,15 +11,64 @@ Math is fine when it carries content; prose around it stays skeletal.
 
 ## Repo layout: active vs archive
 
-The repo holds two generations of work; only one is currently being developed.
+The repo holds three generations of work; only the newest is currently being developed.
 
-- **`NIPS_Resilience/code/`** — **active**. All recent commits touch this tree. Smart-MC / honest-MC basin-stability studies for LSE and LSR live here, plus their plot scripts.
+- **`AAAI_Ramsauer/` + `LSE_capacity_final/`** — **active**. The AAAI 2026 project on the saddle-dominated capacity of the LSE model: simulations and plot scripts in `AAAI_Ramsauer/`, the submission LaTeX in `LSE_capacity_final/`. All recent commits touch these trees. (`LSE_capacity/` is an earlier copy of the same paper, kept with its build dirs; `aaai2026_LSE_saddle*.tex` and `LSE_capacity_v1/v2` inside `AAAI_Ramsauer/` are superseded drafts. Edit `LSE_capacity_final/` only.)
+- **`NIPS_Resilience/code/`** — previous generation. Smart-MC / honest-MC basin-stability studies for LSE and LSR, plus their plot scripts. Still the canonical location for the smart-MC and LSR work.
 - **Repo root** (`basin_stab_LSE_v6.jl`, `generate_lsr_longeq_gpu_v4.jl`, etc.) — **archive**, last touched March 2025. The README's v1→v4 LSR evolution narrative is historical; do not assume those scripts represent the current methodology.
 - **`OLD_*`, `NeurIPS_2024/`, `PROD*`, `panels_v10/`** — frozen artifacts. Read-only for reference.
 
-When the user says "the LSE script" or "the smart-MC code" without qualification, they mean files in `NIPS_Resilience/code/`.
+When the user says "the paper" without qualification, they mean `LSE_capacity_final/`. "The smart-MC code" means `NIPS_Resilience/code/`; scripts for the AAAI project live in `AAAI_Ramsauer/`.
 
-## Current canonical scripts (in `NIPS_Resilience/code/`)
+## AAAI 2026 paper (`LSE_capacity_final/`)
+
+Three tex targets, synced by hand (no `\input` sharing):
+
+| File | Content |
+|---|---|
+| `LSE_capacity.tex` | Joint compile: main text + Appendices A-C. The reference version. |
+| `LSE_capacity_na.tex` | Main text only (page-limited submission body). |
+| `LSE_capacity_appendices.tex` | Standalone appendices (separate technical-appendix upload). |
+
+Sync rules:
+- A main-text edit goes into both `LSE_capacity.tex` and `LSE_capacity_na.tex`. The two are line-for-line identical except: `_na` writes appendix cross-references as literal `Appendix~A` / `Appendix~B` instead of `\ref{...}`, and stops at `\end{document}` after `\bibliography`.
+- An appendix edit goes into both `LSE_capacity.tex` and `LSE_capacity_appendices.tex`.
+- Equation numbers (36)-(53) in `LSE_capacity_appendices.tex` are frozen with `\tag{N}` to match the joint compile; its references to main-text equations are hard-coded numerals. Any edit that shifts equation numbering in the joint compile requires re-freezing those tags and numerals by hand.
+
+The preamble is the official AAAI 2026 template; lines marked `DO NOT CHANGE` are literal, and the forbidden package/command list sits in comments at the top of each tex file. Both main files use `\usepackage[submission]{aaai2026}` (anonymous).
+
+Build from `LSE_capacity_final/` so `panels_paper/` figure paths resolve; send aux output to a per-target build dir (convention from `LSE_capacity/`):
+
+```bash
+mkdir -p build_joint
+pdflatex -interaction=nonstopmode -output-directory=build_joint LSE_capacity.tex
+cp aaai2026.bib aaai2026.bst build_joint/
+(cd build_joint && bibtex LSE_capacity)
+pdflatex -interaction=nonstopmode -output-directory=build_joint LSE_capacity.tex
+pdflatex -interaction=nonstopmode -output-directory=build_joint LSE_capacity.tex
+```
+
+Same recipe with `build_na` / `LSE_capacity_na` and `build_app` / `LSE_capacity_appendices`. Keep `.aux`/`.log` files out of the source directory.
+
+`LSE_capacity_final/panels_paper/*.pdf` are copies of `AAAI_Ramsauer/panels_paper/` outputs. To change a figure, edit and run the producing script in `AAAI_Ramsauer/` (Julia + CairoMakie; each script reads CSVs next to itself and states its output in a header comment), then copy the new PDF over:
+
+| Figure | Producing script |
+|---|---|
+| `cusp_vs_extreme.pdf` | `plot_cusp_vs_extreme.jl` |
+| `cusp_illustration.pdf` | `plot_cusp_illustration.jl` |
+| `heatmap_textwidth_profile.pdf` | `plot_heatmap_textwidth_profile.jl` |
+| `Veff_finite_N.pdf` | `plot_Veff_finite_N.jl` |
+
+Naming: the paper's three MC schemes map to `AAAI_Ramsauer/` scripts as Full = `basin_stab_LSE_honest_AAAI*.jl` ("honest" in filenames/CSVs), Cone = `basin_stab_LSE_semismart_AAAI*.jl` ("semismart"), Bulk = `kinetics_boundary_LSE.jl` / `kinetics_LSE_Ndim.jl` (chain on the analytical bulk potential). Use only the paper names (Full, Cone, Bulk) in the tex; the code names never appear in prose.
+
+Run facts behind the paper's numbers (from script headers and CSV comment lines):
+- `N(α) = max(N_FLOOR, round(ln M_TARGET / α))` — round, not ceil. `M_TARGET = 4.4e6` (Full, and Cone at the shared budget) gives N = 76…24 over α = 0.20…0.65; `M_TARGET = 3.0e8` (Cone, `PHI_KEEP = 0.40`) gives N = 98…30.
+- Full/Cone are GPU scripts with resume-by-default and `--fresh`, like the NIPS tree. Bulk (`kinetics_boundary_LSE.jl`) is CPU: `julia -t auto`, output `kinetics_boundary_LSE_N{N}_TMC{T_MC}.csv`, also resume/`--fresh`.
+- CSVs carry a `# generator=…` comment header with the exact parameters; trust it over the paper text when they disagree.
+
+`LSE_capacity_final/Backups/` holds manual snapshots named `<file>_backup_vN-MM-DD-HHhMM.tex`. When asked to back up before an edit pass, follow that naming; do not overwrite existing snapshots.
+
+## Canonical scripts in `NIPS_Resilience/code/` (previous generation)
 
 | Topic | Latest file | Notes |
 |---|---|---|

@@ -43,19 +43,45 @@ p = plot(size = (266, 177),
 
 plot!(p, α_grid, y_c;
       lw = 1.6, color = RGB(0.75, 0.10, 0.20),
-      label = L"\varphi_c=\alpha+g_{\max}(\beta_{\rm net})")
+      label = L"\varphi_c\ (15)")
 plot!(p, α_grid, y_max;
       lw = 1.6, color = RGB(0.10, 0.20, 0.55),
-      label = L"\varphi_{\max}=\sqrt{1-e^{-2\alpha}}")
+      label = L"\varphi_{\max}\ (6)")
 plot!(p, α_grid, y_g;
       lw = 1.2, ls = :dot, color = RGB(0.10, 0.20, 0.55),
-      label = L"\varphi=\sqrt{2\alpha}")
+      label = L"\sqrt{2\alpha}")
 plot!(p, α_grid, y_grey;
-      lw = 1.2, ls = :dash, color = :gray,
-      label = L"\varphi=1-\alpha/\beta_{\rm net}")
+      lw = 1.0, ls = :dash, color = :gray,
+      label = L"1-\alpha/\beta_{\rm net}")
+
+# Authors' LO capacities at β_net = 1:
+#   blue  α = 1/2,   φ = 1  (Lucibello-Mézard / PPS26 typical-pattern saddle)
+#   red   α = 0.623, φ = 1  (cusp / saddle-point capacity, this work)
+#   gray  α = 0.316, on the blue curve (Ramsauer 2021 capacity, intersection
+#                                       of 1 − α/β with √(1 − e^{−2α}))
+const α_R = 0.316
+scatter!(p, [0.5], [1.0];
+         markersize = 2.5, markerstrokewidth = 0.5,
+         markerstrokecolor = RGB(0.10, 0.20, 0.55),
+         markercolor = RGB(0.10, 0.20, 0.55), label = "")
+scatter!(p, [α_c], [1.0];
+         markersize = 2.5, markerstrokewidth = 0.5,
+         markerstrokecolor = RGB(0.75, 0.10, 0.20),
+         markercolor = RGB(0.75, 0.10, 0.20), label = "")
+scatter!(p, [α_R], [φ_max(α_R)];
+         markersize = 2.5, markerstrokewidth = 0.5,
+         markerstrokecolor = :gray,
+         markercolor = :gray, label = "")
+# Tangency of φ_c with φ_max at the saddle φ* (this work): blue rim, red fill.
+const α_tan = -0.5 * log(1 - φ_star^2)
+scatter!(p, [α_tan], [φ_star];
+         markersize = 2.5, markerstrokewidth = 1.2,
+         markerstrokecolor = RGB(0.10, 0.20, 0.55),
+         markercolor      = RGB(0.75, 0.10, 0.20), label = "")
 
 xlims!(p, (0, 0.7))
 ylims!(p, (0, 1.03))
+xticks!(p, 0.0:0.1:0.7)
 
 outdir = joinpath(@__DIR__, "panels_paper")
 isdir(outdir) || mkpath(outdir)

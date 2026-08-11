@@ -12,6 +12,16 @@ Optional CLI:
   --boundary=<th>  outline the empirical data boundary as the locus
                    where Z(α, T) = ⟨φ⟩ − φ_eq(T) first drops below −th
                    (scanning α upward at each T). Drawn as a thick black line.
+  --smooth-T=<N>   median-filter Z along T with window of width N before
+                   thresholding (default N=3). Set N=0 or N=1 to disable.
+  --smooth-bd=<N>  moving-average smooth T_bd[α] with window of width N
+                   after thresholding (default N=5). T_bd values become
+                   off-grid; staircase step heights become more uniform.
+                   Set N=0 or N=1 to disable.
+  --no-monotone    disable monotone non-increasing enforcement on T_bd[α].
+                   By default the staircase is clipped to be monotone
+                   descending in α (physically expected; suppresses
+                   single-cell noise back-steps).
 
 Output: panels_paper/heatmap_Nramp_M4.4e6_phikeep0.40[_bd<th>].{png,pdf}
 =#
@@ -34,7 +44,77 @@ function parse_boundary_threshold(args)
     return nothing
 end
 
+function parse_smooth_T_width(args, default::Int)
+    for a in args
+        startswith(a, "--smooth-T=") || continue
+        v = split(a, "=", limit=2)[2]
+        try
+            return parse(Int, v)
+        catch
+            @warn "could not parse $a as Int; using default $default"
+            return default
+        end
+    end
+    return default
+end
+
+function parse_smooth_bd_width(args, default::Int)
+    for a in args
+        startswith(a, "--smooth-bd=") || continue
+        v = split(a, "=", limit=2)[2]
+        try
+            return parse(Int, v)
+        catch
+            @warn "could not parse $a as Int; using default $default"
+            return default
+        end
+    end
+    return default
+end
+
+parse_monotone(args, default::Bool) =
+    "--no-monotone" in args ? false :
+    "--monotone" in args ? true : default
+
+# Moving-average smooth of a 1D vector, edge-aware (window shrinks at edges).
+function smooth_vec(v::AbstractVector, w::Int)
+    w <= 1 && return copy(v)
+    h = (w - 1) ÷ 2
+    n = length(v)
+    out = similar(v)
+    for i in 1:n
+        lo = max(1, i - h)
+        hi = min(n, i + h)
+        out[i] = mean(view(v, lo:hi))
+    end
+    return out
+end
+
+# Median filter Z along the T axis with window of width w.
+# NaN entries are excluded from the median; if a window is entirely NaN,
+# the original value is kept.
+function median_smooth_T(Z::AbstractMatrix, w::Int)
+    w <= 1 && return Z
+    h = (w - 1) ÷ 2
+    nT, nα = size(Z)
+    out = copy(Z)
+    for iα in 1:nα, iT in 1:nT
+        lo = max(1, iT - h)
+        hi = min(nT, iT + h)
+        window = Float64[]
+        for k in lo:hi
+            v = Z[k, iα]
+            isnan(v) || push!(window, v)
+        end
+        isempty(window) || (out[iT, iα] = median(window))
+    end
+    return out
+end
+
 const BOUNDARY_TH = parse_boundary_threshold(ARGS)
+const SMOOTH_T    = parse_smooth_T_width(ARGS, 3)
+const SMOOTH_BD   = parse_smooth_bd_width(ARGS, 5)
+const MONOTONE    = parse_monotone(ARGS, true)
 
 const φ_star = (sqrt(5) - 1)/2
 const g_max  = 0.5*log(1 - φ_star^2) + φ_star          # ≈ 0.3774
@@ -113,18 +193,39 @@ plot!(p, [ac_sp(t)    for t in T_curve], T_curve,
 # (T = T_bd − dT/2), vertical segments at the cell edge between consecutive
 # α columns (α = α_bd + dα/2).
 if BOUNDARY_TH !== nothing
+    Z_bd = SMOOTH_T > 1 ? median_smooth_T(Z, SMOOTH_T) : Z
     α_bd = Float64[]
     T_bd = Float64[]
     for (iα, α) in enumerate(αs)
         for (iT, T) in enumerate(Ts)
-            if !isnan(Z[iT, iα]) && Z[iT, iα] < -BOUNDARY_TH
+            if !isnan(Z_bd[iT, iα]) && Z_bd[iT, iα] < -BOUNDARY_TH
                 push!(α_bd, α)
                 push!(T_bd, T)
                 break
             end
         end
     end
+    if SMOOTH_BD > 1 && length(T_bd) > 1
+        T_bd = smooth_vec(T_bd, SMOOTH_BD)
+    end
+    if MONOTONE && length(T_bd) > 1
+        for i in 2:length(T_bd)
+            T_bd[i] = min(T_bd[i], T_bd[i-1])
+        end
+    end
+    @printf("  smooth-T = %d, smooth-bd = %d, monotone = %s\n",
+            SMOOTH_T, SMOOTH_BD, MONOTONE ? "on" : "off")
     if !isempty(α_bd)
+        bd_csv = joinpath(@__DIR__, "panels_paper",
+                          @sprintf("heatmap_Nramp_M4.4e6_phikeep0.40_bd%.3g.csv",
+                                   BOUNDARY_TH))
+        open(bd_csv, "w") do f
+            println(f, "alpha,T_bd")
+            for (α, T) in zip(α_bd, T_bd)
+                @printf(f, "%.4f,%.6f\n", α, T)
+            end
+        end
+        @printf("  boundary CSV: %s\n", bd_csv)
         dα = length(αs) > 1 ? αs[2] - αs[1] : 0.0
         dT = length(Ts) > 1 ? Ts[2] - Ts[1] : 0.0
         # Build edge-aligned polyline. For column i: horizontal at T_i - dT/2

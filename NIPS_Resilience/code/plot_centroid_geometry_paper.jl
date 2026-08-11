@@ -81,9 +81,9 @@ plot!(p, al, vl, color=:red, lw=1.5, ls=:dash, label=false)
 
 # ── Boundary labels ──
 annotate!(p, φ_c - 0.015, 0.48,
-    text(L"\phi_1 = \varphi_c", FONT_ANN, :right, :blue))
+    text(L"\phi_1 = \varphi_c", FONT_ANN+2, :right, :blue))
 annotate!(p, 0.52, 0.38,
-    text(L"\phi_\mu = \varphi_c", FONT_ANN, :left, :red))
+    text(L"\phi_\mu = \varphi_c", FONT_ANN+2, :left, :red))
 
 # ── Key points ──
 # Retrieval: (φ_eq, 0)
@@ -97,12 +97,12 @@ scatter!(p, [φ_eq], [v_entry], color=:red, markersize=5,
     markerstrokewidth=1, markerstrokecolor=:black, label=false)
 
 # Point labels
-annotate!(p, φ_eq + 0.01, -0.02,
-    text(L"\phi_\mathrm{eq}", FONT_ANN, :left, :green4))
-annotate!(p, φ_cen + 0.01, v_cen + 0.025,
-    text(L"\varphi_\mathrm{cen}^{(0)}", FONT_ANN, :left, :darkorange))
+annotate!(p, φ_eq + 0.03, 0.02,
+    text(L"\phi_\mathrm{eq}", FONT_ANN+2, :left, :black))
+annotate!(p, φ_cen + 0.04, v_cen + 0.025,
+    text(L"\varphi_\mathrm{cen}^{(0)}", FONT_ANN+2, :left, :black))
 annotate!(p, φ_eq + 0.01, v_entry + 0.02,
-    text(L"v_\mathrm{entry}", FONT_ANN, :left, :red3))
+    text(L"v_\mathrm{entry}", FONT_ANN+2, :left, :black))
 
 # ── Escape path arrows ──
 # Stage 1: vertical (φ_eq, 0) → (φ_eq, v_entry)
@@ -114,21 +114,13 @@ plot!(p, [φ_eq - 0.005, φ_cen + 0.005], [v_entry + 0.005, v_cen - 0.005],
 
 # Step labels
 annotate!(p, φ_eq - 0.02, v_entry / 2,
-    text(L"\Delta E = 0", FONT_ANN, :right, :black))
+    text(L"\Delta E = 0", FONT_ANN+2, :right, :black))
 annotate!(p, (φ_eq + φ_cen) / 2 + 0.02, (v_entry + v_cen) / 2 + 0.02,
-    text(L"\Delta E < 0", FONT_ANN, :left, :black))
-
-# ── Energy values at key points ──
-E_ret = -(1/b_lsr) * log(max(1e-30, 1-b_lsr+b_lsr*φ_eq))
-E_cen = -(1/b_lsr) * log(2*max(1e-30, 1-b_lsr+b_lsr*φ_cen))
-annotate!(p, φ_eq + 0.01, 0.025,
-    text(@sprintf("E/N = %.3f", E_ret), FONT_ANN-1, :left, :green4))
-annotate!(p, φ_cen - 0.01, v_cen - 0.03,
-    text(@sprintf("E/N = %.3f", E_cen), FONT_ANN-1, :right, :darkorange))
+    text(L"\Delta E < 0", FONT_ANN+2, :left, :black))
 
 # ── Sphere label ──
-annotate!(p, 0.82, 0.50,
-    text(L"\phi_1^2 + v^2 = 1", FONT_ANN-1, :center, rotation=0, :gray40))
+annotate!(p, 0.82, 0.53,
+    text(L"\phi_1^2 + v^2 = 1", FONT_ANN+1, :center, rotation=0, :black))
 
 for ext in ("png", "pdf")
     savefig(p, joinpath(out_dir, "centroid_geometry.$ext"))
@@ -136,4 +128,3 @@ end
 println("Saved: panels_paper/centroid_geometry.{png,pdf}")
 @printf("φ_{1μ} = %.3f, φ_eq = %.3f, φ_cen = %.3f\n", φ_1μ, φ_eq, φ_cen)
 @printf("v_entry = %.3f, v_cen = %.3f\n", v_entry, v_cen)
-@printf("E_ret/N = %.4f, E_cen/N = %.4f\n", E_ret, E_cen)

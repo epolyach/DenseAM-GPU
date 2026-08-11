@@ -1,0 +1,97 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\title{Note: LSE Phase Boundary --- Exact Distribution and Finite-Size Effects}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Background}
+
+The zero-temperature capacity $\alpha_c(0) = 0.5$ for the LSE kernel on the $N$-sphere was proved by Ramsauer et al.\ (2021) using the Gaussian approximation for the alignment distribution: $f(\phi) \propto e^{-N\phi^2/2}$, which gives the maximum spurious alignment $\varphi_{1,\max} = \sqrt{2\alpha}$ and hence $\alpha_c(0) = 0.5$ from the condition $\sqrt{2\alpha} = 1$.  The ICML companion paper follows the same approach to derive the finite-temperature phase boundary.  The exact density on the sphere, $f(\phi) = C_N(1-\phi^2)^{(N-3)/2}$, has lighter tails (vanishing at $|\phi| = 1$) and gives $\varphi_{1,\max} = \sqrt{1-e^{-2\alpha}}$, which never reaches~1 at finite~$\alpha$.  This raises the question whether $\alpha_c(0) = 0.5$ is the true capacity or an artifact of the Gaussian approximation.
+
+\section{The v10 LSE phase diagram}
+
+Figure~\ref{fig:lse_phase} shows the disorder-averaged alignment $\langle\varphi\rangle(\alpha, T)$ from the v10 Monte Carlo simulation of the LSE model ($\beta_{\mathrm{net}} = 1$, $M = 10\,000$--$200\,000$, $N = \lfloor\ln M/\alpha\rfloor$, 256 disorder samples per point).  Two theoretical phase boundaries are overlaid:
+\begin{itemize}
+\item Gaussian (blue): $\alpha_c(T) = \tfrac{1}{2}(1 - f_{\mathrm{ret}})^2$, giving $\alpha_c(0) = 0.5$.
+\item Exact (red dashed): $\alpha_c(T) = -\tfrac{1}{2}\ln(1 - (1 - f_{\mathrm{ret}})^2)$, giving $\alpha_c(0) = \infty$.
+\end{itemize}
+
+At low $\alpha$ (large $N$, e.g.\ $\alpha < 0.2$, $N > 50$), the MC transition follows the exact (red) curve, not the Gaussian.  At high $\alpha$ (small $N$, e.g.\ $\alpha > 0.4$, $N < 25$), the MC boundary shifts leftward toward the Gaussian curve.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{../code/panels_v10/phase_LSE_v10.pdf}
+\caption{LSE phase diagram from v10 MC.  Color: $\langle\varphi\rangle$.  Blue: Gaussian boundary.  Red dashed: exact-density boundary.}
+\label{fig:lse_phase}
+\end{figure}
+
+\section{Finite-size scaling at $\alpha = 0.20$}
+
+To determine whether the leftward shift at high $\alpha$ is a finite-$N$ effect, we fix $\alpha = 0.20$ and vary $N$ by changing $M = e^{\alpha N}$:
+
+\begin{center}
+\begin{tabular}{ccrcc}
+\toprule
+$N$ & $M$ & $T_c$ ($\langle\varphi\rangle = 0.5$) & $\langle\varphi_{1,\max}\rangle$ & Direction \\
+\midrule
+20 &    55 & 0.30 & 0.49 & \\
+25 &   148 & 0.35 & 0.51 & \\
+30 &   403 & 0.39 & 0.51 & \\
+35 & 1\,097 & 0.43 & 0.52 & \\
+\midrule
+$\infty$ & $e^{0.2N}$ & (exact: 0.57) & 0.574 & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+As $N$ increases, $T_c$ increases: retrieval survives to higher temperatures.  Equivalently, at fixed $T$, the boundary shifts \emph{rightward} with increasing $N$.  The finite-$N$ effect shifts the boundary \emph{leftward}---toward the Gaussian prediction---at small $N$.
+
+\subsection{Which mechanism?}
+
+The data distinguish between two candidate mechanisms:
+
+\paragraph{1.\ Extreme-value fluctuations (ruled out).}
+If retrieval were lost because the most-aligned spurious pattern exceeds a critical overlap, then smaller $N$ (fewer patterns) would produce a \emph{lower} $\varphi_{1,\max}$, i.e.\ \emph{less} noise, and the boundary would shift \emph{rightward}.  The data show the opposite: the boundary shifts leftward at small $N$.  Moreover, $\langle\varphi_{1,\max}\rangle$ grows monotonically with $N$ (from $0.49$ to $0.52$), confirming that the noise is weaker, not stronger, at small $N$.  The extreme-value statistics are well described by the exact density ($\varphi_{1,\max} \to 0.574$), not the Gaussian ($0.632$).
+
+\paragraph{2.\ Entropy-driven destabilization (confirmed).}
+The geometric entropy stabilizing the retrieval basin is $s(\phi) = \frac{N-1}{2N}\ln(1-\phi^2)$ at finite $N$, approaching $\frac{1}{2}\ln(1-\phi^2)$ as $N \to \infty$.  At small $N$, the entropy is weaker by a factor $(N-1)/N$, reducing the free-energy depth of the retrieval well.  Thermal fluctuations can then destabilize retrieval at lower $T$ (or equivalently, at lower $\alpha$).  This shifts the boundary leftward, consistent with the data.
+
+\paragraph{Detailed comparison at fixed $T$:}
+
+\begin{center}
+\begin{tabular}{cccccl}
+\toprule
+$T$ & $\langle\varphi\rangle_{N=20}$ & $\langle\varphi\rangle_{N=25}$ & $\langle\varphi\rangle_{N=30}$ & $\langle\varphi\rangle_{N=35}$ & Direction \\
+\midrule
+0.10 & 0.953 & 0.953 & 0.952 & 0.952 & same (deep retrieval) \\
+0.20 & 0.892 & 0.903 & 0.907 & 0.908 & $N\!\downarrow$ shifts LEFT \\
+0.30 & 0.587 & 0.791 & 0.860 & 0.867 & $N\!\downarrow$ shifts LEFT \\
+0.40 & 0.026 & 0.195 & 0.471 & 0.709 & $N\!\downarrow$ shifts LEFT \\
+0.50 & 0.010 & 0.001 & 0.015 & 0.108 & $N\!\downarrow$ shifts LEFT \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The effect is dramatic near the transition: at $T = 0.40$, $\langle\varphi\rangle$ ranges from $0.03$ ($N = 20$) to $0.71$ ($N = 35$).
+
+\section{Conclusion}
+
+For the LSE kernel:
+\begin{enumerate}
+\item The exact spherical density correctly predicts the $N \to \infty$ phase boundary.  The Gaussian boundary ($\alpha_c(0) = 0.5$) from Ramsauer et al.\ (2021) appears to be a finite-$N$ artifact: the true zero-temperature capacity on the sphere may be higher than $0.5$.
+\item The finite-$N$ effect shifts the boundary \emph{leftward} (to lower $\alpha_c$) due to weaker entropy stabilization at small $N$, not due to noise fluctuations.
+\item The extreme-value statistics ($\varphi_{1,\max}$) are well described by the exact density and converge to $\sqrt{1 - e^{-2\alpha}}$ from below, confirming that the noise floor mechanism (a spurious pattern entering the retrieval basin) operates correctly.  The Gaussian prediction $\sqrt{2\alpha}$ overestimates $\varphi_{1,\max}$ at all finite $N$.
+\item At the system sizes accessible to MC ($N \approx 20$--$50$), the boundary lies between the exact and Gaussian predictions, approaching the exact curve as $N$ increases.
+\end{enumerate}
+
+This is in contrast to the LSR kernel, where the loss of retrieval near $\alpha_{\mathrm{th}}$ is driven by \emph{centroid escape} (a Kramers process through an entropic barrier), not by a spurious pattern entering the retrieval basin.  For LSE, the noise floor mechanism works as expected: a spurious pattern with alignment above a critical threshold destabilizes retrieval.  The exact distribution correctly predicts this threshold; the Gaussian overestimates the noise, producing a lower (conservative) capacity bound.
+
+\end{document}

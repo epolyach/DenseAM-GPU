@@ -13,7 +13,7 @@ using Statistics
 # ──────────────── Figure settings ────────────────
 const FIG_DPI = 300
 const FIG_W = round(Int, 86 / 25.4 * 100)   # 86mm
-const FIG_H = FIG_W
+const FIG_H = round(Int, 56 / 25.4 * 100)  # 56mm (wider aspect ratio)
 const FONT_GUIDE = 8
 const FONT_TICK  = 7
 const FONT_ANN   = 7
@@ -112,16 +112,14 @@ println("Plotting CDFs...")
 
 # Select interesting points spanning the transition
 cdf_points = [
-    (0.10, 0.325, "α=0.10 (deep retrieval)"),
-    (0.20, 0.325, "α=0.20 (onset)"),
+    (0.10, 0.325, "α=0.10"),
     (0.22, 0.325, "α=0.22"),
-    (0.25, 0.325, "α=0.25 (≈α_th)"),
+    (0.25, 0.325, "α=0.25"),
     (0.28, 0.325, "α=0.28"),
-    (0.30, 0.325, "α=0.30"),
     (0.35, 0.325, "α=0.35"),
 ]
 
-colors_cdf = [:darkblue, :blue, :dodgerblue, :green, :orange, :red, :darkred]
+colors_cdf = [:darkblue, :dodgerblue, :green, :orange, :red, :darkred, :brown]
 
 p2 = plot(xlabel="φ", ylabel="CDF",
     xlims=(-0.1, 1.05), ylims=(0, 1),
@@ -132,7 +130,7 @@ p2 = plot(xlabel="φ", ylabel="CDF",
     left_margin=0Plots.mm, bottom_margin=0Plots.mm)
 
 # φ_c line
-vline!(p2, [φ_c], color=:gray, lw=1, ls=:dash, label=false)
+vline!(p2, [0.48, 0.83], color=:gray30, lw=2, ls=:dash, label=false)
 
 for (ci, (α_sel, T_sel, lbl)) in enumerate(cdf_points)
     mask = (abs.(alpha .- α_sel) .< 0.003) .& (abs.(T .- T_sel) .< 0.003)
@@ -144,17 +142,18 @@ end
 
 for ext in ("png", "pdf")
     savefig(p2, joinpath(out_dir, "cdf_LSR_T0325.$ext"))
+    savefig(p2, joinpath(out_dir, "cdf_panel_A.$ext"))
 end
 println("Saved CDF at T=0.325.")
 
 # CDFs at fixed α, varying T
 cdf_T_points = [
-    (0.22, 0.125, "T=0.125"),
+    (0.22, 0.075, "T=0.075"),
     (0.22, 0.225, "T=0.225"),
     (0.22, 0.325, "T=0.325"),
     (0.22, 0.525, "T=0.525"),
     (0.22, 0.825, "T=0.825"),
-    (0.22, 1.025, "T=1.025"),
+    (0.22, 1.225, "T=1.225"),
 ]
 
 colors_T = [:darkblue, :blue, :green, :orange, :red, :darkred]
@@ -167,7 +166,7 @@ p3 = plot(xlabel="φ", ylabel="CDF",
     size=(FIG_W, FIG_H), dpi=FIG_DPI,
     left_margin=0Plots.mm, bottom_margin=0Plots.mm)
 
-vline!(p3, [φ_c], color=:gray, lw=1, ls=:dash, label=false)
+vline!(p3, [0.48, 0.83], color=:gray30, lw=2, ls=:dash, label=false)
 
 for (ci, (α_sel, T_sel, lbl)) in enumerate(cdf_T_points)
     mask = (abs.(alpha .- α_sel) .< 0.003) .& (abs.(T .- T_sel) .< 0.003)
@@ -179,6 +178,7 @@ end
 
 for ext in ("png", "pdf")
     savefig(p3, joinpath(out_dir, "cdf_LSR_alpha022.$ext"))
+    savefig(p3, joinpath(out_dir, "cdf_panel_B.$ext"))
 end
 println("Saved CDF at α=0.22.")
 

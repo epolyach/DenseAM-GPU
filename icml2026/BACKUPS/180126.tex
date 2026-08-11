@@ -1,0 +1,159 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+
+\title{Summary of Key Results and Research Direction}
+\author{Tatiana Petrova \and Evgeny Polyachenko}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Overview}
+
+This document summarizes the main ideas, results, and conclusions obtained in our recent analysis of Dense Associative Memory (DAM) models with particular focus on Log-Sum-Exp (LSE) and Log-Sum-ReLU (LSR) kernels. The goal is to clarify the problem setting, identify the core theoretical contributions, and outline the direction toward a full ICML submission.
+
+%==============================================================================
+\section{What Was Discussed}
+%==============================================================================
+
+\subsection{Retrieval vs.\ Generation Perspective}
+
+The starting point of the discussion was the observation that recent work (notably Hoover et al.) analyzes LSR-based DAM primarily from the perspective of \emph{generation} in continuous state spaces. In contrast, our focus is on \emph{associative memory retrieval}, where the central requirement is the reliable and unambiguous recovery of stored patterns.
+
+This change of perspective fundamentally alters the notion of success:
+\begin{itemize}
+    \item In generative settings, new stable states (e.g.\ centroids) are acceptable or even desirable.
+    \item In retrieval settings, any loss of individual pattern distinguishability constitutes failure.
+\end{itemize}
+
+\subsection{Role of the Kernel Width $\sigma$}
+
+The kernel width $\sigma$ acts as the main control parameter:
+\begin{itemize}
+    \item For small $\sigma$, each stored pattern possesses a private basin of attraction.
+    \item As $\sigma$ increases, patterns that are close in the underlying metric are affected first.
+    \item Beyond a critical scale, nearby patterns lose individual retrievability and effectively merge.
+    \item For sufficiently large $\sigma$, all patterns collapse into a single averaged representation.
+\end{itemize}
+
+\subsection{Meaning of ``Pattern Loss''}
+
+When we say that a pattern ``disappears'' or ``dies,'' we do \emph{not} mean that it ceases to be a local minimum of the energy function. Rather, we mean that:
+\begin{itemize}
+    \item the pattern no longer has a private basin of attraction;
+    \item retrieval from nearby states becomes ambiguous or non-deterministic;
+    \item individual identity of the pattern is lost.
+\end{itemize}
+
+%==============================================================================
+\section{What Has Been Achieved}
+%==============================================================================
+
+\subsection{Correct Formulation of Retrieval Failure}
+
+We showed that the commonly used criterion
+\begin{quote}
+``retrieval fails if there exist states with energy lower than or equal to that of a stored pattern''
+\end{quote}
+is meaningless for DAMs of the form
+\[
+E(x) = -\log\!\left(\varepsilon + \sum_{\mu=1}^p K(x,\xi^\mu)\right),
+\]
+since all stored patterns are designed to be local minima with equal energy.
+
+We proposed a correct and operational notion of retrieval failure based on \emph{local distinguishability}.
+
+\subsection{Geometric Criterion via Pattern Collisions}
+
+Retrieval failure was formalized geometrically:
+\[
+\text{Pattern } \xi^\mu \text{ is not retrievable if } \exists \nu\neq\mu \text{ such that } d_H(\xi^\mu,\xi^\nu)\le k.
+\]
+
+For random patterns in $\{-1,+1\}^N$, we derived an explicit expression for the probability of such collisions,
+\[
+P_{\text{collision}}(N,p,k) \approx 1 - \exp\!\left(-\frac{p(p-1)}{2}\frac{B(N,k)}{2^N}\right),
+\]
+validated it numerically, and analyzed its asymptotic behavior.
+
+This part of the analysis is kernel-independent and captures the \emph{structural} limits of retrieval.
+
+\subsection{Discrete LSR: Energy Plateaus and Degeneracy}
+
+Our main theoretical result concerns the behavior of LSR in discrete state spaces:
+\begin{itemize}
+    \item For pairs of sufficiently close patterns, the linear Epanechnikov kernel induces exact cancellation of energy changes under single-spin flips.
+    \item As a consequence, all intermediate configurations between two patterns share identical energy.
+    \item This creates exponentially large flat energy plateaus.
+\end{itemize}
+
+Under any reasonable discrete descent or flip-based dynamics, such plateaus imply:
+\begin{itemize}
+    \item absence of a unique attractor;
+    \item non-deterministic retrieval outcomes;
+    \item loss of individual pattern retrievability.
+\end{itemize}
+
+\subsection{Connection to Continuous LSR and Hoover et al.}
+
+We showed that this degeneracy is not merely an artifact of discreteness, but of the \emph{metric structure}:
+\begin{itemize}
+    \item In continuous spaces, the squared Euclidean distance yields position-dependent gradients.
+    \item This produces isolated stationary points at centroids of overlapping patterns.
+    \item In discrete Hamming spaces, the same functional leads to constant-magnitude ``forces'' and exact cancellation.
+\end{itemize}
+
+Thus, ``generation'' (centroid attractors) in continuous LSR and ``retrieval failure'' (energy plateaus) in discrete LSR are two manifestations of the same underlying mechanism.
+
+\subsection{Capacity Interpretation}
+
+As $\sigma$ increases, the number of patterns that remain individually retrievable decreases. This naturally leads to a notion of \emph{effective capacity}:
+\begin{itemize}
+    \item small $\sigma$: full capacity, perfect retrieval;
+    \item intermediate $\sigma$: partial capacity, partial pattern merging;
+    \item large $\sigma$: vanishing capacity, global averaging.
+\end{itemize}
+
+The ``critical'' regime reported in prior work corresponds to partial information loss rather than true coexistence of memorization and generation.
+
+%==============================================================================
+\section{Specificity and Scope of the Problem}
+%==============================================================================
+
+The key specificity of our analysis is the focus on:
+\begin{itemize}
+    \item discrete state spaces $\{-1,+1\}^N$,
+    \item retrieval as the primary objective,
+    \item flip-based or descent-like dynamics.
+\end{itemize}
+
+This setting is distinct from the continuous-state, generative interpretation adopted in recent DAM literature. Our results therefore do not contradict existing theory, but rather delineate its domain of applicability.
+
+%==============================================================================
+\section{Direction Forward}
+%==============================================================================
+
+The next steps toward a full ICML submission are:
+\begin{enumerate}
+    \item Formalize the core results as a small set of lemmas and theorems:
+    \begin{itemize}
+        \item energy plateau formation in discrete LSR;
+        \item retrieval ambiguity as a corollary;
+        \item centroid--plateau duality across continuous and discrete settings.
+    \end{itemize}
+    \item Provide minimal but decisive experiments:
+    \begin{itemize}
+        \item energy profiles along discrete geodesics;
+        \item comparison of discrete retrieval dynamics for LSR vs.\ LSE.
+    \end{itemize}
+    \item Move auxiliary material (collision probabilities, capacity curves, KDE discussion) to supplementary sections.
+\end{enumerate}
+
+\section*{Conclusion}
+
+In summary, we have identified a fundamental mismatch between linear compact-support kernels and discrete associative memory retrieval. While LSR enables meaningful generation in continuous settings, the same mechanism induces degeneracy and retrieval failure in discrete systems. This clarifies the relationship between recent DAM results and classical associative memory theory and provides a principled foundation for an ICML-level contribution.
+
+\end{document}

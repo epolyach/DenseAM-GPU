@@ -1,0 +1,893 @@
+%File: anonymous-submission-latex-2026.tex
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage[submission]{aaai2026}  % DO NOT CHANGE THIS
+\usepackage{times}  % DO NOT CHANGE THIS
+\usepackage{helvet}  % DO NOT CHANGE THIS
+\usepackage{courier}  % DO NOT CHANGE THIS
+\usepackage[hyphens]{url}  % DO NOT CHANGE THIS
+\usepackage{graphicx} % DO NOT CHANGE THIS
+\urlstyle{rm} % DO NOT CHANGE THIS
+\def\UrlFont{\rm}  % DO NOT CHANGE THIS
+\usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption} % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing  % DO NOT CHANGE THIS
+\setlength{\pdfpagewidth}{8.5in} % DO NOT CHANGE THIS
+\setlength{\pdfpageheight}{11in} % DO NOT CHANGE THIS
+%
+% These are recommended to typeset algorithms but not required. See the subsubsection on algorithms. Remove them if you don't have algorithms in your paper.
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+
+%
+% These are are recommended to typeset listings but not required. See the subsubsection on listing. Remove this block if you don't have listings in your paper.
+\usepackage{newfloat}
+\usepackage{listings}
+\DeclareCaptionStyle{ruled}{labelfont=normalfont,labelsep=colon,strut=off} % DO NOT CHANGE THIS
+\lstset{%
+	basicstyle={\footnotesize\ttfamily},% footnotesize acceptable for monospace
+	numbers=left,numberstyle=\footnotesize,xleftmargin=2em,% show line numbers, remove this entire line if you don't want the numbers.
+	aboveskip=0pt,belowskip=0pt,%
+	showstringspaces=false,tabsize=2,breaklines=true}
+\floatstyle{ruled}
+\newfloat{listing}{tb}{lst}{}
+\floatname{listing}{Listing}
+%
+% Keep the \pdfinfo as shown here. There's no need
+% for you to add the /Title and /Author tags.
+\pdfinfo{
+/TemplateVersion (2026.1)
+}
+
+% DISALLOWED PACKAGES
+% \usepackage{authblk} -- This package is specifically forbidden
+% \usepackage{balance} -- This package is specifically forbidden
+% \usepackage{color (if used in text)
+% \usepackage{CJK} -- This package is specifically forbidden
+% \usepackage{float} -- This package is specifically forbidden
+% \usepackage{flushend} -- This package is specifically forbidden
+% \usepackage{fontenc} -- This package is specifically forbidden
+% \usepackage{fullpage} -- This package is specifically forbidden
+% \usepackage{geometry} -- This package is specifically forbidden
+% \usepackage{grffile} -- This package is specifically forbidden
+% \usepackage{hyperref} -- This package is specifically forbidden
+% \usepackage{navigator} -- This package is specifically forbidden
+% (or any other package that embeds links such as navigator or hyperref)
+% \indentfirst} -- This package is specifically forbidden
+% \layout} -- This package is specifically forbidden
+% \multicol} -- This package is specifically forbidden
+% \nameref} -- This package is specifically forbidden
+% \usepackage{savetrees} -- This package is specifically forbidden
+% \usepackage{setspace} -- This package is specifically forbidden
+% \usepackage{stfloats} -- This package is specifically forbidden
+% \usepackage{tabu} -- This package is specifically forbidden
+% \usepackage{titlesec} -- This package is specifically forbidden
+% \usepackage{tocbibind} -- This package is specifically forbidden
+% \usepackage{ulem} -- This package is specifically forbidden
+% \usepackage{wrapfig} -- This package is specifically forbidden
+% DISALLOWED COMMANDS
+% \nocopyright -- Your paper will not be published if you use this command
+% \addtolength -- This command may not be used
+% \balance -- This command may not be used
+% \baselinestretch -- Your paper will not be published if you use this command
+% \clearpage -- No page breaks of any kind may be used for the final version of your paper
+% \columnsep -- This command may not be used
+% \newpage -- No page breaks of any kind may be used for the final version of your paper
+% \pagebreak -- No page breaks of any kind may be used for the final version of your paperr
+% \pagestyle -- This command may not be used
+% \tiny -- This is not an acceptable font size.
+% \vspace{- -- No negative value may be used in proximity of a caption, figure, table, section, subsection, subsubsection, or reference
+% \vskip{- -- No negative value may be used to alter spacing above or below a caption, figure, table, section, subsection, subsubsection, or reference
+
+\setcounter{secnumdepth}{1} %May be changed to 1 or 2 if section numbers are desired.
+
+% Custom macros
+\newcommand{\bxi}{\boldsymbol{\xi}}
+\newcommand{\bx}{\bm{x}}
+\newcommand{\avg}[1]{\langle #1 \rangle}
+\newcommand{\e}{{\mathrm{e}}}
+\newcommand{\dd}{{\mathrm{d}}}
+% \newcommand{\Bnet}{\beta_{\mathrm{net}}}
+\newcommand{\Bnet}{\beta}
+\newcommand{\phieq}{\varphi_{\mathrm{eq}}}
+\newcommand{\fret}{f_{\mathrm{ret}}}
+\newcommand{\gmax}{g_{\max}}
+% \newcommand{\acGauss}{\alpha_c^{\mathrm{G}}}
+\newcommand{\ac}{\alpha_c}
+% \newcommand{\acBd}{\alpha_c^{\mathrm{bd}}}
+\newcommand{\acEd}{\alpha_c^{\mathrm{ed}}}
+% \newcommand{\acSp}{\alpha_c^{\mathrm{sp}}}
+\newcommand{\p}{\partial}
+\newcommand{\cas}{\textstyle\frac}
+
+
+% The file aaai2026.sty is the style file for AAAI Press
+% proceedings, working notes, and technical reports.
+%
+
+% Title
+
+% Your title must be in mixed case, not sentence case.
+% That means all verbs (including short verbs like be, is, using,and go),
+% nouns, adverbs, adjectives should be capitalized, including both words in hyphenated terms, while
+% articles, conjunctions, and prepositions are lower case unless they
+% directly follow a colon or long dash
+\title{\bfseries Thermodynamic approach and Saddle-Dominated Capacity
+\\of the LSE Dense Associative Memory}
+
+\author{
+    %Authors
+    % All authors must be in the same font size and format.
+    Written by AAAI Press Staff\textsuperscript{\rm 1}\thanks{With help from the AAAI Publications Committee.}\\
+    AAAI Style Contributions by Pater Patel Schneider,
+    Sunil Issar,\\
+    J. Scott Penberthy,
+    George Ferguson,
+    Hans Guesgen,
+    Francisco Cruz\equalcontrib,
+    Marc Pujol-Gonzalez\equalcontrib
+}
+\affiliations{
+    %Afiliations
+    \textsuperscript{\rm 1}Association for the Advancement of Artificial Intelligence\\
+    % If you have multiple authors and multiple affiliations
+    % use superscripts in text and roman font to identify them.
+    % For example,
+
+    % Sunil Issar\textsuperscript{\rm 2},
+    % J. Scott Penberthy\textsuperscript{\rm 3},
+    % George Ferguson\textsuperscript{\rm 4},
+    % Hans Guesgen\textsuperscript{\rm 5}
+    % Note that the comma should be placed after the superscript
+
+    1101 Pennsylvania Ave, NW Suite 300\\
+    Washington, DC 20004 USA\\
+    % email address must be in roman text type, not monospace or sans serif
+    proceedings-questions@aaai.org
+%
+% See more examples next
+}
+
+%Example, Single Author, ->> remove \iffalse,\fi and place them surrounding AAAI title to use it
+\iffalse
+\title{My Publication Title --- Single Author}
+\author {
+    Author Name
+}
+\affiliations{
+    Affiliation\\
+    Affiliation Line 2\\
+    name@example.com
+}
+\fi
+
+\iffalse
+%Example, Multiple Authors, ->> remove \iffalse,\fi and place them surrounding AAAI title to use it
+\title{My Publication Title --- Multiple Authors}
+\author {
+    % Authors
+    First Author Name\textsuperscript{\rm 1},
+    Second Author Name\textsuperscript{\rm 2},
+    Third Author Name\textsuperscript{\rm 1}
+}
+\affiliations {
+    % Affiliations
+    \textsuperscript{\rm 1}Affiliation 1\\
+    \textsuperscript{\rm 2}Affiliation 2\\
+    firstAuthor@affiliation1.com, secondAuthor@affilation2.com, thirdAuthor@affiliation1.com
+}
+\fi
+
+
+% REMOVE THIS: bibentry
+% This is only needed to show inline citations in the guidelines document. You should not need it and can safely delete it.
+\usepackage{bibentry}
+% END REMOVE bibentry
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We study the retrieval capacity of the log-sum-exp (LSE) Dense Associative Memory on the $N$-sphere at finite temperature $T$. Retrieval is lost not to the single best-aligned competing pattern but to Kramers escape into a collective non-retrieval basin. At leading order this basin is the saddle of the softmax sum over non-retrieval patterns; the resulting spinodal is the $N \to \infty$ retrieval boundary, recovering the known $T = 0$ capacity. We call this boundary the \textit{saddle-dominated capacity}. We validate the prediction with three Monte Carlo schemes: Full, Cone, and Bulk. Full samples all $M$ patterns directly. Cone restricts the pattern set to a cone around the target, matching Full at the shared budget and extending $M$ by two orders of magnitude. Bulk drops the live patterns and runs the chain on the analytical bulk potential, agreeing with Cone at small $N$ and reaching $N$ large enough to converge to the spinodal. %The Cone and Bulk schemes are tailored to the LSE kernel.
+\end{abstract}
+
+
+
+% Uncomment the following to link to your code, datasets, an extended version or similar.
+% You must keep this block between (not within) the abstract and the main body of the paper.
+% \begin{links}
+%     \link{Code}{https://aaai.org/example/code}
+%     \link{Datasets}{https://aaai.org/example/datasets}
+%     \link{Extended version}{https://aaai.org/example/extended-version}
+% \end{links}
+
+
+% ----------------------------------------------------------------------------------
+% ----------------------------------------------------------------------------------
+% ----------------------------------------------------------------------------------
+
+\section{Introduction}
+
+Modern dense associative memory (DAM) models originate with \citet{krotov2016dense}, who generalized the classical Hopfield network~\citep{Hopfield1982} from pairwise to higher-order interactions. This raised the storage capacity, i.e. the number of patterns that can be reliably retrieved from a sufficiently close starting point, from linear to polynomial in $N$. Pushing the polynomial degree to infinity changes the character of the capacity from polynomial to exponential: for binary neurons, $\{-1,+1\}^{N}$, the limiting capacity is $M_{\rm c} = \exp(\alpha_{\rm c} N)$ with load $\alpha_{\rm c} = (\ln 2)/2 \approx 0.35$~\citep{demircigil2017model}.
+
+
+The same exponential scaling carries over to continuous states. \citet[][hereafter R+21]{ramsauer2021hopfield} introduced a modern Hopfield network whose state is a continuous vector $\bx \in \mathbb{R}^N$, with a log-sum-exp (LSE) energy
+\begin{equation}
+H(\bx) = -\Bnet^{-1}\ln\sum_{\mu=1}^{M}\exp\!\big[-\Bnet\,N (1-\varphi^\mu(\bx)) \big]\,,
+\label{eq:lse}
+\end{equation}
+where $\Bnet$ sets the sharpness with which the energy distinguishes patterns, and $\varphi^\mu(\bx)$ is the alignment of the vector $\bx$ with the $\mu$-th pattern $\bxi^\mu$,
+\begin{equation}
+    \varphi^\mu(\bm{x}) = N^{-1} \bm{x} \cdot \bm{\xi}^\mu\,.
+    \label{eq:alignment}
+\end{equation}
+We take both the patterns and the state on the sphere $|\bxi^\mu|^2 = |\bx|^2 = N$, and the number of patterns exponential in the system size, $M = \exp(\alpha N)$, with the load $\alpha$ fixing the storage density.
+
+The logarithm is what distinguishes the LSE energy from the polynomial and exponential models. It keeps the energy extensive in $N$ rather than exponentially large, and, acting as a smooth maximum, has a softmax gradient, so retrieval replaces the state by a softmax-weighted average of the stored patterns, exactly the attention mechanism of transformers. Model~\eqref{eq:lse} is the Gaussian-kernel member of a broader family of kernel-based energies; e.g., replacing the Gaussian by the compactly supported Epanechnikov kernel gives the log-sum-ReLU (LSR) model~\citep{hoover2025dense}.
+
+The capacity of the LSE model has been estimated in several works. R+21 gave a crude lower bound on the critical load $\alpha_c(\Bnet)$, defined by Eq.~\eqref{eq:ramsauer_capacity} below. More recently, \citet[][hereafter LM24]{lucibello2024exponential} determined the true zero-temperature threshold, reproduced by Eq.~\eqref{eq:capacity_T0} below. At $\Bnet=1$ the two read $\alpha_c \approx 0.316$ and $\alpha_c \approx 0.623$, respectively, and both depend on $\Bnet$.
+
+A natural question is how retrieval survives thermal noise, set by the temperature $T$ of the bath, a parameter independent of $\Bnet$. The retrieval behavior is displayed most directly in the load-temperature plane $(\alpha, T)$, where boundary lines separate the retrieval, non-retrieval, and metastable domains. \citet[][hereafter PPS26]{icml2026theory} derived such a boundary $\alpha_c(\Bnet, T)$ for both the LSE and LSR kernels, under two assumptions: that retrieval is lost to the single best-aligned competing pattern, and that the inter-pattern alignment density is Gaussian (see Section~\ref{sec:theory}). For LSE, this yields a zero-temperature limit $\alpha_c = 1/2$ for $\Bnet\ge 1$, in conflict with the exact threshold above. Direct Monte Carlo simulations were taken to confirm it~\citep{iclr2026mc}, but only at $\Bnet=1$ and limited $N$. Since the discrepancy opens only at large $N$, such a check could not reveal it.
+
+Here we revisit the LSE capacity on the $N$-sphere using the exact spherical alignment density, both analytically and by three Monte Carlo schemes, across the $(\alpha, T)$ plane. The exact density vanishes at perfect alignment, so the retrieval state keeps a finite basin at any load, i.e. there is always a neighborhood of the target pattern in which retrieval succeeds. On the exact sphere no single competing pattern reaches the target, so the retrieval basin is never erased. Retrieval is lost instead by escaping over a barrier into the collective non-retrieval basin while its own basin still exists.
+
+The paper is organized as follows. Section~\ref{sec:theory} builds the
+finite-temperature retrieval theory from the exact spherical alignment density and derives the spinodal $\alpha_c(\Bnet, T)$. Section~\ref{sec:mc} describes three
+Monte Carlo schemes: Full, Cone, and Bulk. Section~\ref{sec:results} validates the theory by presenting the stability $(\alpha, T)$-diagram and examines the finite-$N$ behavior. Section \ref{sec:discussion} collects the results and discusses further extension of this work.
+
+
+% ---------------------------------
+% ---------------------------------
+% ---------------------------------
+
+\section{Retrieval at large $N$ and finite $T$}
+\label{sec:theory}
+
+Let the typical retrieval pattern be $\bxi^1$ and a non-retrieval pattern $\bxi$ be drawn independently and uniformly from the sphere of radius $\sqrt N$ in $\mathbb{R}^N$. The alignment $\varphi(\bxi) = \varphi^1(\bxi)$ is the cosine of the angle between them.
+By rotational symmetry, we may fix the first pattern along the coordinate axis $\bm e_1$ and treat the non-retrieval pattern as a unit vector $\bm u$ uniformly distributed on $S^{N-1}$. The alignment is its first coordinate, $\varphi=u_1$, and we seek the density of $u_1$ induced by the uniform measure on the sphere. The probability that $u_1$ lies in $[\varphi,\varphi+\dd\varphi]$ equals the area of the corresponding spherical band divided by the total area of $S^{N-1}$. Decomposing $\bm u=(u_1,\bm u_\perp)$, the constraint $|\bm u|=1$ fixes $|\bm u_\perp|=\sqrt{1-\varphi^2}$, so the points at height 
+$\varphi$ form a sphere $S^{N-2}$ of radius $\sqrt{1-\varphi^2}$, with surface area $\propto (1-\varphi^2)^{(N-2)/2}$. The band thickness is $\dd\varphi/\sqrt{1-\varphi^2}$, since the surface is inclined with respect to the axis. Normalizing the band area
+$\propto(1-\varphi^2)^{(N-3)/2}\dd\varphi$ gives the density
+\begin{equation}
+h(\varphi)=C_N(1-\varphi^2)^{(N-3)/2}
+\label{eq:exact_density}
+\end{equation}
+with the normalization constant
+\begin{equation}
+C_N=\frac{\Gamma(N/2)}{\sqrt\pi\;\Gamma\!\big((N-1)/2\big)}\,.
+\end{equation}
+
+The density is symmetric about $\varphi=0$, with mean zero and variance $1/N$. As $N\to\infty$ it approaches a Gaussian,
+\begin{equation}
+    h(\varphi)\;\longrightarrow \;\sqrt{\tfrac{N}{2\pi}} \; \e^{-N\varphi^2/2}\,,
+    \label{eq:gaussian} 
+\end{equation}
+so distinct high-dimensional patterns are nearly orthogonal: typical alignments are of order $N^{-1/2}$. 
+
+In addition to patterns uniform on the $N$-sphere, with inter-pattern alignment density~\eqref{eq:exact_density}, LM24 considered i.i.d.-Gaussian patterns, whose components are independent $\mathcal N(0,1)$ variables, for which the alignment density~\eqref{eq:gaussian} is \textit{exact} at large $N$ by the CLT. 
+
+LM24 identify two non-retrieval phases: \textit{condensed}, where a single competing pattern dominates the energy; and \textit{non-condensed}, where exponentially many patterns contribute. For i.i.d.-Gaussian patterns the binding phase depends on $\Bnet$. For $\Bnet \geq 1$ the condensed phase is binding: $\varphi_{\max} = \sqrt{2\alpha}$ reaches $1$ at $\alpha_c = 1/2$. For $\Bnet \leq 1$ the non-condensed phase is binding, resulting in $\alpha_c = \Bnet(1 - \Bnet/2)$.
+
+%Through the Gaussian approximation~\eqref{eq:gaussian} of the alignment density, PPS26 recover LM24's analysis via a noise-floor saddle: their kernel-limited and load-limited regimes are LM24's non-condensed and condensed phases, and $\alpha_c(\Bnet)$ matches in both.
+Through the Gaussian approximation~\eqref{eq:gaussian} of the alignment density, PPS26 essentially recover LM24's analysis via a noise-floor saddle: their kernel-limited and load-limited regimes coincide with LM24's non-condensed and condensed phases, and the resulting $\alpha_c(\Bnet)$ matches LM24's threshold in both regimes. Under the exact density~\eqref{eq:exact_density}, however, the load-limited (condensed) regime gives
+\begin{equation}
+    \varphi_{\max} = \sqrt{1 - \e^{-2\alpha}}\,,
+    \label{eq:varphi_max}
+\end{equation}
+below 1 at every finite $\alpha$: the vanishing of~\eqref{eq:exact_density} at $\varphi = 1$ leaves a tail too thin for $M = \e^{\alpha N}$ samples to populate the edge. The Gaussian retains a tail $\e^{-N/2}$ at $\varphi = 1$, and $M \e^{-N/2}$ reaches order unity at $\alpha = 1/2$: this is where the PPS26 threshold sits. Under the exact density the load-limited (condensed) regime is never binding; the threshold is set entirely by the kernel-limited (non-condensed) regime, which we now evaluate with the exact density~\eqref{eq:exact_density} rather than its Gaussian approximation.
+
+We split the softmax sum~\eqref{eq:lse} into a retrieval term and a sum over the $M-1$ non-retrieval patterns,
+\begin{align}
+S(\bx) \equiv \exp\!\big[\Bnet\,N (\varphi(\bx) - 1)\big] + S_{\rm nr}(\bx)\,,
+\label{eq:softmax_sum}\\
+S_{\rm nr}(\bx) \equiv \sum_{\mu=2}^{M} \exp\!\big[\Bnet\,N (\varphi^\mu(\bx) - 1)\big]\,.
+\label{eq:comp_sum}
+\end{align}
+The non-retrieval patterns are i.i.d. uniform on the sphere and independent of $\bm x$, so by rotational symmetry $S_{\rm nr}(\bm x)$ has the same distribution at every $\bm x$ with $|\bm x|^2 = N$. We evaluate it at $\bm x = \bxi^1$, where the projections $\varphi^\mu(\bxi^1)$ are the inter-pattern alignments drawn from~\eqref{eq:exact_density}:
+\begin{equation}
+    S_{\rm nr} \approx M \int_{-1}^{1} \dd\varphi\, h(\varphi) \exp[\Bnet N(\varphi - 1)]\,.
+    \label{eq:comp_integral}
+\end{equation}
+The large-$N$ limit of~\eqref{eq:comp_integral} is set by a saddle point. The
+saddle $\varphi^*$ solves $\p g(\varphi, \Bnet)/\p\varphi = 0$, with
+\begin{equation}
+    g(\varphi, \Bnet) = \ln(1-\varphi^2)/2 + \Bnet\,\varphi\,.
+\end{equation}
+This gives the saddle point at
+\begin{equation}
+\varphi^*(\Bnet) = \frac{\sqrt{1+4\Bnet^2} - 1}{2\Bnet}\,,
+\label{eq:saddle}
+\end{equation}
+and the saddle value
+\begin{equation}
+g_{\max}(\Bnet) = g(\varphi^*, \Bnet) = \frac12 \ln(1 - \varphi^{*\,2}) + \Bnet\,\varphi^*\,.
+\label{eq:saddle_value}
+\end{equation}
+The leading-order (LO) non-retrieval sum is then
+\begin{equation}
+    S_{\rm nr} \sim \exp[N(\alpha + g_{\max}(\Bnet) - \Bnet)]\,.
+    \label{eq:comp_saddle}
+\end{equation}
+Carried to $\mathcal{O}(1)$ in the prefactor (derivation in Appendix~\ref{app:prefactor}),
+\begin{equation}
+    S_{\rm nr} \approx \frac{\e^{N[\alpha + g_{\max}(\Bnet) - \Bnet]}}{\sqrt{1-\varphi^{*4}(\Bnet)}}\,,
+    \label{eq:comp_laplace}
+\end{equation}
+with prefactor $\approx 1.082$ at $\Bnet = 1$, used in the finite-$N$ analysis of Section~\ref{sec:results}.
+
+The internal energy density $u = H/N$ from~\eqref{eq:lse} reads
+\begin{equation}
+    u(\varphi) = \begin{cases}
+        1 - \varphi & \text{retrieval term dominates}, \\
+        1 - [\alpha + g_{\max}(\Bnet)]/\Bnet & \text{non-retrieval term dominates}.
+    \end{cases}
+    \label{eq:u_piecewise}
+\end{equation}
+The two branches meet in a cusp at
+\begin{equation}
+\varphi_c(\alpha, \Bnet) = (\alpha + g_{\max}(\Bnet))/\Bnet\,,
+\label{eq:cusp}
+\end{equation}
+where dominance switches. At zero temperature the retrieval minimum sits at
+$\varphi = 1$; it is the global minimum as long as $\varphi_c < 1$, giving the
+zero-temperature capacity
+\begin{equation}
+\ac(\Bnet) = \Bnet - g_{\max}(\Bnet)\,.
+\label{eq:capacity_T0}
+\end{equation}
+This boundary matches the exact spherical threshold of LM24 at every $\Bnet$. The capacity grows from $\sim\Bnet$ at small $\Bnet$ to $\tfrac12 \ln\Bnet$ at
+large $\Bnet$, having $\approx 0.623$ at $\Bnet = 1$.
+
+The integral~\eqref{eq:comp_integral} is in fact elementary: substituting $\varphi = \cos\theta$ maps the spherical density onto the kernel of the integral representation of the modified Bessel function $I_\nu(z)$~\citep[8.431.3]{gradshteyn2015}, and at $\nu = N/2 - 1$, $z = \Bnet N$ this gives for $N > 1$
+\begin{equation}
+S_{\rm nr} = M \Gamma\Big(\tfrac{N}{2}\Big)\left(\frac{2}{\Bnet N}\right)^{\!N/2-1}\!\!\e^{-\Bnet N}\,I_{N/2-1}(\Bnet N)\,.
+\label{eq:comp_exact}
+\end{equation}
+Expression~\eqref{eq:comp_exact} gives the disorder expectation of the sum~\eqref{eq:comp_sum}. The relative fluctuations of $S_{\rm nr}$ around this expectation are $\sim \e^{N[\delta(\Bnet) - \alpha]/2}$ with $\delta(\Bnet) = g_{\max}(2\Bnet) - 2\,g_{\max}(\Bnet) > 0$. The identity $g'_{\max}(\Bnet) = \varphi^*(\Bnet)$ gives $\delta(\Bnet) < \ac(\Bnet, 0)$ at every $\Bnet$, so the fluctuations are exponentially small in $N$ throughout the retrieval region.
+
+R+21 bound each term in \eqref{eq:comp_sum} by its largest, $\exp[\Bnet N(\varphi^\mu - 1)] \leq \exp[\Bnet N(\varphi_{\max} - 1)]$, giving
+\begin{equation}
+    S_{\rm nr} \leq M\e^{-\Bnet N(1-\varphi_{\max})} = \e^{N(\alpha - \Bnet(1-\varphi_{\max}))}\,,
+    \label{eq:ramsauer_bound}
+\end{equation}
+which exceeds the retrieval term once $\varphi_{\max} > 1 - \alpha/\Bnet$. Inserting $\varphi_{\max}$ from~\eqref{eq:varphi_max} gives the R+21's capacity equation
+\begin{equation}
+    (1 - \e^{-2\alpha})^{1/2} = 1 - \frac{\alpha}{\Bnet}\,.
+    \label{eq:ramsauer_capacity}
+\end{equation}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.45\textwidth]{panels_paper/cusp_vs_extreme.pdf}
+\caption{Threshold curves at $\Bnet = 1$. Red straight line:
+$\varphi_c(\alpha)$, Eq.\,\eqref{eq:cusp}, tangent to the blue solid curve at the saddle $\varphi=\varphi^*(\Bnet)$ (red rimmed dot, Appendix B). Blue solid: the exact-density extreme alignment~\eqref{eq:varphi_max}.
+Blue dotted: $\sqrt{2\alpha}$, from the Gaussian approximation. Grey dashed: $1 - \alpha/\Bnet$, gives R+21 condition.}
+\label{fig:varphi}
+\end{figure}
+
+Fig.~\ref{fig:varphi} compares the three capacity estimates at $\Bnet = 1$. The straight red cusp line $\varphi_c$~\eqref{eq:cusp} reaches $\varphi = 1$ at the saddle-point capacity~\eqref{eq:capacity_T0} (red dot). The solid blue curve is the exact-density extreme alignment~\eqref{eq:varphi_max} and it never reaches $\varphi = 1$. Its Gaussian approximation $\sqrt{2\alpha}$ (dotted blue), by contrast, does reach $\varphi = 1$ at $\alpha = 1/2$ (blue dot), the condensed-phase value that binds for $\Bnet \geq 1$. 
+The R+21 condition $1 - \alpha/\Bnet$ (grey dashed)~\eqref{eq:ramsauer_capacity} crosses the blue curve at the R+21 capacity, which lies below the saddle-point capacity at every $\Bnet$.
+
+The red line is tangent to the blue solid curve at every $\Bnet$: as $\Bnet$ varies, the tangency point sweeps the entire blue solid curve. This follows from the Legendre conjugacy between $g_{\max}(\Bnet)$ and $\varphi_{\max}(\alpha)$, derived in Appendix~B. The consequence is that the cusp $\varphi_c(\alpha, \Bnet)$ lies above the maximum alignment $\varphi_{\max}(\alpha)$ at every $\alpha$: no single competing pattern ever enters the retrieval basin $\varphi > \varphi_c$. This proves geometrically that retrieval loss cannot be due to any individual competing pattern.
+
+% \paragraph{Extension to finite temperature.}
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.45\textwidth]{panels_paper/cusp_illustration.pdf}
+\caption{Leading-order free energy density $f(\varphi)$ at $\alpha=0.5$, $\Bnet=1$, for several $T$. RB: retrieval basin; NRB: non-retrieval basin (where the non-retrieval term dominates); cusp at $\varphi\approx 0.877$ (dashed grey). Coloured dots mark the RB minima; they disappear at the spinodal temperature
+$T_{\rm sp}(\alpha, \Bnet) \approx 0.262$.}
+\label{fig:cusp}
+\end{figure}
+
+At $T > 0$ the entropy density~(PPS26)
+\begin{equation}
+    s(\varphi) = \tfrac{1}{2} \ln(1 - \varphi^2)\,,
+    \label{eq:entropy}
+\end{equation}
+adds to the internal energy, giving the free energy density 
+\begin{multline}
+    f(\varphi) = u(\varphi) - T\,s(\varphi) \\= 1 -\max(\varphi, \varphi_c) - \tfrac{T}{2}\ln(1-\varphi^2)\,,
+    \label{eq:free_en}
+\end{multline}
+plotted in  Fig.~\ref{fig:cusp} for $\alpha = 0.5$, $\Bnet = 1$ and several $T$. The profile has two minima: one at $\varphi \approx 0$ from the non-retrieval sum, one at $\varphi \approx 1$ from the retrieval term. The retrieval minimum shifts from $\varphi = 1$ at $T = 0$ to
+\begin{equation}
+    \varphi_{\rm eq}(T) \equiv \tfrac{1}{2}(\sqrt{T^2 + 4} - T)
+    \label{eq:phi_eq}
+\end{equation}
+at $T > 0$, and disappears at the spinodal
+$\varphi_{\rm eq}(T) = \varphi_c(\alpha, \Bnet)$, giving
+\begin{equation}
+    T_{\mathrm{sp}}(\alpha, \Bnet) \;=\; \frac{\Bnet^2 - (\alpha + \gmax(\Bnet))^2}
+              {\Bnet\,(\alpha + \gmax(\Bnet))}\,.
+    \label{eq:spinodal}
+\end{equation}
+Inverting~\eqref{eq:spinodal} at fixed $T$ gives the spinodal capacity
+\begin{equation}
+    \ac(\Bnet, T) = \Bnet \varphi_{\rm eq}(T) - g_{\max}(\Bnet)\,,
+    \label{eq:capacity_T_sp}
+\end{equation}
+the central result of this section: the finite-temperature extension of the LM24 zero-temperature threshold.
+
+At $T = 0$ the retrieval minimum is global and the non-retrieval minimum is local. The equal-depth curve
+\begin{equation}
+    \acEd(\Bnet, T) \;=\; \Bnet\,[\,1 - \fret(T)\,] - g_{\max}(\Bnet)
+    \label{eq:capacity_T}
+\end{equation}
+with retrieval free energy
+\begin{equation}
+    \fret(T) = (1 - \varphi_{\rm eq}) - \tfrac{T}{2}\ln(1 - \varphi_{\rm eq}^2)
+\end{equation}
+marks the load at which the two minima become equally deep; their global/local ordering switches across it. Both~\eqref{eq:capacity_T_sp} and~\eqref{eq:capacity_T} reduce to~\eqref{eq:capacity_T0} at $T = 0$.
+
+% \paragraph{Stability and Kramers escape.}
+
+The retrieval minimum exists for $T < T_{\mathrm{sp}}(\alpha, \Bnet)$. Its barrier $\Delta f$ shrinks smoothly with $T$, and the Kramers escape rate $\sim \e^{-N \Delta f / T}$ grows smoothly with it. At the equal-depth curve~\eqref{eq:capacity_T} the global and local minima switch roles, but nothing else changes: the barrier, the rate, and the basin shapes all vary smoothly through it. The spinodal $\ac(\Bnet, T)$ is where the retrieval minimum itself disappears.
+
+Monte Carlo sees this boundary through the escape time $\tau_{\rm esc}(T, N)$: a chain initialized in the retrieval basin leaves it once $\tau_{\rm esc}$ falls below the run budget $T_{\rm MC}$, which can happen already below the spinodal, since the basin is still present but no longer traps the chain for the full run. The observed boundary therefore lies below $\ac$ at finite $(N, T_{\rm MC})$; the $N$- and $T_{\rm MC}$-scaling of the gap is worked out in Section~\ref{sec:results}. At $T = 0$ the escape rate vanishes and retrieval persists whenever the retrieval minimum exists.
+
+
+% ----------------------------
+% ----------------------------
+% ----------------------------
+\section{Monte Carlo schemes}
+\label{sec:mc}
+
+The bottleneck for MC validation in DAMs with exponential capacity is the cost of evaluating the energy~\eqref{eq:lse} at each step, a sum over $M = \e^{\alpha N}$ patterns. We therefore introduce two approximations alongside the standard Metropolis scheme that evaluates the full sum~\citep[e.g.,][]{iclr2026mc}, and compare all three against the theory of Sec.~\ref{sec:theory}. Throughout this section we take $\Bnet = 1$.
+
+\paragraph{Full.} This is the standard scheme of~\citet{iclr2026mc}, included so that comparisons are direct. All $M = \lceil\e^{\alpha N}\rceil$ patterns are generated explicitly per disorder realization, and the log-sum is evaluated over all of them at every step. Cost per step is $\mathcal{O}(MN)$, dominated by the $M \times N$ matrix-vector product that yields the $M$ pattern-state alignments; we run on GPU and batch chains into a single matrix-matrix product to saturate the device. $M$ is fixed at the largest value GPU memory allows, and $N$ then follows from $N(\alpha) = \lceil \ln M / \alpha \rceil$. At each $(\alpha, T)$ we draw 32 disorder realizations and follow two Metropolis replicas per realization, both initialised at the target $\bxi^1$. Step size is $\sigma = 2.4 T / \sqrt N$. Each replica is equilibrated for $N_{\rm eq} = 2^{15}$ steps and sampled for $N_{\rm samp} = 2^{13}$ steps. Per cell we record the time-averaged target alignment.
+
+\paragraph{Cone.}
+This approximation rests on our finding that the non-retrieval basin is dominated by patterns whose alignment with the target is near the saddle $\varphi^*$. We introduce an alignment cutoff $\varphi_{\rm keep}$ that partitions the pattern set. Patterns with $\varphi^\mu(\bxi^1) \geq \varphi_{\rm keep}$ lie inside a spherical cone of half-angle $\arccos \varphi_{\rm keep}$ around $\bxi^1$; these are generated explicitly and enter the log-sum term-by-term. Patterns with $\varphi^\mu(\bxi^1) < \varphi_{\rm keep}$ form the passive bulk, absorbed into the constant
+\begin{equation}
+    \ln C_{\rm bulk} = \alpha N + \ln\int_{-1}^{\varphi_{\rm keep}} h(\varphi)\,\e^{\Bnet N \varphi}\,\dd\varphi\,,
+    \label{eq:cbulk}
+\end{equation}
+which enters the log-sum alongside the in-cone exponentials. The number of in-cone patterns per disorder is a Poisson draw with mean $M\,p_{>}$, where $p_{>} = \Pr(\varphi \geq \varphi_{\rm keep})$ under the spherical density~\eqref{eq:exact_density}; we denote the actual in-cone count $K$. In the rescaled variable $y = (1 + \varphi)/2$ the spherical density is a symmetric Beta, and each in-cone alignment $\varphi^\mu(\bxi^1)$ is drawn from the truncated distribution
+\begin{equation}
+    y \sim \mathrm{Beta} \Bigl(\tfrac{N-1}{2}, \tfrac{N-1}{2}\Bigr)\,,
+    \label{eq:beta-tail}
+\end{equation}
+with a uniform perpendicular direction on the $(N{-}2)$-sphere orthogonal to $\bxi^1$. The cone set is fixed once per disorder. For our $\varphi_{\rm keep}$, the in-cone pattern set is smaller than $M$ by orders of magnitude; the bulk enters through~\eqref{eq:cbulk}. Disorder count, replicas, initial condition, step size, equilibration and sampling lengths, and recorded observable are identical to Full. 
+
+\paragraph{Bulk.}
+No patterns are generated. The chain evolves under the LO free energy $f(\varphi)$, a single closed-form profile that produces both basins. The chain's alignment with the target is $\varphi^1$~\eqref{eq:alignment}. The non-retrieval sum is replaced by its disorder-averaged saddle value~\eqref{eq:comp_saddle}, and the softmax sum~\eqref{eq:softmax_sum} reduces to two terms,
+\begin{equation}
+	\ln S(\varphi^1) = \ln \bigl[\e^{\Bnet N(\varphi^1 - 1)} + \e^{N(\alpha + \gmax(\Bnet) - \Bnet)}\bigr]\,,
+	\label{eq:bulk-logS}
+\end{equation}
+at $\mathcal{O}(N)$ cost per step, which lets Bulk easily reach $N = 10^4$ and beyond.
+
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{panels_paper/heatmap_textwidth_profile.pdf}
+\caption{$(\alpha, T)$ stability diagram at $\Bnet = 1$. Heatmap:
+$\varphi_{\mathrm{eq}}(T) - \langle\varphi\rangle$ from the
+$M = 3.0 \times 10^8$ Cone MC run.  Blue staircases: Cone retrieval
+boundary at threshold $0.02$ (roughly 5\% of chain endpoints escaped) for
+$M = 4.4 \times 10^6$ (dark) and $M = 3.0 \times 10^8$ (light).  Green
+curves: Bulk retrieval boundary at $T_{\mathrm{MC}} = 10^5$ and
+$N = 100, 300, 10^4$, dark to light with $N$.  The light-green
+$N = 10^4$ curve sits on the spinodal across most of the $\alpha$ range.  Reference curves: equal-depth curve $\acEd(\Bnet, T)$~\eqref{eq:capacity_T} (red dotted), spinodal $T_{\mathrm{sp}}$~\eqref{eq:spinodal} (black dotted), Gaussian baseline by PPS26 (grey dash-dotted).}
+\label{fig:heatmap}
+\end{figure*}
+
+The Full/Cone step $\sigma = 2.4\,T/\sqrt N$ becomes microscopic at this $N$: at $N = 10^4$ the chain cannot traverse the retrieval basin in $T_{\mathrm{MC}} = 10^5$ steps, let alone resolve the Kramers escape rate that sets the boundary. We instead use a curvature-matched step,
+\begin{equation}
+\sigma^2 \equiv \frac{2 T}{\gamma(\varphi_{\rm eq})}\,,
+\label{eq:bulk-sigma}
+\end{equation}
+where $\gamma(\varphi)$ is the curvature:
+\begin{equation}
+\gamma(\varphi) \equiv f''(\varphi)
+              = \frac{T\,(1 + \varphi^2)}{(1 - \varphi^2)^2}\,.
+\label{eq:bulk-gamma}
+\end{equation}
+The $T$ in $\sigma$ cancels against $T$ in $\gamma$, so the only remaining dependence is through $\varphi_{\rm eq}(T)$, and $\sigma$ is $N$-independent. A chain started at the target $\varphi^1 = 1$ would face a singular curvature, acceptance would vanish, and the chain would stall. We therefore initialise at the basin minimum $\varphi^1 = \varphi_{\rm eq}(T)$~\eqref{eq:phi_eq}, leading to acceptance $\approx 0.37$ at every $N$. There is no disorder: the LO landscape is determined by $(\alpha, T)$ alone. At each $(\alpha, T)$ we run 64 independent chains for $T_{\mathrm{MC}}$ steps and record the final target alignment, averaged across chains.
+
+
+The three schemes validate different things. Full uses all $M$ patterns and is the ground-truth reference; its only approximation is Monte Carlo noise. Cone replaces the patterns with $\varphi^\mu(\bxi^1) < \varphi_{\rm keep}$ (almost all of $M$, and almost orthogonal to the target) by the analytical bulk integral~\eqref{eq:cbulk}; Cone matching Full at a shared $M$ validates that replacement to within MC noise. Bulk drops the explicit patterns and uses the LO saddle value in $\ln S$~\eqref{eq:bulk-logS}; the convergence of its boundary to the spinodal as $N$ grows validates the LO Kramers picture in the asymptotic limit.
+
+
+% ------------------------------
+% ------------------------------
+% ------------------------------
+
+\section{Stability diagram}
+\label{sec:results}
+
+We mapped the stability diagram %with Full and Cone 
+on an $(\alpha, T)$ grid: $\alpha \in [0.20, 0.65]$ in steps of $0.01$ ($46$ nodes), $T \in [0.005, 0.495]$ in steps of $0.01$ ($50$ nodes). A single NVIDIA RTX A6000 (50 GB) GPU fits $M \approx 4.4 \times 10^6$ patterns for Full (\texttt{Float32}), giving $N(\alpha) = \lceil \ln M / \alpha \rceil$ from $N = 77$ at $\alpha = 0.20$ to $N = 24$ at $\alpha = 0.65$; the sweep takes $26$ days.
+
+The Cone scheme runs at much larger budgets. With $\varphi_{\rm keep} = 0.40$, $K$ stays below $1.3\%$ of $M$ in every cell, so at $M = 3.0 \times 10^8$ Cone reaches $N$ from $98$ at $\alpha = 0.20$ to $30$ at $\alpha = 0.65$. The gain in $N$ over Full is modest, but the wall-clock saving is enormous: at the shared budget $M = 4.4 \times 10^6$ the sweep takes $7$ hours; the full $M = 3.0 \times 10^8$ sweep takes $7$ days.
+
+The Bulk scheme needs no GPU. On a 16-thread CPU, sweeps at $N = 100, 300, 10^4$ take about one, five, and ninety minutes respectively. Despite a much larger $N$ reach than Full or Cone, the cost is orders of magnitude lower, which lets us run several $N$ on the same diagram and read the $N$-dependence of the boundary directly. 
+
+% Fig.~\ref{fig:heatmap} shows the $(\alpha, T)$ stability diagram at $\Bnet = 1$, from the Cone scheme at two budgets, $M = 4.4 \times 10^6$ and $M = 3.0 \times 10^8$. The heatmap encodes the residual $\varphi_{\mathrm{eq}}(T) - \langle\varphi\rangle$ from the $M = 3.0 \times 10^8$ run: white where the chain remains in the retrieval basin, red where it escapes to the non-retrieval basin. The blue staircases trace, for each $\alpha$ column, the lowest $T$ at which roughly 5\% of chain endpoints have escaped from the retrieval basin. Numerically, this corresponds to $\varphi_{\mathrm{eq}}(T) - \langle\varphi\rangle = 0.02$ along the boundary, after a light smoothing pass to suppress MC noise from a single-cell. 
+
+% At fixed $\alpha$, increasing the budget from $M = 4.4 \times 10^6$ to $M = 3.0 \times 10^8$ shifts the boundary to higher $T$. The expected destination at $N \to \infty$ is the spinodal $T_{\rm sp}(\alpha, \Bnet)$~\eqref{eq:spinodal}: below the spinodal the retrieval basin still exists, and a chain initialized in the basin escapes only at Kramers time $\tau_K \sim \e^{N \Delta f / T}$, which grows exponentially with $N$. At the $N$ values reached by the Cone sampler here ($N \le 98$) the boundary is still far from the spinodal.  It lies close to the equal-depth line $\acEd(\Bnet, T)$~\eqref{eq:capacity_T}, but this proximity is incidental: as established in Section~\ref{sec:theory}, $\acEd$ is not a sharp boundary, with no sharp change in the retrieval fraction as we cross it. The Gaussian prediction of PPS26 sits to the left of both Cone boundaries, underestimating the capacity at every $T$.
+
+Fig.~\ref{fig:heatmap} shows the $(\alpha, T)$ stability diagram at $\Bnet = 1$, from the Cone scheme at two budgets, $M = 4.4 \times 10^6$ and $M = 3.0 \times 10^8$. The heatmap encodes the residual $\varphi_{\mathrm{eq}}(T) - \langle\varphi\rangle$ from the $M = 3.0 \times 10^8$ run: white where the chain remains in the retrieval basin, red where it escapes to the non-retrieval basin. The Gaussian prediction of~PPS26 sits deep in the retrieval domain at every $T$.
+
+The blue staircases trace the threshold
+\begin{equation}
+    \varphi_{\mathrm{eq}}(T) - \langle\varphi\rangle = 0.02
+    \label{eq:threshold}
+\end{equation}
+along the boundary, after a light smoothing pass to suppress single-cell MC noise.
+At fixed $\alpha$, increasing the budget from $M = 4.4 \times 10^6$ to $M = 3.0 \times 10^8$ shifts the boundary to higher $T$. The expected destination at $N \to \infty$ is the spinodal $T_{\rm sp}(\alpha, \Bnet)$~\eqref{eq:spinodal}: below the spinodal the retrieval basin still exists, and a chain initialised in the basin escapes on the Kramers escape time $\tau_K \sim \e^{N \Delta f / T}$, which grows exponentially with $N$. At the $N$ values reached by the Cone sampler ($N \leq 98$) the boundary is still far from the spinodal. Its proximity to the equal-depth line $\acEd(\Bnet, T)$~\eqref{eq:capacity_T} is incidental: $\acEd$ is not a boundary at all, and the retrieval fraction is smooth as we cross it (Sec.~\ref{sec:theory}). 
+
+% We run Bulk at $N \in \{100, 300, 10^4\}$.  Per $\alpha$ we scan $T$ downward from $\min(T_{\rm sp}(\alpha), 0.495)$ in steps of $0.01$, running $64$ independent chains of $T_{\mathrm{MC}} = 10^5$ steps each, and record $T_{\rm bd}(\alpha)$ as the largest $T$ at which the residual $\varphi_{\rm eq}(T) - \avg{\varphi^1}$ first stays below $0.02$ for three consecutive $T$-steps.  
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{panels_paper/Veff_finite_N.pdf}
+\caption{Finite-$N$ effective potential $V_N(\varphi)/N$ at $\Bnet = 1$, $T = 0.005$, plotted against $\lg(1-\varphi)$ for three loads above $\ac = 0.623$. Black: leading-order landscape \eqref{eq:free_en}. Red: the finite-$N$ form~\eqref{eq:V-finite-N} at the $N(\alpha)$ corresponding to $M = 4.4 \times 10^6$. The log-sum smooths the LO corner at $\varphi_c$ over a width $\sim (\Bnet N)^{-1}$, producing a local minimum just below $\varphi = 1$ that the LO landscape lacks. Red dots: residual-basin minima of $V_N$. Black dot (left panel): LO retrieval-basin minimum at $\varphi = \varphi_{\rm eq}(T)$. Grey dotted: LO cusp position $\varphi_c$.}
+\label{fig:Veff_finite_N}
+\end{figure*}
+
+The green curves trace the Bulk boundary at the same threshold \eqref{eq:threshold},
+$T_{\mathrm{MC}} = 10^5$ steps per chain, and $N = 100, 300, 10^4$. The chain follows the two-term log-sum~\eqref{eq:bulk-logS} directly, so the line is the pure Kramers-escape boundary from the basin minimum at finite $N$. The gap to the spinodal shrinks approximately as $N^{-1/2}$: at $\alpha = 0.50$ the gap drops from $\Delta T \approx 0.13$ at $N = 100$ to $0.08$ at $N = 300$. By $N = 10^4$ the boundary sits within one $T$-grid cell of the spinodal across $\alpha \in [0.40,\, 0.62]$. 
+
+The position of each Bulk curve in $(\alpha, T)$ is determined by the Kramers escape condition $k\,T_{\rm MC} \sim 1$, with the Kramers rate $k \sim \e^{-N \Delta f(\alpha T) / T}$~\citep{kramers1940, hanggi1990}. The barrier $\Delta f$ vanishes at the spinodal. Taking the log, the curve satisfies
+\begin{equation}
+	{N\Delta f(\alpha, T)}/{T} \sim \ln T_{\rm MC}.
+	\label{eq:bulk_kramers}
+\end{equation}
+$N$ multiplies the left-hand side directly; $T_{\rm MC}$ appears only inside a log on the right. Doubling $N$ halves $\Delta f / T$ on the curve, pulling it towards where $\Delta f = 0$ (the spinodal). Multiplying $T_{\rm MC}$ by ten only adds $\ln 10 \approx 2.3$ on the right, hardly moving the curve. Concretely, going from $T_{\rm MC} = 10^5$ to $10^6$ shifts the $N = 100$ Bulk curve by less than the spacing of the $T$-grid at low $T$, and by at most a few hundredths of $T$ above $T \approx 0.2$. The convergence to the spinodal in the figure is therefore controlled by $N$.
+
+% \paragraph{Finite-$N$ residual basin near the LSE tip.}
+At low $T$ near the tip $\ac(\Bnet, 0) = 0.623$, the Cone boundary in Fig.~\ref{fig:heatmap} extends past the LO spinodal, reaching $\alpha \approx 0.70$ at $T = 0.005$. This is a finite-$N$ effect. Replacing the non-retrieval term in the softmax sum~\eqref{eq:softmax_sum} by the prefactor-corrected non-retrieval sum~\eqref{eq:comp_laplace} gives the finite-$N$ effective potential
+\begin{multline}
+\frac{V_N(\varphi)}{N} = 1 - \frac{1}{\Bnet N}\,
+   \ln\!\left[\e^{\Bnet N \varphi} +
+            \frac{\e^{\Bnet N \varphi_c(\alpha, \Bnet)}}{(1-\varphi^{*4}(\Bnet))^{1/2}} \right] \\
+    - \frac{T(N-3)}{2N}\,\ln(1 - \varphi^{2})\,.
+\label{eq:V-finite-N}
+\end{multline}
+The log-sum smooths the LO corner at $\varphi_c$ over a width $(\Bnet N)^{-1}$. When $\varphi_c$ sits just above $1$, this smoothing reaches into the physical region $\varphi < 1$ and produces a local minimum of $V_N$ slightly below $\varphi = 1$ that the LO landscape lacks.
+
+Fig.~\ref{fig:Veff_finite_N} shows $V_N$ at $\alpha = 0.62, 0.65, 0.70$ and $T = 0.005$, for the $N(\alpha)$ that the $M = 4.4 \times 10^6$ Cone run reaches. The retrieval-basin equilibrium alignment, set by $V_N'(\varphi) = 0$, sits at $\varphi = 0.995, 0.992, 0.977$; the Cone numerical $\langle\varphi\rangle$ at the same cells is $0.995, 0.991, 0.975$, within $0.002$ at every load. As $N$ grows the smoothing width $(\Bnet N)^{-1}$ shrinks, the residual minimum retreats toward $\varphi = 1$, and the deviation past the LO tip closes; this is visible across the Bulk curves in Fig.~\ref{fig:heatmap}, where the $N = 10^4$ boundary lies on top of the LO spinodal at this $T$.
+
+
+
+
+
+
+
+% ----------------------------------------------------------------------------------
+% ----------------------------------------------------------------------------------
+% ----------------------------------------------------------------------------------
+
+\section{Discussion}
+\label{sec:discussion}
+
+We have studied the retrieval capacity of the LSE Dense Associative Memory at finite temperature, both analytically and by Monte Carlo. Previous estimates rested on the Gaussian alignment density, giving the $\Bnet$-independent $\ac = 1/2$ at $T = 0$ in the condensed phase ($\Bnet \geq 1$), in conflict with the exact LM24 threshold. We worked with the exact spherical density throughout: the non-retrieval sum is set by an interior saddle, and the resulting spinodal $\ac(\Bnet, T) = \Bnet \varphi_{\rm eq}(T) - g_{\max}(\Bnet)$ is the saddle-dominated capacity. At $T = 0$ it reproduces the LM24 threshold at every $\Bnet$.
+
+The cusp lines $\varphi_c(\alpha, \Bnet)$ are tangent envelopes of the exact extreme curve $\varphi_{\max}(\alpha)$ at every $\Bnet$ (Fig.~\ref{fig:varphi}, Appendix~B), so no individual non-retrieval pattern ever enters the retrieval basin: retrieval loss is collective, set by the bulk saddle. The R+21 capacity is a weaker lower bound, obtained by replacing the non-retrieval sum by $M$ times its largest term; it lies below $\ac(\Bnet, 0)$ at every $\Bnet$.
+
+To validate the spinodal at large $N$, where direct evaluation of the energy is prohibitive, we developed two approximate Monte Carlo schemes tailored to the LSE kernel. The Full scheme samples all $M$ patterns and reaches $N \sim 25$. The Cone scheme absorbs the patterns outside a cone around the target into a closed-form bulk constant and reaches $N \sim 30$. The Bulk scheme drops the live patterns and runs on the LO free energy at $\mathcal{O}(N)$ cost per step, reaching $N = 10^4$ and beyond. The three schemes are mutually validated where their reaches overlap: Cone matches Full at every $\alpha$ at the shared budget $M = 4.4 \times 10^6$, and Bulk at $N = 100$ matches the Cone staircase at the low-$\alpha$ end of Fig.~\ref{fig:heatmap}. The $N = 10^4$ Bulk boundary then sits on the spinodal across most of the $\alpha$ range. At the modest $N$ that Full and Cone reach, the boundary lies below the spinodal by an amount fixed by Kramers escape, $N \Delta f / T \approx \ln T_{\rm MC}$, so convergence is controlled by $N$ and only weakly by $T_{\rm MC}$.
+
+The Cone boundary extends past the LO tip at low $T$. This is a finite-$N$ artefact, not a correction to the spinodal: the log-sum smooths the LO corner over width $(\Bnet N)^{-1}$ and produces a residual minimum of $V_N$ near $\varphi = 1$ that the LO landscape lacks (Fig.~\ref{fig:Veff_finite_N}). The analytic minimum matches the Cone $\avg{\varphi}$ to within $0.002$ at $\alpha = 0.62, 0.65, 0.70$. As $N$ grows the residual minimum retreats toward $\varphi = 1$ and the deviation closes.
+
+In the future, it would be interesting to extend this analysis to other log-sum kernels. A natural candidate is the LSR (Epanechnikov) kernel of~\citet{hoover2025dense}, whose distinguishing feature is the compact kernel support: each pattern contributes to the energy only when its alignment with the state exceeds a fixed threshold. The LSE Gaussian kernel, by contrast, weights every pattern smoothly at every alignment, and the saddle-dominated picture developed here may not survive the change.
+
+The condensed and uncondensed regimes of~\citet{lucibello2024exponential} are defined for kernels under which every pattern contributes to the non-retrieval sum. Compact support changes this picture: at any given chain position most patterns lie outside the kernel and contribute nothing, so only a small and ever-changing subset is active. The collective uncondensed regime we identified here, in which many patterns near an interior alignment saddle jointly bind the retrieval boundary, has no obvious LSR counterpart. We expect LSR retrieval to be lost in a condensed-style mechanism, driven by a small number of well-aligned patterns rather than by a bulk saddle.
+
+The Cone and Bulk schemes are LSE-specific: they rely on the smooth way every pattern contributes to the LSE energy. A Monte Carlo scheme suited to LSR would have to keep track only of the small set of patterns currently affecting the energy and update that set as the chain moves. We leave this design for future work.
+
+
+
+% ----------------------------------------------------------------------------------
+% ----------------------------------------------------------------------------------
+% ----------------------------------------------------------------------------------
+
+% \section{Acknowledgments}
+
+
+\bibliography{aaai2026}
+
+\newpage
+~
+
+\newpage
+
+\appendix
+
+\section{Appendix A: Derivation of the prefactor \\in the non-retrieval sum}
+
+\label{app:prefactor}
+
+The Debye uniform asymptotic of the modified Bessel function~\citep[10.41.3]{olver2010nist}
+gives the prefactor of~\eqref{eq:comp_saddle}. Keeping the leading ($k = 0$) term of
+the asymptotic series,
+\begin{equation}
+I_\nu(\nu z') \sim \frac{\e^{\nu\eta(z')}}{(2\pi\nu)^{1/2}(1+{z'}^2)^{1/4}},
+\end{equation}
+where $z' = 2\Bnet N/(N-2)$ and
+\begin{equation}
+    \eta(z') = \sqrt{1+{z'}^2} + \ln\frac{z'}{1+\sqrt{1+{z'}^2}}\,.
+    \label{eq:bessel_debye}
+\end{equation}  
+$\eta(z')$ is expanded to $\mathcal{O}(N^{-1})$ because it is multiplied by
+$\nu = N/2 - 1$ in the exponent:
+\begin{equation}
+    \eta(z') = \eta(2\Bnet) + \eta'(2\Bnet) \frac{4\Bnet}{N} + O(N^{-2})\,,
+\end{equation}
+where
+\begin{align}
+    \eta(2\Bnet)  &= 1 + 2\Bnet\varphi^* + \ln\varphi^*\,, \\
+    \eta'(2\Bnet) &= \varphi^* + \frac{1}{2\Bnet}\,.
+\end{align}
+Then 
+\begin{equation}
+    \nu \eta(z') = \tfrac{N}{2} \eta(2\Bnet) - \ln\varphi^* + \mathcal{O}(1/N)\,.
+\end{equation}
+The $\mathcal{O}(1)$ piece $-\ln\varphi^*$ in the exponent contributes a factor
+$1/\varphi^*$ to the prefactor. Using Stirling's formula
+\begin{equation}
+    \Gamma(N/2) \sim \sqrt{4\pi/N}\,(N/2)^{N/2}\,\e^{-N/2}
+\end{equation} 
+and collecting all terms in~\eqref{eq:comp_exact} to $\mathcal{O}(1)$ in the
+exponent and to leading order in the prefactor reproduces the exponent
+of~\eqref{eq:comp_saddle} and gives the prefactor:
+\begin{equation}
+S_{\rm nr} \approx \frac{\e^{N[\alpha + g_{\max}(\Bnet) - \Bnet]}}{\sqrt{1-\varphi^{*4}}}\,,
+\end{equation}
+with $g_{\max}(\Bnet)$ given by~\eqref{eq:saddle_value}.
+At $\Bnet = 1$, $\varphi^* \approx 0.618$ and the prefactor is $\approx 1.082$, reproducing~\eqref{eq:comp_laplace}.
+
+
+\section{Appendix B: Tangency of the cusp lines \\to the spherical extreme}
+
+To show that the cusp lines \eqref{eq:cusp} are tangent to the
+spherical-extreme curve \eqref{eq:varphi_max} at every
+$\Bnet$, we need to show that the slope and the $\varphi$-intercept
+coincide.
+
+Differentiating \eqref{eq:varphi_max} once gives
+\begin{equation}
+\varphi_{\max}'(\alpha) \;=\; \frac{1-\varphi_{\max}^2}{\varphi_{\max}}\,,
+\label{eq:tangent_slope_C}
+\end{equation}
+and a second differentiation gives $\varphi_{\max}''(\alpha) < 0$ for $\alpha > 0$,
+so $\varphi_{\max}$ is strictly concave on $(0, \infty)$. For a concave function
+every tangent line lies above the function, with equality only at the tangency
+point. This is used in the lower-envelope identity below.
+
+The cusp line at sharpness $\Bnet$,
+\begin{equation}
+\varphi \;=\; \alpha/\Bnet + g_{\max}(\Bnet)/\Bnet\,,
+\end{equation}
+has slope $1/\Bnet$ and $\varphi$-intercept $g_{\max}(\Bnet)/\Bnet$. To find the point on
+the blue curve where the tangent has the same slope, set the right-hand side
+of~\eqref{eq:tangent_slope_C} equal to $1/\Bnet$:
+\begin{equation}
+\frac{1-\varphi^2}{\varphi} \;=\; \frac{1}{\Bnet}
+\quad\Longleftrightarrow\quad
+\Bnet\,\varphi^2 + \varphi - \Bnet = 0\,.
+\label{eq:saddle_eq_C}
+\end{equation}
+This is the saddle equation and its unique positive root is the spherical saddle \eqref{eq:saddle}.
+The corresponding $\alpha$ on the blue curve follows from
+$\varphi^* = \varphi_{\max}(\alpha^*)$:
+\begin{equation}
+\alpha^*(\Bnet) \;=\; -\tfrac12 \ln(1-\varphi^{*\,2})\,.
+\label{eq:alpha_star_C}
+\end{equation}
+
+A line of slope $1/\Bnet$ passing through $(\alpha^*(\Bnet), \varphi^*(\Bnet))$ has
+$\varphi$-intercept
+\begin{equation}
+b_{\rm tg}(\Bnet) \;=\; \varphi^* - \alpha^*/\Bnet\,.
+\end{equation}
+The cusp line has $\varphi$-intercept $g_{\max}(\Bnet)/\Bnet$.
+Using~\eqref{eq:saddle_value}, the $\varphi$-intercepts coincide;
+the two lines are therefore identical.
+
+By the concavity statement above, the cusp line at any sharpness $\Bnet$ lies above the blue curve, with equality only at
+$\alpha = \alpha^*(\Bnet)$:
+\begin{equation}
+\varphi_c(\alpha, \Bnet) \;\ge\; \varphi_{\max}(\alpha) \quad \text{for all $\alpha$ and all $\Bnet > 0$}\,,
+\end{equation}
+with equality at one $\alpha$ for each $\Bnet$. Taking the infimum over $\Bnet$,
+\begin{equation}
+\varphi_{\max}(\alpha) \;=\; \inf_{\Bnet > 0} \varphi_c(\alpha, \Bnet)\,,
+\label{eq:lower_envelope_C}
+\end{equation}
+the lower-envelope identity.
+
+The saddle function $\varphi^*(\Bnet)$~\eqref{eq:saddle} is
+continuous and strictly increasing on $(0, \infty)$ from $0$ to $1$. As $\Bnet$ sweeps $(0, \infty)$,
+the tangency point $(\alpha^*(\Bnet), \varphi^*(\Bnet))$ therefore traces the
+entire blue curve from the origin to its right edge.
+
+Two results follow from the geometric setup above.  At $T = 0$ the
+cusp line of slope $1/\Bnet$ reaches $\varphi = 1$ at
+$\alpha = \Bnet - g_{\max}(\Bnet)$, which is the zero-temperature
+capacity~\eqref{eq:capacity_T0} (equivalently, the spinodal at
+$T = 0$).
+
+% \textbf{Ramsauer's bound is too restrictive.}  
+The \citeauthor{ramsauer2021hopfield}'s condition
+$\varphi_{\max}(\alpha) = 1 - \alpha/\Bnet$ is the intersection of
+$\varphi_{\max}$ with the line of slope $-1/\Bnet$ through $(0, 1)$.
+By~\eqref{eq:lower_envelope_C}, $\varphi_{\max}$ lies below every
+cusp line, so the \citeauthor{ramsauer2021hopfield}'s line crosses $\varphi_{\max}$ at strictly
+smaller $\alpha$ than the cusp line at slope $1/\Bnet$ reaches
+$\varphi = 1$.  \citeauthor{ramsauer2021hopfield}'s capacity $\alpha_c^R$ therefore satisfies
+$\alpha_c^R < \alpha_c(\Bnet, 0)$ for every $\Bnet > 0$.
+
+% \textbf{Asymptotic capacity.}  
+Using \eqref{eq:saddle} in
+\eqref{eq:saddle_value} and then in \eqref{eq:capacity_T0}, one obtains:
+\begin{equation}
+\begin{aligned}
+\ac(\Bnet, 0) = \Bnet - g_{\max}(\Bnet) &\;\to\; \Bnet
+   && (\Bnet \to 0)\,,\\
+\ac(\Bnet, 0) = \Bnet - g_{\max}(\Bnet) &\;\to\; \tfrac{1}{2}\ln\Bnet + \tfrac{1}{2}
+   && (\Bnet \to \infty)\,,
+\end{aligned}
+\label{eq:asymptotic_C}
+\end{equation}
+the small- and large-$\Bnet$ limits of the zero-temperature capacity
+cited in the Abstract.
+
+\paragraph{Legendre transform.}
+The lower-envelope identity~\eqref{eq:lower_envelope_C} and the formula
+below are the two sides of a Legendre transform between
+$\varphi_{\max}(\alpha)$ and $g_{\max}(\Bnet)/\Bnet$.  The forward
+transform takes $\varphi_{\max}$ to its conjugate,
+\begin{equation}
+g_{\max}(\Bnet)/\Bnet \;=\; \sup_\alpha\,\bigl[\,\varphi_{\max}(\alpha) - \alpha/\Bnet\,\bigr]\,,
+\label{eq:legendre_C}
+\end{equation}
+with the supremum attained at $\alpha = \alpha^*(\Bnet)$ from the
+slope-match condition~\eqref{eq:saddle_eq_C}.  The Legendre transform
+is involutive: applying it to $g_{\max}(\Bnet)/\Bnet$ recovers
+$\varphi_{\max}(\alpha)$, which is exactly~\eqref{eq:lower_envelope_C}
+after using the cusp-line definition~\eqref{eq:cusp}.
+
+Two facts follow from the duality.  First, the lower-envelope
+identity~\eqref{eq:lower_envelope_C} is the inverse
+of~\eqref{eq:legendre_C}, so the tangency is automatic.  Second,
+differentiating~\eqref{eq:saddle_value} in $\Bnet$ and using the
+envelope theorem $\p g/\p\varphi|_{\varphi^*} = 0$ gives
+\begin{equation}
+g_{\max}'(\Bnet) \;=\; \varphi^*(\Bnet)\,,
+\label{eq:envelope_C}
+\end{equation}
+so $g_{\max}(\Bnet)$ is recovered by integrating $\varphi^*(\Bnet)$.
+Plugging the small- and large-$\Bnet$ limits $\varphi^* \sim \Bnet$
+and $\varphi^* \sim 1 - 1/(2\Bnet)$ into~\eqref{eq:envelope_C} and
+integrating reproduces~\eqref{eq:asymptotic_C}.
+
+\end{document}
+
+\section{Appendix C: Translation of \citeauthor{ramsauer2021hopfield}'s storage-capacity bound}
+\label{sec:appendix_ramsauer}
+
+We give a literal symbol-by-symbol map between
+\citeauthor{ramsauer2021hopfield}'s notation and ours, then derive
+the Theorem~4 reading, Eq.~\eqref{eq:ramsauer_bound} and
+Eq.~\eqref{eq:ramsauer_capacity} step by step.
+
+\paragraph{Notation map.}
+\citeauthor{ramsauer2021hopfield} use $N$ patterns
+$\bm x_i \in \mathbb R^d$ on a sphere of radius
+$\mathbf M := K\sqrt{d-1}$ with sharpness $\beta$, and a query
+$\bm \xi \in \mathbb R^d$.  Our patterns are
+$\bxi^\mu \in \mathbb R^N$, $\mu = 1, \dots, M$, on a sphere of
+radius $\sqrt N$ with sharpness $\Bnet$; the target is $\bxi^1$ and
+the query is taken at the target.  Setting $K = 1$ in
+\citeauthor{ramsauer2021hopfield}'s convention identifies the
+pattern norm $\mathbf M = \sqrt{d-1}$ with our $\sqrt N$ in the
+large-$N$ limit.  The variable map is
+\begin{center}
+\begin{tabular}{lll}
+\hline
+\citeauthor{ramsauer2021hopfield} & here & meaning \\
+\hline
+$N$ & $M = \e^{\alpha N}$ & number of patterns \\
+$d$ & $N$ & pattern dimension \\
+$\mathbf M$ & $\sqrt N$ & pattern norm \\
+$\beta$ & $\Bnet$ & softmax sharpness \\
+$\bm x_i^\top \bm x_j$ & $N\,\varphi^{ij}$ & pair product \\
+$\bm x_i$, $\bm \xi$ & $\bxi^i$, $\bxi^1$ & patterns, target query \\
+\hline
+\end{tabular}
+\end{center}
+With the query at the target, $\bm \xi^\top \bm x_1 = N$ and
+$\bm \xi^\top \bm x_j = N\,\varphi^{1j}$ for $j \geq 2$.  The
+\emph{maximum competing alignment} is
+$\varphi_{\max} = \max_{j \neq 1}\varphi^{1j}$.
+
+\paragraph{Theorem~4 reading: retrieval ties to $N(1-\varphi_{\max})$.}
+The separation, their Eq.~(5), is
+\begin{equation*}
+\Delta_i \;:=\; \bm x_i^\top \bm x_i - \max_{j \neq i}\bm x_i^\top \bm x_j.
+\end{equation*}
+At the target $i = 1$ we substitute the map: $\bm x_1^\top \bm x_1 = N$
+and $\max_{j \neq 1}\bm x_1^\top \bm x_j = N\,\varphi_{\max}$.  Hence
+\begin{equation*}
+\Delta_1 \;=\; N\,(1 - \varphi_{\max}).
+\end{equation*}
+Their Theorem~5, Eq.~(9), bounds the retrieval error of pattern
+$\bm x_1$ by
+\begin{equation*}
+\|\bm x_1 - \bm x_1^*\| \;\leq\; 2 e\,(N-1)\,\mathbf M\,\e^{-\beta \Delta_1}.
+\end{equation*}
+Substituting the map ($N \to M$, $\mathbf M \to \sqrt N$,
+$\beta \to \Bnet$, $\Delta_1 \to N(1-\varphi_{\max})$):
+\begin{equation*}
+\|\bxi^1 - \bxi^{1*}\| \;\leq\; 2 e\,M\,\sqrt N\,\e^{-\Bnet N(1-\varphi_{\max})}.
+\end{equation*}
+For this bound to guarantee retrieval (error below any fixed
+$\epsilon$ at large $N$) we need the exponential to overcome the
+prefactor, i.e.
+\begin{equation*}
+\Bnet N (1-\varphi_{\max}) \;>\; \ln M + O(\ln N) \;=\; \alpha N + O(\ln N),
+\end{equation*}
+since $M = \e^{\alpha N}$.  To leading order in $N$ this is
+$\varphi_{\max} < 1 - \alpha/\Bnet$.  As $\varphi_{\max} \to 1$ the
+exponential factor approaches $1$, the bound no longer guarantees
+small retrieval error, and Theorem~4 stops securing retrieval.  In
+this sense Theorem~4 ties retrieval to the separation
+$N(1-\varphi_{\max})$, and retrieval fails when
+$\varphi_{\max} \to 1$.
+
+\paragraph{Derivation of Eq.~\eqref{eq:ramsauer_bound}.}
+The non-retrieval sum~\eqref{eq:comp_sum} is
+\begin{equation*}
+S_{\rm nr} \;=\; \sum_{\mu = 2}^M \e^{\Bnet N (\varphi^\mu - 1)}.
+\end{equation*}
+For every $\mu \geq 2$, $\varphi^\mu \leq \varphi_{\max}$ by
+definition of $\varphi_{\max}$, so
+\begin{equation*}
+\e^{\Bnet N (\varphi^\mu - 1)} \;\leq\; \e^{\Bnet N (\varphi_{\max} - 1)}
+   \;=\; \e^{-\Bnet N (1-\varphi_{\max})}.
+\end{equation*}
+The sum of $M - 1$ terms, each at most this maximum, satisfies
+\begin{equation*}
+S_{\rm nr} \;\leq\; (M-1)\,\e^{-\Bnet N (1-\varphi_{\max})}
+   \;\leq\; M\,\e^{-\Bnet N (1-\varphi_{\max})}.
+\end{equation*}
+Using $M = \e^{\alpha N}$ on the right,
+\begin{equation*}
+M\,\e^{-\Bnet N (1-\varphi_{\max})}
+   \;=\; \e^{\alpha N - \Bnet N (1-\varphi_{\max})}
+   \;=\; \e^{N(\alpha - \Bnet(1-\varphi_{\max}))},
+\end{equation*}
+which is Eq.~\eqref{eq:ramsauer_bound}.  The $M$-times-largest step
+is the same one \citeauthor{ramsauer2021hopfield} use in their
+Lemma~A4 Eq.~(134) for the softmax probability mass on non-retrieval patterns;
+applying it to the unnormalised shifted sum gives the bound on
+$S_{\rm nr}$ above.
+
+\paragraph{Derivation of Eq.~\eqref{eq:ramsauer_capacity}.}
+The shifted softmax sum~\eqref{eq:softmax_sum} reads
+$S(\bm x) = 1 + S_{\rm nr}$ at the target, since the retrieval
+term equals $\e^{\Bnet N(\varphi^1 - 1)} = 1$ for $\varphi^1 = 1$.
+Retrieval requires the retrieval term to dominate, $S_{\rm nr} < 1$;
+substituting the bound just derived,
+\begin{equation*}
+S_{\rm nr} < 1 \quad\Longleftarrow\quad
+\e^{N(\alpha - \Bnet(1-\varphi_{\max}))} < 1
+\quad\Longleftrightarrow\quad
+\alpha < \Bnet\,(1-\varphi_{\max}),
+\end{equation*}
+or $\varphi_{\max} < 1 - \alpha/\Bnet$, the same threshold as in the
+Theorem~4 reading.  The capacity is where this inequality saturates,
+$\varphi_{\max}(\alpha) = 1 - \alpha/\Bnet$.  Substituting the
+exact-density extreme alignment~\eqref{eq:varphi_max},
+$\varphi_{\max}(\alpha) = \sqrt{1 - \e^{-2\alpha}}$,
+\begin{equation*}
+\sqrt{1 - \e^{-2\alpha}} \;=\; 1 - \frac{\alpha}{\Bnet},
+\end{equation*}
+which is Eq.~\eqref{eq:ramsauer_capacity}.  The Gaussian alternative
+$\varphi_{\max}(\alpha) = \sqrt{2\alpha}$, used in
+\citet{icml2026theory}, instead gives
+$\sqrt{2\alpha} = 1 - \alpha/\Bnet$; at $\Bnet \to \infty$ this
+reduces to $\ac = 1/2$.

@@ -1,0 +1,150 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+
+\title{Summary of Discussion: Thermal Dense Associative Memory}
+\author{Tatiana Petrova \and Evgeny Polyachenko}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Overview}
+
+This document reconstructs and systematizes the technical content of the recent discussion on Dense Associative Memory (DAM) models in the presence of thermal noise. The goal of the discussion was to clarify the conceptual meaning of retrieval in thermal settings, assess the relevance and feasibility of recently identified theoretical work, and define a realistic short-term research strategy under tight time constraints.
+
+%==============================================================================
+\section{What Was Discussed}
+%==============================================================================
+
+\subsection{State of Existing Materials}
+
+The discussion started from the observation that the current work is distributed across multiple partially overlapping files:
+\begin{itemize}
+    \item a large accumulation document titled \texttt{Retrieval Failure} (latest version unnumbered), containing intermediate ideas and exploratory derivations;
+    \item several auxiliary files, including \texttt{LSE/LSR/SSB line}, with formula-level attempts inspired by a recent paper on thermal dense associative memory;
+    \item older drafts (e.g.\ \texttt{Retrieval Failure Paper / LSA / ... Mass}), produced prior to engaging seriously with thermal and dynamical-statistical formulations.
+\end{itemize}
+
+While many technical fragments exist, a short, coherent narrative suitable for an abstract or near-term submission has not yet been distilled.
+
+\subsection{Standard Dense AM vs.\ Thermal Dense AM}
+
+The conceptual contrast between non-thermal and thermal dense associative memory was a central point.
+
+In the standard (non-thermal) setting, DAM dynamics can be interpreted as deterministic descent in an energy landscape,
+\[
+\dot{x} = -\nabla U(x),
+\]
+with retrieval identified as convergence to a local minimum corresponding to a stored pattern.
+
+In the thermal setting, the system is coupled to a heat bath. The dynamics becomes stochastic, e.g.\ Langevin-like,
+\[
+\dot{x} = -\nabla U(x) + \eta(t),
+\]
+or, in discrete spin systems, a probabilistic spin-flip dynamics where acceptance probabilities depend on energy differences and temperature.
+
+As a consequence, the system does not converge to a fixed point for any finite temperature; instead, it fluctuates persistently around regions of state space.
+
+\subsection{Energy, Probability, and the Meaning of Retrieval}
+
+A key conceptual shift discussed concerns the interpretation of energy and retrieval in thermal DAMs. The energy is naturally related to a probability density via
+\[
+P(x) \propto \exp(-\beta E(x)),
+\]
+or equivalently,
+\[
+E(x) = -\frac{1}{\beta}\log(\cdot).
+\]
+
+In non-thermal DAMs, retrieval can be described as minimizing \(E(x)\). In thermal DAMs, it is more appropriate to describe the system in terms of \emph{maxima of the probability density} \(P(x)\).
+
+Temperature qualitatively alters this structure:
+\begin{itemize}
+    \item at low temperature, probability mass concentrates near energy minima;
+    \item at high temperature, noise broadens the distribution and may favor more symmetric or averaged configurations.
+\end{itemize}
+
+\subsection{Macroscopic Description via Overlap}
+
+Because the relevant regime is large \(N\), the discussion emphasized macroscopic observables rather than microscopic configurations. The primary order parameter is the overlap
+\[
+m = \frac{1}{N}\sum_{i=1}^{N} \xi_i x_i,
+\]
+where \(\xi\) is a stored pattern and \(x\) is the current system state.
+
+In thermal DAM analyses, retrieval success and failure are characterized by the dynamics and distribution of \(m\), not by convergence of individual spins.
+
+\subsection{Redefinition of Retrieval Success under Noise}
+
+A critical technical issue is the definition of retrieval in the presence of thermal fluctuations.
+
+In principle, retrieval could be defined through infinite-time stationary distributions. In practice, this is infeasible. Instead, existing work adopts a finite-time, threshold-based criterion:
+\begin{itemize}
+    \item retrieval is declared successful if \(m(t)\) crosses a prescribed threshold (e.g.\ \(m \approx 0.5\)–\(0.6\)) within a finite time horizon.
+\end{itemize}
+
+Thus, retrieval is no longer defined as arrival at a fixed point, but as achieving sufficiently high overlap despite ongoing stochastic fluctuations.
+
+\subsection{Reference Paper and DMFT Formalism}
+
+The recently identified paper on thermal dense associative memory was discussed in detail. Its main technical structure involves:
+\begin{itemize}
+    \item a derivation starting around a key equation (referred to as Eq.~(35));
+    \item the construction of a Dynamical Mean Field Theory (DMFT);
+    \item a central effective dynamical equation (around Eq.~(50)), obtained after averaging over spins in the \(N \to \infty\) limit.
+\end{itemize}
+
+It was emphasized that fully understanding, reproducing, and extending this derivation requires substantial effort and does not fit into a one-week development cycle.
+
+\subsection{Conceptual Analogy: Spontaneous Symmetry Breaking}
+
+An analogy with spontaneous symmetry breaking (SSB) was discussed to build intuition. The canonical Landau potential
+\[
+V(\phi) = -\mu^2\phi^2 + \lambda\phi^4
+\]
+illustrates how a symmetric Hamiltonian can lead to symmetry-breaking minima. Introducing temperature-dependent corrections of the form \(-\mu^2 + cT^2\) leads to:
+\begin{itemize}
+    \item symmetry restoration at high temperature;
+    \item symmetry breaking at low temperature.
+\end{itemize}
+
+This analogy was proposed as a conceptual bridge to interpret temperature-driven changes in retrieval structure in thermal DAMs.
+
+%==============================================================================
+\section{Conclusions Reached}
+%==============================================================================
+
+\subsection{Feasibility under Time Constraints}
+
+A central conclusion was that reproducing or competing directly with the full DMFT-based thermal theory is not feasible within the available short time window.
+
+Instead, the focus should shift to extracting a small, well-defined result that can be completed quickly and clearly articulated.
+
+\subsection{Strategic Decision}
+
+The agreed strategy is:
+\begin{itemize}
+    \item identify and enumerate intermediate results already obtained (or nearly obtained);
+    \item decide which of these can realistically be finalized for an ICML submission;
+    \item allocate more exploratory or less mature results to a workshop submission;
+    \item postpone deep engagement with the full thermal DMFT framework to a longer-term track (e.g.\ toward a later major conference).
+\end{itemize}
+
+%==============================================================================
+\section*{Next Immediate Actions}
+%==============================================================================
+
+\begin{enumerate}
+    \item Compile a concrete list of existing intermediate results across all files.
+    \item Rank these results by novelty, completeness, and submission feasibility.
+    \item Decide on a minimal, coherent narrative suitable for near-term submission.
+\end{enumerate}
+
+\section*{Conclusion}
+
+The discussion clarified that thermal dense associative memory requires a conceptual redefinition of retrieval, replacing fixed-point convergence with probabilistic and macroscopic criteria. While recent DMFT-based work provides a deep theoretical framework, short-term progress must rely on simpler, well-controlled models and already available results. This sets a clear division between immediate deliverables and longer-term theoretical development.
+
+\end{document}

@@ -1,0 +1,204 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+
+\newcommand{\bnet}{\beta_{\rm net}}
+\newcommand{\bhat}{\hat{\beta}_{\rm net}}
+
+\title{Analysis of the LSR Model Scaling Problem}
+\author{Notes for Discussion}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{The Problem}
+
+In the current paper, the LSR energy density is written as:
+\begin{equation}
+    u_{\rm LSR}(\phi) = -\frac{1}{\bhat} \ln\left(1 - \bhat(1-\phi)\right),
+\end{equation}
+where $\bhat = N\bnet$ is a \emph{rescaled} network sharpness parameter. This rescaling was introduced to obtain a non-trivial thermodynamic limit.
+
+\textbf{The awkwardness}: For $\bhat = 1$, the support boundary is $\phi > 1 - 1/\bhat = 0$, meaning \emph{all} alignments are within support. The ``compact support'' property that defines the Epanechnikov kernel is lost.
+
+\section{How Hoover et al.\ Achieve Exponential Capacity}
+
+The Hoover et al.\ paper defines the LSR energy as:
+\begin{equation}
+    E_{\rm LSR}(x) = -\frac{1}{\beta} \ln\left(\epsilon + \sum_{\mu=1}^M \text{ReLU}\left(1 - \frac{\beta}{2}\|x - \xi^\mu\|^2\right)\right).
+\end{equation}
+
+The support region around pattern $\xi^\mu$ is:
+\begin{equation}
+    S_\mu = \left\{x : \|x - \xi^\mu\|^2 \leq \frac{2}{\beta}\right\}.
+\end{equation}
+
+\subsection{Capacity Theorem (Theorem 2 in Hoover et al.)}
+
+For $M$ patterns sampled uniformly from $\{-1,+1\}^D$:
+\begin{itemize}
+    \item The minimum pairwise distance satisfies $r_{\min} \geq \sqrt{2D(1-\alpha)}$ with high probability.
+    \item With $\beta = 2/(r - \Delta)^2$ for basin radius $\Delta < r$, all memories are retrievable.
+    \item This gives capacity $M \sim \exp(\alpha^2 D/2)$.
+\end{itemize}
+
+\textbf{Key observation}: They choose $\beta$ \emph{adaptively} based on pattern separation. Since $r \sim \sqrt{D}$, this means $\beta \sim 1/D$.
+
+\section{Translation to the $N$-Sphere Framework}
+
+On the $N$-sphere with $\|x\|^2 = \|\xi\|^2 = N$, the squared distance is:
+\begin{equation}
+    d^2(x, \xi) = \|x - \xi\|^2 = 2N(1 - \phi), \quad \text{where } \phi = \frac{x \cdot \xi}{N}.
+\end{equation}
+
+The support condition $\|x - \xi\|^2 \leq 2/\beta$ becomes:
+\begin{equation}
+    2N(1-\phi) \leq \frac{2}{\beta} \quad \Rightarrow \quad \phi \geq 1 - \frac{1}{\beta N}.
+\end{equation}
+
+Define $b \equiv \beta N$ (this is the $\bhat$ in our paper). The support boundary in alignment space is:
+\begin{equation}
+    \phi_{\rm support} = 1 - \frac{1}{b}.
+\end{equation}
+
+\subsection{Pattern Separation}
+
+For $M = e^{\alpha N}$ random patterns on the $N$-sphere, the maximum spurious alignment is:
+\begin{equation}
+    \phi_{\max} = \sqrt{2\alpha}.
+\end{equation}
+
+For the retrieval basin of a target pattern to be isolated (not overlapping with spurious patterns), we need:
+\begin{equation}
+    \phi_{\rm support} < 1 - \phi_{\max} \quad \Rightarrow \quad 1 - \frac{1}{b} < 1 - \sqrt{2\alpha}.
+\end{equation}
+
+This gives a \textbf{support threshold}:
+\begin{equation}
+    \boxed{\alpha < \alpha_{\rm th}(b) = \frac{1}{2}\left(1 - \frac{1}{b}\right)^2}
+\end{equation}
+
+\section{The Key Insight}
+
+The scaling $b = \beta N = O(1)$ is \textbf{not artificial}---it is \textbf{required} by the geometry of high-dimensional pattern separation. Hoover et al.\ implicitly use this scaling when they choose $\beta$ based on $r_{\min} \sim \sqrt{D}$.
+
+The exponential capacity comes from:
+\begin{enumerate}
+    \item High-dimensional concentration: random patterns are nearly orthogonal.
+    \item The kernel width must match this separation scale.
+    \item This naturally gives $\beta \sim 1/N$, or equivalently $b = \beta N = O(1)$.
+\end{enumerate}
+
+\section{Resolution: The Parameter $b = \bhat$}
+
+Instead of viewing the rescaling as awkward, we should view $b = \bhat$ as the \textbf{fundamental parameter} of the LSR model in the thermodynamic limit.
+
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+$b = \bhat$ & Support boundary $\phi > $ & Max capacity $\alpha_{\rm th}$ & Character \\
+\midrule
+1 & 0 & 0 & Degenerate (no compact support) \\
+2 & 0.5 & 0.125 & Moderate support \\
+4 & 0.75 & 0.281 & Sharper support \\
+10 & 0.9 & 0.405 & Sharp support \\
+$\infty$ & 1 & 0.5 & LSE limit \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Physical Interpretation}
+
+\begin{itemize}
+    \item \textbf{For $b = 1$}: Support covers all $\phi > 0$. This is the degenerate case where compact support is lost. The current paper's analysis with $\bhat = 1$ lives here.
+
+    \item \textbf{For $b > 1$}: True compact support. Only alignments $\phi > 1 - 1/b$ contribute. The constraint $\alpha < \alpha_{\rm th}(b)$ is physical---it says LSR can only achieve exponential capacity up to $\alpha_{\rm th} < 0.5$.
+
+    \item \textbf{For $b \to \infty$}: The support boundary approaches $\phi = 1$, and the logarithmic well becomes infinitely sharp. In this limit, LSR approaches LSE behavior, and $\alpha_{\rm th} \to 0.5$.
+\end{itemize}
+
+\section{Implications for the Phase Diagram}
+
+\subsection{The Critical Line for General $b$}
+
+The equilibrium condition for LSR with general $b$:
+\begin{equation}
+    \frac{\partial f}{\partial \phi} = -\frac{1}{1 - b(1-\phi)} + \frac{T\phi}{1-\phi^2} = 0.
+\end{equation}
+
+Let $y = 1 - \phi$. This becomes:
+\begin{equation}
+    (bT + 1)y^2 - (2 + T + Tb)y + T = 0.
+\end{equation}
+
+The physical solution is:
+\begin{equation}
+    y = \frac{(2 + T + Tb) - \sqrt{(2 + T + Tb)^2 - 4T(bT + 1)}}{2(bT + 1)}.
+\end{equation}
+
+For $b = 1$, this simplifies to $\phi = 1/\sqrt{1+T}$.
+
+\subsection{Maximum Temperature}
+
+The retrieval free energy must satisfy $f_{\rm ret} < 1$ (the maximum noise floor). This gives a maximum temperature $T_{\max}(b)$ that depends on $b$.
+
+For $b = 1$: $T_{\max} \approx 2.23$.
+
+For larger $b$, the equilibrium $\phi$ is higher (sharper confinement), leading to larger entropy penalty and potentially \emph{lower} $T_{\max}$.
+
+\subsection{The Full Picture}
+
+The LSR phase diagram depends on \textbf{two} parameters: $\alpha$ and $b$.
+
+\begin{enumerate}
+    \item For $\alpha > \alpha_{\rm th}(b) = (1 - 1/b)^2/2$: No compact support effect; behavior similar to $b = 1$ analysis.
+
+    \item For $\alpha < \alpha_{\rm th}(b)$: True compact support. The melted branch may not exist (no patterns in support), giving enhanced retrieval stability.
+
+    \item The critical line $\alpha_c(T; b)$ interpolates between these regimes.
+\end{enumerate}
+
+\section{Proposal for the Paper}
+
+\subsection{Option 1: Keep $b = 1$ but Acknowledge Limitations}
+
+State clearly that $\bhat = 1$ is a special limit where compact support is lost. The analysis remains valid as a ``soft'' LSR model---a logarithmic well without hard cutoff. This is simpler but less faithful to the Epanechnikov motivation.
+
+\subsection{Option 2: Analyze General $b > 1$}
+
+Present results for general $\bhat = b$:
+\begin{itemize}
+    \item Support threshold: $\alpha_{\rm th}(b) = (1 - 1/b)^2/2$
+    \item Equilibrium: $\phi_{\rm LSR}(T; b)$ from the quadratic equation
+    \item Critical line: $\alpha_c(T; b)$
+    \item Maximum temperature: $T_{\max}(b)$
+\end{itemize}
+
+Use $b = 2$ as canonical example (gives $\alpha_{\rm th} = 0.125$, meaningful compact support).
+
+\subsection{Option 3: Reframe the Narrative}
+
+Present LSR as a \textbf{one-parameter family} of models indexed by $b$:
+\begin{itemize}
+    \item $b = 1$: Soft logarithmic well (current analysis)
+    \item $b > 1$: Hard cutoff with compact support
+    \item $b \to \infty$: Approaches LSE
+\end{itemize}
+
+This turns the ``awkwardness'' into a \textbf{feature}---LSR interpolates between different regimes.
+
+\section{Conclusion}
+
+The rescaling $\bhat = N\bnet$ is not a bug but a feature. It reflects the fundamental fact that kernel width must scale with pattern separation in high dimensions. The choice of $\bhat$ controls the trade-off between:
+
+\begin{itemize}
+    \item \textbf{Compact support} (meaningful for $\alpha < \alpha_{\rm th}$)
+    \item \textbf{Capacity} (higher $\bhat$ allows higher $\alpha_{\rm th}$)
+    \item \textbf{Entropy penalty} (higher $\bhat$ means sharper confinement)
+\end{itemize}
+
+The current paper's choice $\bhat = 1$ is the boundary case where compact support vanishes. For a fuller picture of LSR, analyzing $\bhat > 1$ would be valuable.
+
+\end{document}

@@ -1,0 +1,86 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb, parskip}
+\begin{document}
+
+
+We thank the reviewer for the positive assessment and the
+constructive suggestions.
+
+% ------------------------------------------------------------
+\subsection*{Weakness 1: Limited empirical validation}
+% ------------------------------------------------------------
+
+We have extended the Monte Carlo validation in two directions,
+updating both figures.
+
+\paragraph{Updated Figure~1: full $(\alpha, T)$ phase diagrams.}
+We replace the theory-only Figure~1 with side-by-side theory
+and MC phase maps from comprehensive GPU-accelerated
+Metropolis--Hastings simulations covering
+$\alpha \in [0.01, 0.55]$ (step $0.01$) and
+$T \in [0.025, 2.0]$ (step $0.05$).
+We use an adaptive-$N$ scheme
+$N(\alpha) = \lfloor \ln M(\alpha)/\alpha \rfloor$,
+giving $N \in [24, 990]$ and
+$M \in [20{,}000,\, 500{,}000]$ patterns across the full
+$\alpha$ range, with 64--512 independent trials per
+$(\alpha, T)$ point.
+The maps confirm all central predictions: $\alpha_c(0)=0.5$
+for both kernels; qualitatively different finite-temperature
+behavior of LSE vs.\ LSR; and the sharp threshold
+$\alpha_{\mathrm{th}} = (1-b^{-1})^2/2 \approx 0.25$ for
+LSR below which retrieval is perfect at any temperature.
+
+\paragraph{Updated Figure~2: alignment curves with error bars.}
+We replace the original single-run MC with a multi-trial
+protocol. Each of the \textbf{50 independent trials} per
+$(\alpha, T)$ point uses a freshly sampled pattern set and
+an independent Markov chain, run for 8{,}192 equilibration
++ 4{,}096 sampling steps with step size
+$\sigma = 2.4T/\!\sqrt{N}$ and
+$\varphi_{\mathrm{init}} \sim \mathcal{U}(0.75, 1.0)$.
+Error bars show $\mathrm{SEM} = \hat{\sigma}/\!\sqrt{N_{\mathrm{tr}}}$.
+
+Results are shown at $\alpha=0.05$, $N=100$ and
+$\alpha=0.1$, $N=50$. Both give
+$p = e^{\alpha N} \approx 148$ patterns, probing the theory
+at two different $(\alpha, N)$ points while holding $p$
+fixed. For LSR, both $\alpha$ values fall below
+$\alpha_{\mathrm{th}}=0.25$, so the two curves overlap
+within error bars, directly confirming the predicted
+$\alpha$-independence of retrieval below threshold.
+
+% ------------------------------------------------------------
+\subsection*{Weakness 2: Clarity of derivations}
+% ------------------------------------------------------------
+
+We will add the following clarifications to the revision:
+(1)~after Eq.~(19), a short paragraph explaining that the
+geometric entropy is kernel-independent because the
+configuration-space volume $\Omega$ in Eq.~(47) depends
+only on spherical geometry and not on the Hamiltonian,
+and is therefore identical for any $O(N)$ energy depending
+on~$x$ only through~$\varphi$;
+(2)~after Eq.~(32), one sentence giving the physical meaning
+of $q=\varphi^2$ as isotropic thermal fluctuations
+perpendicular to the target pattern;
+(3)~at the opening of Section~3, brief inline definitions of
+$q_{ab}$, the $n\to 0$ limit, and replica symmetry for
+readers unfamiliar with the statistical-mechanics formalism.
+
+% ------------------------------------------------------------
+\subsection*{Key Question: Numerical simulations validating
+predicted phase boundaries for finite~$N$}
+% ------------------------------------------------------------
+
+We address this question in detail in Weakness~1 above.
+In summary, the updated Figure~1 directly validates the
+predicted phase boundaries across the full $(\alpha, T)$
+plane for both kernels, and Figure~2 provides quantitative
+agreement with Boltzmann predictions within error bars.
+The two figures jointly confirm the predicted phase
+boundaries and the qualitatively distinct retrieval regimes
+of LSE and LSR at finite~$N$. We hope the extended
+simulations resolve the concern about empirical validation.
+
+\end{document}

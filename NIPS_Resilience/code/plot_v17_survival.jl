@@ -1,0 +1,326 @@
+#=
+Plot v14 survival curves S(t) = 1 - P_esc(t) with ⟨λ⟩ fits
+────────────────────────────────────────────────────────────────────────
+For each (α,T): plot S(t) on log scale, overlay exp(-⟨λ⟩ t),
+annotate τ = 1/⟨λ⟩.
+
+⟨λ⟩ computed from initial slope of -ln S(t) (early-time regime
+before disorder heterogeneity distorts the curve).
+
+Output: panels_paper/v17_survival_all.{png,pdf}
+────────────────────────────────────────────────────────────────────────
+=#
+
+using Plots, Printf, LaTeXStrings, LinearAlgebra, SpecialFunctions
+default(guidefontsize=7, tickfontsize=6, legendfontsize=6)
+
+# ──────────────── Global compound Poisson model ────────────────
+const GLOBAL_A = 0.03793
+const GLOBAL_C = 0.2816
+const M_PAT = 20000
+const b_lsr_g = 2 + sqrt(2)
+const φ_c_g = (b_lsr_g - 1) / b_lsr_g
+
+function φ_eq_g(T)
+    T < 1e-10 && return 1.0
+    φ = 0.95
+    for _ in 1:200
+        D = 1 - b_lsr_g + b_lsr_g*φ
+        D ≤ 1e-10 && (φ = φ_c_g + 0.005; continue)
+        f = (1 - φ^2) - T*φ*D
+        fp = -2φ - T*(D + b_lsr_g*φ)
+        φ = clamp(φ - f/fp, φ_c_g + 1e-8, 1 - 1e-8)
+    end
+    return φ
+end
+
+# D_v interpolation from v13
+v13_lines_g = readlines(joinpath(@__DIR__, "v13_diffusion.csv"))
+const v13_α_g = Float64[]; const v13_T_g = Float64[]; const v13_Dv_g = Float64[]
+for line in v13_lines_g[2:end]
+    f = split(line, ","); length(f) < 6 && continue
+    push!(v13_α_g, parse(Float64, f[1]))
+    push!(v13_T_g, parse(Float64, f[2]))
+    push!(v13_Dv_g, parse(Float64, f[6]))
+end
+const v13_alphas_g = sort(unique(v13_α_g))
+
+function interp_Dv_g(α_q, T_q)
+    _, ia = findmin(abs.(v13_alphas_g .- α_q))
+    α_near = v13_alphas_g[ia]
+    mask = v13_α_g .== α_near
+    Ts = v13_T_g[mask]; Ds = v13_Dv_g[mask]
+    p = sortperm(Ts); Ts = Ts[p]; Ds = Ds[p]
+    T_q = clamp(T_q, Ts[1], Ts[end])
+    for i in 1:length(Ts)-1
+        if Ts[i] ≤ T_q ≤ Ts[i+1]
+            frac = (T_q - Ts[i]) / (Ts[i+1] - Ts[i])
+            return Ds[i] + frac * (Ds[i+1] - Ds[i])
+        end
+    end
+    return Ds[end]
+end
+
+function compound_poisson_S(t_arr, α, T, N)
+    φeq = φ_eq_g(T)
+    R2 = 1 - φeq^2; R2 ≤ 1e-10 && return ones(length(t_arr))
+    Dv = interp_Dv_g(α, T)
+    τ_rel = R2 / Dv
+    rate_pre = GLOBAL_A / τ_rel
+
+    φ_min = max(0.0, φ_c_g * (φeq - sqrt(R2))) + 1e-8
+    φ_zb = φ_c_g / φeq
+    φ_hi = min(φ_zb, 0.9999)
+    logC = loggamma(N/2) - 0.5*log(π) - loggamma((N-1)/2)
+
+    # Precompute channel rates and densities
+    λ_list = Float64[]; f_list = Float64[]; dφ_list = Float64[]
+    if φ_hi > φ_min
+        n_φ = 500; dφ = (φ_hi - φ_min) / n_φ
+        for i in 0:n_φ
+            φ = φ_min + i * dφ
+            s = 1 - φ^2; s ≤ 0 && continue
+            v = (φ_c_g - φeq*φ) / sqrt(s)
+            fv = exp(logC + (N-3)/2*log(s))
+            if v ≤ 0
+                push!(λ_list, rate_pre); push!(f_list, fv); push!(dφ_list, dφ)
+            else
+                v2R2 = v^2/R2; v2R2 ≥ 0.9999 && continue
+                ΔFT = (N-3)/2 * (-log(1 - v2R2))
+                push!(λ_list, rate_pre * exp(-GLOBAL_C * ΔFT))
+                push!(f_list, fv); push!(dφ_list, dφ)
+            end
+        end
+    end
+    # Barrierless region
+    if φ_zb < 0.9999
+        dφ2 = (0.9999 - φ_zb) / 100
+        for i in 0:100
+            φ = φ_zb + i * dφ2; s = 1-φ^2; s ≤ 0 && continue
+            push!(λ_list, rate_pre)
+            push!(f_list, exp(logC + (N-3)/2*log(s)))
+            push!(dφ_list, dφ2)
+        end
+    end
+
+    S_out = ones(length(t_arr))
+    for (it, t) in enumerate(t_arr)
+        integral = 0.0
+        for j in eachindex(λ_list)
+            integral += (1 - exp(-λ_list[j] * t)) * f_list[j] * dφ_list[j]
+        end
+        S_out[it] = exp(-(M_PAT - 1) * integral)
+    end
+    return S_out
+end
+
+out_dir = joinpath(@__DIR__, "..", "panels_paper")
+mkpath(out_dir)
+
+# ──────────────── Collect all v14 files ────────────────
+v14_dir = @__DIR__
+all_files = filter(f -> startswith(f, "v17_Pesc_a") && endswith(f, ".csv"), readdir(v14_dir))
+
+# Parse (α, T) from filenames
+data = Dict{Tuple{Float64,Float64}, Vector{Tuple{Int,Float64}}}()
+for f in all_files
+    m_a = match(r"a(\d+\.\d+)", f)
+    m_T = match(r"T(\d+\.\d+)", f)
+    m_a === nothing && continue; m_T === nothing && continue
+    α = parse(Float64, m_a.captures[1])
+    T = parse(Float64, m_T.captures[1])
+    rows = Tuple{Int,Float64}[]
+    lines = readlines(joinpath(v14_dir, f))
+    for line in lines[2:end]
+        parts = split(line, ",")
+        length(parts) < 2 && continue
+        push!(rows, (parse(Int, parts[1]), parse(Float64, parts[2])))
+    end
+    data[(α, T)] = rows
+end
+
+alphas = sort(unique([k[1] for k in keys(data)]))
+Ts_all = sort(unique([k[2] for k in keys(data)]))
+
+na = length(alphas); nT = length(Ts_all)
+@printf("v14 data: %d α × %d T = %d panels\n", na, nT, length(data))
+
+# ──────────────── Compute ⟨λ⟩ from initial slope ────────────────
+function fit_mean_rate(steps, pesc; T_val=0.0)
+    # Adaptive fit:
+    #   T ≥ 0.30: wide range (P up to 0.90) — decay is near-exponential
+    #   T < 0.30: narrow range (P up to 0.20) — initial slope only,
+    #             heavy tail from disorder heterogeneity distorts wide fit
+    p_hi_list = T_val ≥ 0.30 ? (0.90, 0.80, 0.60, 0.40) : (0.20, 0.30, 0.50, 0.80)
+
+    for p_hi in p_hi_list
+        mask = (pesc .> 0.005) .& (pesc .< p_hi)
+        if sum(mask) >= 4
+            t = Float64.(steps[mask])
+            y = -log.(1.0 .- pesc[mask])
+            n = length(t)
+            X = hcat(ones(n), t)
+            β = X \ y       # β = [b, λ]
+            λ = β[2]
+            λ ≤ 0 && continue
+            t0 = max(0.0, -β[1] / λ)
+            return λ, t0
+        end
+    end
+    return NaN, 0.0
+end
+
+# ──────────────── Plot grid ────────────────
+println("Plotting survival grid...")
+plots_arr = []
+
+# Rows: T decreasing (top = highest T), Columns: α increasing
+Ts_desc = reverse(Ts_all)
+
+for iT in 1:nT
+    for ia in 1:na
+        T_val = Ts_desc[iT]
+        α_val = alphas[ia]
+        key = (α_val, T_val)
+
+        if haskey(data, key)
+            rows = data[key]
+            steps = [r[1] for r in rows]
+            pesc  = [r[2] for r in rows]
+            surv  = 1.0 .- pesc  # S(t) = 1 - P_esc(t)
+
+            # Step 1: get lag t₀ from quick slope fit
+            _, t0 = fit_mean_rate(steps, pesc; T_val=T_val)
+
+            t_max = steps[end]
+            t_plot = Float64.(steps)
+            s_plot = max.(surv, 1e-4)
+
+            # x-range: where S(t) drops to ~1e-3 (or end of data)
+            idx_end = findfirst(s -> s < 1e-3, surv)
+            t_xmax = idx_end !== nothing ? Float64(steps[idx_end]) * 1.1 : Float64(t_max)
+
+            # Step 2: fit Poisson model S(t) = exp(-K(1-exp(-(t-t₀)/τ_ch)))
+            # This determines BOTH the magenta curve AND the red slope.
+            mask_fit = (surv .> 0.005) .& (Float64.(steps) .> t0)
+            best_K = NaN; best_τch = NaN
+            λ_quick, _ = fit_mean_rate(steps, pesc; T_val=T_val)
+            τ_guess = isnan(λ_quick) || λ_quick ≤ 0 ? Float64(t_max)/5 : 1.0/λ_quick
+
+            if sum(mask_fit) >= 5
+                t_m = Float64.(steps[mask_fit])
+                lnS_m = log.(surv[mask_fit])
+                best_err = Inf
+                for log_r in range(-2.0, 2.0, length=400)
+                    τ_try = τ_guess * 10.0^log_r
+                    u = [1.0 - exp(-(t - t0) / τ_try) for t in t_m]
+                    K_try = -dot(u, lnS_m) / dot(u, u)
+                    K_try ≤ 0 && continue
+                    pred = [-K_try * ui for ui in u]
+                    err = sum((lnS_m .- pred).^2)
+                    if err < best_err
+                        best_err = err; best_K = K_try; best_τch = τ_try
+                    end
+                end
+            end
+
+            # ⟨λ⟩ for the red line (τ_d):
+            # For fast decay (P_max > 0.3): fit initial slope directly (P < 0.20)
+            # For slow decay (P_max ≤ 0.3): use Poisson fit K/τ_ch (more robust)
+            P_max = maximum(pesc)
+            if P_max > 0.3
+                λ_mean = NaN
+                for p_hi in (0.20, 0.30, 0.50)
+                    mask_init = (pesc .> 0.005) .& (pesc .< p_hi) .& (Float64.(steps) .> t0)
+                    if sum(mask_init) >= 4
+                        t_init = Float64.(steps[mask_init])
+                        y_init = -log.(1.0 .- pesc[mask_init])
+                        X_init = hcat(ones(length(t_init)), t_init)
+                        β_init = X_init \ y_init
+                        if β_init[2] > 0; λ_mean = β_init[2]; break; end
+                    end
+                end
+            else
+                # Slow decay: Poisson fit is more robust
+                λ_mean = (!isnan(best_K) && best_K > 0) ? best_K / best_τch : NaN
+            end
+            τ_val = isnan(λ_mean) || λ_mean ≤ 0 ? NaN : 1.0 / λ_mean
+
+            N_val = max(round(Int, log(20000) / α_val), 2)
+
+            # Title: α on top row only
+            ttl = (iT == 1) ? @sprintf("α=%.2f", α_val) : ""
+            # Y-label: T on left column, rotated
+            ylab = (ia == 1) ? @sprintf("T=%.1f", T_val) : ""
+
+            # Adaptive y-range, max = 1
+            s_min = minimum(s_plot)
+            y_lo = max(1e-3, s_min / 3)
+            use_log = s_min < 0.5
+
+            p = plot(t_plot, s_plot,
+                     yscale=(use_log ? :log10 : :identity),
+                     ylims=(use_log ? (y_lo, 1.0) : (max(0, s_min - 0.05), 1.0)),
+                     xlims=(0, t_xmax),
+                     lw=1.5, color=:steelblue, label=false,
+                     xlabel=(iT == nT ? "t" : ""),
+                     ylabel=ylab, yguidefontsize=9,
+                     title=ttl, titlefontsize=9,
+                     framestyle=:box,
+                     tickfontsize=5,
+                     left_margin=(ia==1 ? 16Plots.mm : 5Plots.mm),
+                     right_margin=0Plots.mm,
+                     bottom_margin=(iT==nT ? 4Plots.mm : 1Plots.mm))
+
+            if !isnan(λ_mean) && λ_mean > 0
+                t_fit = range(0, t_xmax, length=300)
+
+                # Red dashed: exp(-⟨λ⟩(t-t₀)) — tangent of Poisson at t₀
+                s_exp = [t > t0 ? exp(-λ_mean * (t - t0)) : 1.0 for t in t_fit]
+                plot!(p, t_fit, s_exp, lw=1.0, ls=:dash, color=:red, label=false)
+
+                # Green solid: global compound Poisson
+                s_global = compound_poisson_S(max.(0.0, collect(t_fit) .- t0), α_val, T_val, N_val)
+                plot!(p, t_fit, s_global, lw=1.5, ls=:solid, color=:green, label=false)
+
+                # τ_data from Poisson fit (red), τ_model from compound Poisson (green)
+                # τ_model: initial slope of green curve
+                dt_m = t_fit[2] - t_fit[1]
+                τ_model = s_global[1] > s_global[2] && s_global[2] > 0 ?
+                    -dt_m / log(s_global[2] / s_global[1]) : Inf
+
+                function fmt_tau(τ)
+                    τ ≥ 1e6 ? @sprintf("%.1fM", τ/1e6) :
+                    τ ≥ 1000 ? @sprintf("%.0fk", τ/1000) :
+                    @sprintf("%.0f", τ)
+                end
+
+                ann = @sprintf("τd=%s\nτm=%s", fmt_tau(τ_val), fmt_tau(τ_model))
+                ann_y = use_log ? 0.7 : 0.95
+                annotate!(p, t_xmax*0.95, ann_y, text(ann, :black, 5, :right))
+            end
+        else
+            # Empty panel
+            ttl = (iT == 1) ? @sprintf("α=%.2f", alphas[ia]) : ""
+            ylab = (ia == 1) ? @sprintf("T=%.1f", Ts_desc[iT]) : ""
+            p = plot(framestyle=:box, grid=false,
+                     title=ttl, titlefontsize=9,
+                     ylabel=ylab, yguidefontsize=9,
+                     left_margin=(ia==1 ? 16Plots.mm : 5Plots.mm),
+                     right_margin=0Plots.mm)
+            annotate!(p, 0.5, 0.5, text("—", :gray, 10, :center))
+        end
+
+        push!(plots_arr, p)
+    end
+end
+
+# Arrange: rows = T (top = highest T), columns = α
+fig = plot(plots_arr..., layout=(nT, na),
+           size=(na * 350, nT * 260), dpi=200,
+           margin=1Plots.mm)
+
+for ext in ("png", "pdf")
+    savefig(fig, joinpath(out_dir, "v17_survival_all.$ext"))
+end
+println("Saved: panels_paper/v17_survival_all.{png,pdf}")
