@@ -1,164 +1,70 @@
-# Dense Associative Memory with Epanechnikov Energy
+# Dense Associative Memory at Finite Temperature
 
-GPU-accelerated Monte Carlo simulations for studying phase transitions in Dense Associative Memory (DenseAM) networks, comparing Log-Sum-Exponential (LSE) and Log-Sum-ReLU (LSR) energy functions.
+GPU Monte Carlo and theory for retrieval in continuous Dense Associative Memories (DAMs) on the N-sphere, as a function of the load α = ln(M)/N and the bath temperature T. Two kernel energies are compared throughout: log-sum-exp (LSE, Gaussian kernel) and log-sum-ReLU (LSR, Epanechnikov kernel, compact support). The repository holds the code, data, and LaTeX behind four papers, written in that order; each generation of code supersedes the previous one.
 
-Based on: [Hoover et al., "Dense Associative Memory with Epanechnikov Energy", ICLR 2025 Workshop](papers/25_Dense_Associative_Memory_wi.pdf)
+## Papers and their trees
 
-## Overview
+| Paper | Status | Trees |
+|---|---|---|
+| Finite-T retrieval phase diagrams for LSE and LSR | ICML 2026 | `icml2026/` (paper); simulations from the equilibrium generation: root scripts, `PROD/`, `PROD_V3/`, `panels_v10/`, `CSV/` |
+| Thermal robustness of LSE vs LSR (direct MC) | ICLR 2026 workshop | same equilibrium generation (root `generate_*`, `maps_*`, `basin_stab_*_v6/v7`) |
+| LSR metastability: Kramers escape and centroid hopping | under review | `NIPS_Resilience/` (code, `latex/metastable.tex`, `panels_paper/`) |
+| LSE saddle-dominated capacity | submitted | `AAAI_Ramsauer/` (simulations, plot scripts), `LSE_capacity_final/` (paper + code supplement); `LSE_capacity/` is an earlier copy |
 
-This repository contains Julia code for:
-- GPU-accelerated Metropolis-Hastings Monte Carlo on the N-sphere
-- Phase boundary detection for LSE and LSR energy functions
-- T-dependent equilibration for proper sampling at low temperatures
-- Visualization of phase diagrams (retrieval vs spin-glass phases)
+## Repository layout
 
-## Key Parameters
+Active and recent:
 
-| Parameter | Description | Typical Value |
-|-----------|-------------|---------------|
-| `b` | LSR sharpness (Epanechnikov kernel) | 2 + √2 ≈ 3.414 |
-| `α = ln(P)/N` | Memory load | 0.01 - 0.55 |
-| `T` | Temperature | 0.05 - 2.50 |
-| `N_TRIALS` | Independent MC chains | 64 - 256 |
-| `N_EQ` | Equilibration steps | T-dependent |
-| `N_SAMP` | Sampling steps | 500 - 5000 |
+- `AAAI_Ramsauer/` — LSE capacity simulations. Three MC schemes: Full (`basin_stab_LSE_honest_AAAI*.jl`, all M patterns), Cone (`basin_stab_LSE_semismart_AAAI*.jl`, explicit patterns inside a cone around the target, analytical bulk outside), Bulk (`kinetics_boundary_LSE.jl`, `kinetics_LSE_Ndim.jl`, chain on the analytical bulk potential, CPU). CSVs sit next to the scripts; plots go to `AAAI_Ramsauer/panels_paper/`.
+- `LSE_capacity_final/` — the LSE capacity paper: three tex targets (joint, main-only, appendices), figures in `panels_paper/`, code supplement in `code_supplement/`.
+- `NIPS_Resilience/` — the LSR metastability study. `code/` holds the smart-MC and honest-MC scripts (latest: `basin_stab_LSE_smart_v19_dynamic.jl`, `basin_stab_LSE_honest_fixedN.jl`, `basin_stab_LSR_v17.jl`) and the plot scripts; `latex/` the paper and notes; `panels_paper/` the figures.
+- `icml2026/` — the ICML paper source and revisions.
 
-## LSR Simulation Versions
+Archive (read-only for reference):
 
-The LSR Monte Carlo simulation evolved through four versions, each addressing specific issues in the phase diagram:
+- Root scripts (`generate_lsr_longeq_gpu*.jl`, `generate_lse_longeq_gpu.jl`, `basin_stab_*_v6/v7.jl`, `maps_*.jl`, `trajectory_*.jl`, `percolation_*.jl`) — the equilibrium generation, last touched March 2025. The v1→v4 evolution of the LSR runs is documented in `LATEX/lsr_evolution.tex`; a summary is in the History section below.
+- `NIPS_Percolation/` — percolation side study of the LSR support graph.
+- `PROD/`, `PROD_V3/`, `panels_v10/`, `panels_paper/`, `CSV/`, `EPS/`, `PNG/`, `OLD_*` — frozen production runs and figure sets.
+- `MD/GPU_OPTIMIZATION_GUIDE.md` — alpha-batching, fused ops, preallocation. Written for the archive scripts; the principles still apply.
 
-### v1 — Masking (`generate_lsr_longeq_gpu.jl`)
-- Processes all T simultaneously in batched arrays `[N, n_T×N_TRIALS]`
-- Uses `mc_step_masked!` with boolean active mask for T-dependent equilibration
-- All chains initialized independently near target for every (α, T)
-- **Problem**: Complex threshold-based deactivation; all states initialized in retrieval basin
+## Running
 
-### v2 — T-loop (`generate_lsr_longeq_gpu_v2.jl`)
-- Sequential T loop with per-(α, T) state arrays `xs_full[i][j]`
-- T-dependent equilibration: `N_EQ(T) = 5000 × exp(0.15 × (1/T - 1/T_max))`, cap 300k
-- Uses `gemm_strided_batched` for batched energy computation
-- **Problem**: "Blue bay" artifact — metastable retrieval above the theoretical boundary due to independent initialization + first-order transition barrier + LSR hard support walls
-
-### v3 — Heating Protocol (`generate_lsr_longeq_gpu_v3.jl`)
-- **Key innovation**: propagates equilibrated states from low T → high T (heating protocol)
-- Single state per α `xs_g[i]` reused across T — massive memory reduction
-- Only T₁ initialized near target; subsequent T inherit state from previous T
-- Merged equilibration + sampling in one T loop
-- Log-spaced T grid for better resolution at low T where the phase transition occurs
-- **Result**: Blue bay eliminated — thermal fluctuations naturally destabilize retrieval as T crosses T_c
-
-### v4 — CUDA Streams + Fine Grid (`generate_lsr_longeq_gpu_v4.jl`) ← current
-- **CUDA streams**: one stream per α value for concurrent GPU processing
-- **Double-buffered RNG**: overlap random number generation with compute (one `CUDA.synchronize()` per MC step)
-- `mc_step_prerand!`: separates random generation from compute (cuRAND generators can't be shared across concurrent streams)
-- Finer grids: α = 0.01:0.01:0.55 (55 values), T = 50 log-spaced points
-- Heating protocol from v3 preserved
-- Output: `lsr_heating.csv`
-
-See [LATEX/lsr_evolution.tex](LATEX/lsr_evolution.tex) for detailed documentation of the v1→v2→v3 evolution.
-
-## Project Structure
-
-```
-├── generate_lse_longeq_gpu.jl    # LSE Monte Carlo simulation
-├── generate_lsr_longeq_gpu.jl    # LSR v1: masking approach
-├── generate_lsr_longeq_gpu_v2.jl # LSR v2: T-loop, independent states
-├── generate_lsr_longeq_gpu_v3.jl # LSR v3: heating protocol
-├── generate_lsr_longeq_gpu_v4.jl # LSR v4: CUDA streams + fine grid (current)
-├── maps1_longeq.jl               # Phase diagram visualization
-├── test_acceptance_map.jl        # Acceptance rate diagnostics
-├── test_lsr_acceptance.jl        # LSR acceptance tests
-├── TOML/
-│   └── Project.toml              # Julia dependencies
-├── LATEX/
-│   ├── lsr_evolution.tex         # LSR v1→v2→v3 evolution documentation
-│   ├── fss_report.tex            # Finite-size scaling report
-│   └── mc_approaches.tex         # MC methodology notes
-├── MD/
-│   ├── README.md                 # Usage notes
-│   └── GPU_OPTIMIZATION_GUIDE.md # GPU optimization tips
-└── papers/
-    └── 25_Dense_Associative_Memory_wi.pdf  # Reference paper
-```
-
-## Usage
+CUDA is mandatory for the `basin_stab_*` and `generate_*` GPU scripts; they assert `CUDA.functional()` and exit otherwise. The Bulk scheme (`kinetics_boundary_LSE.jl`) is CPU (`julia -t auto`).
 
 ```bash
-# First time setup
-julia --project=TOML -e 'using Pkg; Pkg.instantiate()'
+# Archive root scripts: use the TOML/ project
+julia --project=TOML -e 'using Pkg; Pkg.instantiate()'   # first time
+julia --project=TOML <script>.jl
 
-# Run LSE simulation
-julia --project=TOML generate_lse_longeq_gpu.jl
-
-# Run LSR simulation (v4 recommended)
-julia --project=TOML generate_lsr_longeq_gpu_v4.jl
-
-# Generate phase diagram plots
-julia --project=TOML maps1_longeq.jl
+# NIPS_Resilience and AAAI_Ramsauer scripts: run from their directory
+cd NIPS_Resilience/code
+julia <script>.jl              # resume from the last completed (α, T)
+julia <script>.jl --fresh      # start over, overwrite the CSV
 ```
 
-## Equilibration Strategies
+Conventions shared by the recent generations: all parameters are `const` blocks at the top of each script (no CLI flags besides `--fresh`); resume is the default; GPU memory is auto-chunked to `TARGET_MEM_PER_CHUNK_GB`; CSVs carry a `# generator=...` header with the exact run parameters.
 
-### v2: T-dependent exponential
-```
-N_EQ(T) = N_EQ_base × exp(c × (1/T - 1/T_max)),  cap 300k
-```
-Compensates for exponentially decreasing acceptance rate at low T.
+## Model
 
-### v3/v4: Heating protocol
-```
-N_EQ_INIT at T₁ (coldest) + N_EQ_STEP per subsequent T step
-```
-State propagates from low T → high T. At T < T_c: system stays in retrieval. At T ≈ T_c: thermal fluctuations naturally cross the weakening barrier. At T > T_c: system has already transitioned to spin-glass.
+Patterns and state live on the sphere |x|² = N; the number of patterns is exponential in the size, M = e^{αN}. The alignment with pattern ξ_μ is φ_μ = x·ξ_μ/N.
 
-## Physics Background
+- LSE: E = −(1/β) ln Σ_μ exp(−β/2 ||x − ξ_μ||²). Every pattern contributes at every alignment.
+- LSR: E = −(1/β) ln Σ_μ ReLU(1 − β/2 ||x − ξ_μ||²). A pattern contributes only inside its support cap; at b = 2 + √2 the support wall sits at φ_c = (b−1)/b = 1/√2, and the geometric threshold is α_th = −½ ln(1 − φ_c²) = ½ ln 2 ≈ 0.347.
 
-### LSE Energy (Log-Sum-Exponential)
-Standard modern Hopfield network energy with Gaussian kernel:
-```
-E_LSE(x) = -1/β × log Σ_μ exp(-β/2 × ||x - ξ_μ||²)
-```
+The finite-T program: equilibrium phase diagrams in (α, T) for both kernels (ICML, workshop), then the escape kinetics behind the apparent boundaries. In LSR the state escapes through an individual spurious pattern over a purely entropic barrier and hops between two-pattern centroids; in LSE it escapes collectively into a basin formed jointly by many weakly aligned patterns near an interior saddle. The apparent finite-N boundary is a kinetic crossover at τ ≈ T_MC, not a thermodynamic transition.
 
-### LSR Energy (Log-Sum-ReLU)
-Novel energy function based on Epanechnikov kernel:
-```
-E_LSR(x) = -1/β × log Σ_μ ReLU(1 - β/2 × ||x - ξ_μ||²)
-```
+## History: the LSR equilibrium runs, v1→v4
 
-### Key Differences
-
-| Property | LSE | LSR |
-|----------|-----|-----|
-| Support | Infinite (Gaussian tails) | Finite (cones with θ ≈ 45°) |
-| Boundary | Soft | Hard (infinite energy barrier) |
-| Emergent minima | None | At cone intersections |
-| Support boundary | N/A | φ = 1 - 1/b ≈ 0.707 |
-
-### Phase Diagram Interpretation
-
-- **Blue regions** (φ ≈ 1): Retrieval phase - system recalls target pattern
-- **Red regions** (φ ≈ 0): Spin-glass phase - system trapped in spurious states
-- **Theoretical boundary**: Black curve separating phases
-
-For LSR, the phase boundary includes:
-- Curved portion: `α_c(T)` from saddle-point equations
-- Vertical portion at `α_th = 0.5 × (1 - 1/b)² ≈ 0.043`
-
-## Output Files
-
-Running simulations generates:
-- `lse_longeq.csv` / `lsr_longeq.csv` - Raw φ data across (α, T) grid
-- `maps1_longeq.png` - Side-by-side phase diagrams
+The root-level LSR simulation evolved through four versions: v1 batched all T with an active mask; v2 ran a sequential T loop with per-(α,T) states and showed a "blue bay" artifact (metastable retrieval above the boundary from independent initialization); v3 introduced the heating protocol (equilibrated states propagate from low to high T), which removed the artifact; v4 added CUDA streams and double-buffered RNG on a finer grid. Details in `LATEX/lsr_evolution.tex`. The methodology of the later generations (confirmed-barrier-crossing escape criterion, smart-MC live sets, the three AAAI schemes) supersedes this narrative.
 
 ## Requirements
 
-- Julia 1.9+
-- CUDA.jl (GPU support)
-- Plots.jl, CSV.jl, DataFrames.jl, ProgressMeter.jl
-- NVIDIA GPU (tested on RTX A6000, 48GB)
+Julia 1.9+, CUDA.jl, CairoMakie/Plots, CSV.jl, DataFrames.jl; an NVIDIA GPU (tested on RTX A6000, 48 GB). `NIPS_Resilience/code/Project.toml` is minimal; if a package is missing there, run with `--project=..`.
 
 ## References
 
-1. Hoover et al., "Dense Associative Memory with Epanechnikov Energy", ICLR 2025 Workshop
-2. Lucibello & Mézard, "Exponential capacity of dense associative memories", PRL 132, 077301 (2024)
+1. Hoover et al., "Dense Associative Memory with Epanechnikov Energy", ICLR 2025 Workshop (`papers/25_Dense_Associative_Memory_wi.pdf`)
+2. Lucibello, Mézard, "Exponential capacity of dense associative memories", PRL 132, 077301 (2024)
 3. Ramsauer et al., "Hopfield Networks is All You Need", ICLR 2021
+4. Krotov, Hopfield, "Dense Associative Memory for Pattern Recognition", NeurIPS 2016
+5. Demircigil et al., "On a model of associative memory with huge storage capacity", J. Stat. Phys. 168, 288 (2017)
